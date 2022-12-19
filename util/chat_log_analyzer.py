@@ -5,7 +5,7 @@ sys.path.append(dirname(dirname(__file__)))
 from src.chat_message import Message
 from src.chat_message import MessageManager
 from src.chat_logger import Chat_logger
-from util.file import File
+from util.file import OS
 from datetime import datetime
 # set PYTHONPATH="${PYTHONPATH}:C:\Users\feagl\Documents\GIT_REPOS\twitch-spy"
 

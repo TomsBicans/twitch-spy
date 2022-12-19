@@ -1,3 +1,8 @@
+from datetime import datetime
+from config import CHAT_LOGS
+from src.chat_message import Message
+from util.file import OS
+from util.terminal_colors import bcolors
 import socket
 import logging
 from emoji import demojize
@@ -8,15 +13,11 @@ import argparse
 import time
 from os.path import join, basename, dirname, exists
 sys.path.append(dirname(dirname(__file__)))
-from util.terminal_colors import bcolors
-from src.chat_message import Message
-from config import CHAT_LOGS
-from datetime import datetime
-
 
 
 class Chat_logger:
     """more info: https://www.learndatasci.com/tutorials/how-stream-text-data-twitch-sockets-python/"""
+
     def __init__(self, channel: str) -> None:
         self.server = 'irc.chat.twitch.tv'
         self.port = 6667
@@ -43,14 +44,16 @@ class Chat_logger:
 
     def get_log_file(self):
         """Return the absolute location of the log file."""
-        return join(CHAT_LOGS,self.log_name)
+        # datetime.strftime(datetime.now(), )
+        OS.create_dir(CHAT_LOGS)
+        return join(CHAT_LOGS, self.log_name)
 
     def setup_logger(self):
         print(f"Setting up logger. Loggin chat at: {self.get_log_file()}")
         logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s — %(message)s',
-                    datefmt='%Y-%m-%d_%H:%M:%S',
-                    handlers=[logging.FileHandler(self.get_log_file(), encoding='utf-8')])
+                            format='%(asctime)s — %(message)s',
+                            datefmt='%Y-%m-%d_%H:%M:%S',
+                            handlers=[logging.FileHandler(self.get_log_file(), encoding='utf-8')])
 
     def start_logging(self):
         self.setup_logger()
@@ -60,7 +63,7 @@ class Chat_logger:
                     resp = self.socket.recv(2048).decode('utf-8')
                     if resp.startswith('PING'):
                         self.socket.send("PONG\n".encode('utf-8'))
-                    
+
                     elif len(resp) > 0:
                         logging.info(demojize(resp))
             except Exception as e:
@@ -79,7 +82,6 @@ class Chat_logger:
             time.sleep(0.05)
         else:
             print(f"{self.process} is alive.")
-
 
     def __del__(self):
         print(f"Closing socket: {self.socket}")
@@ -101,14 +103,15 @@ class Chat_logger:
             res += f"{bcolors.FAIL}{self.process}{bcolors.ENDC} : {self.process.is_alive()}. log: {bcolors.OKBLUE}{self.get_log_file()}{bcolors.ENDC}\n"
         return res
 
+
 class ChatMultiLogger:
     def __init__(self) -> None:
-        self.loggers :list[Chat_logger] = []
+        self.loggers: list[Chat_logger] = []
 
     def add_logger(self, channel: str):
         listener = Chat_logger(channel)
         self.loggers.append(listener)
-    
+
     def start_loggers(self):
         """Activate all loggers. Activate only if not running already."""
         for log in self.loggers:
@@ -120,13 +123,13 @@ class ChatMultiLogger:
             if log.process.is_alive():
                 print(f"Terminating: {log}")
                 log.__del__()
-    
+
     def __str__(self) -> str:
         res = ""
         for log in self.loggers:
             res += str(log)
         return res
-        
+
 
 def is_favourite_channel(args):
     """Check if favourite channels need to be logged."""
@@ -136,20 +139,44 @@ def is_favourite_channel(args):
             return True
     return False
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi twitch chat logger.")
-    parser.add_argument('channels', metavar="chan", type=str, nargs="+", help="Channels you want to log the chat. Put 'fav' if you want to activate loggers for all favorite channels")
+    parser.add_argument('channels', metavar="chan", type=str, nargs="+",
+                        help="Channels you want to log the chat. Put 'fav' if you want to activate loggers for all favorite channels")
     args = parser.parse_args()
 
     favourite_channels = [
-        "raw_lv", "mikerics", "skima_", "sidratons", 
-        "imkompots", "speletlvgaming", "keen_csgo1", 
-        "thageneral_r2", "popazik", "scvodarchives",
-        "field9", "melina", "hyskeee", "nanajam777",
-        "39daph", "prelidencs", "cohhcarnage", "sodapoppin",
-        "root_supernova", "trainwreckstv", "kntent",
-        "rineksa", "semmler", "esl_sc2", "forsen"
-        ]
+        "raw_lv",
+        "mikerics",
+        # "skima_",
+        "sidratons",
+        "imkompots",
+        "speletlvgaming",
+        "annnn4",
+        "hyskeee",
+        "keen_csgo1",
+        "vadikus007",
+        "ayrrix",
+        "kleverrlv",
+        # "thageneral_r2",
+        # "popazik",
+        # "scvodarchives",
+        # "field9",
+        # "melina",
+        # "nanajam777",
+        # "39daph",
+        # "prelidencs",
+        # "cohhcarnage",
+        # "sodapoppin",
+        # "root_supernova",
+        # "trainwreckstv",
+        # "kntent",
+        # "rineksa",
+        # "semmler",
+        # "esl_sc2",
+        # "forsen"
+    ]
     chat_manager = ChatMultiLogger()
     if is_favourite_channel(args.channels):
         print("Logging favourite channels.")
@@ -160,7 +187,7 @@ if __name__ == "__main__":
         for channel in args.channels:
             channel = str(channel)
             chat_manager.add_logger(channel)
-        
+
     try:
         chat_manager.start_loggers()
         while True:

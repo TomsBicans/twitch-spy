@@ -1,11 +1,14 @@
+import os.path as path
 from datetime import datetime
-from util.file import File
+from util.file import OS
 from util.terminal_colors import bcolors
 from util.printing import mini_print
 import re
 
+
 class Message:
     """Object representing a chat message"""
+
     def __init__(self, log_entry: str) -> None:
         self.time_logged = self.get_time(log_entry)
         info = self.get_message_info(log_entry)
@@ -24,7 +27,8 @@ class Message:
         """Get the username, channel and message text."""
         username_message = log_entry.split('—')[1:]
         username_message = '—'.join(username_message).strip()
-        username, channel, message = re.search(':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*?) :(.+)', username_message).groups()
+        username, channel, message = re.search(
+            ':(.*)\!.*@.*\.tmi\.twitch\.tv PRIVMSG #(.*?) :(.+)', username_message).groups()
         return (username, channel, message)
 
     def __str__(self) -> str:
@@ -38,7 +42,7 @@ class MessageManager:
     @staticmethod
     def extract_messages(file: str):
         res = []
-        content = File.read_file(file)
+        content = OS.read_file(file)
         lines = content.split("\n")
         for line in lines:
             try:
@@ -57,8 +61,8 @@ class MessageManager:
             words = msg.message.split()
             res += len(words)
         return res
-    
-    def get_user_conversation(self, user: str, conversation = False):
+
+    def get_user_conversation(self, user: str, conversation=False):
         """Get every message that a user is involved in."""
         res = []
         others = self._find_replies(user)
@@ -70,7 +74,7 @@ class MessageManager:
             elif conversation and msg.username in others:
                 res.append(msg)
         return res
-    
+
     def _find_replies(self, user: str):
         """Find all people that a specific user has replied to"""
         all_users = self._get_all_users()
@@ -102,17 +106,22 @@ class MessageManager:
                 if res.get(w) is None:
                     res[w] = 1
                 else:
-                    res[w] +=1
-        res = {k:v for k,v in reversed(sorted(res.items(), key= lambda item: item[1]))}
+                    res[w] += 1
+        res = {k: v for k, v in reversed(
+            sorted(res.items(), key=lambda item: item[1]))}
         return res
 
     def __str__(self):
         res = ""
         for msg in self.messages[-200:]:
             res += str(msg)+"\n"
-        res += f"Message count: {self.message_count()}\n" 
+        res += f"Message count: {self.message_count()}\n"
         res += f"Word count: {self.word_count()}\n"
         # res += f"Users: {str(self._get_all_users())}\n"
         res += f"Users: {str(mini_print(self._get_all_users(), threshold=500))}\n"
         res += f"User count: {len(self._get_all_users())}\n"
         return res
+
+
+file_dir = path.dirname(__file__)
+root_dir = path.join(file_dir, "dice", "data")
