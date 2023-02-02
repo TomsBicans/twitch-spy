@@ -169,13 +169,14 @@ if __name__ == "__main__":
         # "prelidencs",
         # "cohhcarnage",
         # "sodapoppin",
-        # "root_supernova",
+        "root_supernova",
         # "trainwreckstv",
         # "kntent",
         # "rineksa",
         # "semmler",
         # "esl_sc2",
-        # "forsen"
+        "forsen",
+        "thageneral_r2",
     ]
     chat_manager = ChatMultiLogger()
     if is_favourite_channel(args.channels):
