@@ -1,8 +1,8 @@
 import os.path as path
 from datetime import datetime
-from util.file import OS
-from util.terminal_colors import bcolors
-from util.printing import mini_print
+from src.util import OS
+from src.util import bcolors
+from src.util import mini_print
 import re
 
 

@@ -1,8 +1,8 @@
 from datetime import datetime
-from config import CHAT_LOGS
+import src.config as config
 from src.chat_message import Message
-from util.file import OS
-from util.terminal_colors import bcolors
+from src.util import OS
+from src.util import bcolors
 import socket
 import logging
 from emoji import demojize
@@ -11,8 +11,7 @@ from multiprocessing import Process
 import sys
 import argparse
 import time
-from os.path import join, basename, dirname, exists
-sys.path.append(dirname(dirname(__file__)))
+import os.path as path
 
 
 class Chat_logger:
@@ -45,8 +44,8 @@ class Chat_logger:
     def get_log_file(self):
         """Return the absolute location of the log file."""
         # datetime.strftime(datetime.now(), )
-        OS.create_dir(CHAT_LOGS)
-        return join(CHAT_LOGS, self.log_name)
+        OS.create_dir(config.CHAT_LOGS)
+        return path.join(config.CHAT_LOGS, self.log_name)
 
     def setup_logger(self):
         print(f"Setting up logger. Loggin chat at: {self.get_log_file()}")
