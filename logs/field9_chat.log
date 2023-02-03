@@ -597,3 +597,15 @@ PING :tmi.twitch.tv
 :feagleyy.tmi.twitch.tv 353 feagleyy = #field9 :feagleyy
 :feagleyy.tmi.twitch.tv 366 feagleyy #field9 :End of /NAMES list
 
+2022-08-23_00:20:47 — :tmi.twitch.tv 001 feagleyy :Welcome, GLHF!
+:tmi.twitch.tv 002 feagleyy :Your host is tmi.twitch.tv
+:tmi.twitch.tv 003 feagleyy :This server is rather new
+:tmi.twitch.tv 004 feagleyy :-
+:tmi.twitch.tv 375 feagleyy :-
+:tmi.twitch.tv 372 feagleyy :You are in a maze of twisty passages, all alike.
+:tmi.twitch.tv 376 feagleyy :>
+
+2022-08-23_00:20:48 — :feagleyy!feagleyy@feagleyy.tmi.twitch.tv JOIN #field9
+:feagleyy.tmi.twitch.tv 353 feagleyy = #field9 :feagleyy
+:feagleyy.tmi.twitch.tv 366 feagleyy #field9 :End of /NAMES list
+
