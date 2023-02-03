@@ -1,10 +1,11 @@
 from datetime import datetime
-from src.util import OS
-from src.chat_logger import Chat_logger
-from src.chat_message import MessageManager
-from src.chat_message import Message
+import config
+from util import OS
+from chat_logger import Chat_logger
+from chat_message import MessageManager
+from chat_message import Message
 import sys
-import src.config as config
+
 # set PYTHONPATH="${PYTHONPATH}:C:\Users\feagl\Documents\GIT_REPOS\twitch-spy"
 
 if __name__ == "__main__":

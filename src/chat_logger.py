@@ -1,8 +1,7 @@
 from datetime import datetime
-import src.config as config
-from src.chat_message import Message
-from src.util import OS
-from src.util import bcolors
+import config
+from chat_message import Message
+from util import OS, bcolors
 import socket
 import logging
 from emoji import demojize
