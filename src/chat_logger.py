@@ -144,6 +144,8 @@ if __name__ == "__main__":
                         help="Channels you want to log the chat. Put 'fav' if you want to activate loggers for all favorite channels")
     args = parser.parse_args()
 
+    logging.basicConfig(filename='program.log',
+                        level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     favourite_channels = [
         "raw_lv",
         "mikerics",
@@ -190,6 +192,8 @@ if __name__ == "__main__":
     try:
         chat_manager.start_loggers()
         while True:
+            logging.info(str(datetime.now()))
+            logging.info(str(chat_manager))
             print(str(datetime.now()))
             print(chat_manager)
             chat_manager.start_loggers()
