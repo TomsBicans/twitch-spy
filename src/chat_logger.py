@@ -63,7 +63,7 @@ class Chat_logger:
                         self.socket.send("PONG\n".encode('utf-8'))
 
                     elif len(resp) > 0:
-                        logging.info(demojize(resp))
+                        logging.debug(demojize(resp))
             except Exception as e:
                 print(f"{bcolors.FAIL}{e}{bcolors.ENDC}")
                 sys.exit(1)
@@ -143,41 +143,9 @@ if __name__ == "__main__":
     parser.add_argument('channels', metavar="chan", type=str, nargs="+",
                         help="Channels you want to log the chat. Put 'fav' if you want to activate loggers for all favorite channels")
     args = parser.parse_args()
-
     logging.basicConfig(filename='program.log',
                         level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-    favourite_channels = [
-        "raw_lv",
-        "mikerics",
-        # "skima_",
-        "sidratons",
-        "imkompots",
-        "speletlvgaming",
-        "annnn4",
-        "hyskeee",
-        "keen_csgo1",
-        "vadikus007",
-        "ayrrix",
-        "kleverrlv",
-        # "thageneral_r2",
-        # "popazik",
-        # "scvodarchives",
-        # "field9",
-        # "melina",
-        # "nanajam777",
-        # "39daph",
-        # "prelidencs",
-        # "cohhcarnage",
-        # "sodapoppin",
-        "root_supernova",
-        # "trainwreckstv",
-        # "kntent",
-        # "rineksa",
-        # "semmler",
-        # "esl_sc2",
-        "forsen",
-        "thageneral_r2",
-    ]
+    favourite_channels = config.CONFIG['favourite_channels']
     chat_manager = ChatMultiLogger()
     if is_favourite_channel(args.channels):
         print("Logging favourite channels.")
@@ -188,7 +156,6 @@ if __name__ == "__main__":
         for channel in args.channels:
             channel = str(channel)
             chat_manager.add_logger(channel)
-
     try:
         chat_manager.start_loggers()
         while True:
