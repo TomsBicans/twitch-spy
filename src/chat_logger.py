@@ -170,12 +170,12 @@ if __name__ == "__main__":
             channel = str(channel)
             chat_manager.add_logger(channel)
     try:
-        logging.basicConfig(filename='program.log',
-                            level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+        # logging.basicConfig(filename='program.log',
+        #                     level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
         chat_manager.start_loggers()
         while True:
-            logging.info(str(datetime.now()))
-            logging.info(str(chat_manager))
+            # logging.info(str(datetime.now()))
+            # logging.info(str(chat_manager))
             print(str(datetime.now()))
             print(chat_manager)
             chat_manager.start_loggers()
