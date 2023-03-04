@@ -22,7 +22,7 @@ class Chat_logger:
         self.nickname = 'Feagleyy'
         self.token = 'oauth:ubyeyu7pbrfpf3dha63eg1hwmmx55d'
         self.channel = "#" + channel
-        self.socket = None
+        self.socket = self.auth_socket()
         self.log_name = f'{self.get_channel()}_chat.log'
         self.process: Process = Process()
         atexit.register(self.__del__)
@@ -74,8 +74,6 @@ class Chat_logger:
                     if resp.startswith('PING'):
                         self.socket.send("PONG\n".encode('utf-8'))
                     elif len(resp) > 0:
-                        # print("resp received.")
-                        # print(self.channel, demojize(resp))
                         logging.debug(demojize(resp))
             except Exception as e:
                 print(f"{bcolors.FAIL}{e}{bcolors.ENDC}")
@@ -87,7 +85,6 @@ class Chat_logger:
 
     def start_process(self):
         if not self.process.is_alive():
-            self.socket = self.auth_socket()
             p = Process(target=self.start_logging)
             p.name = self.channel
             self.process = p
