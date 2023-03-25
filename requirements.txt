@@ -1,2 +1,7 @@
 emoji
 streamlink
+pytube
+moviepy
+mutagen
+eyed3
+google-api-python-client

@@ -1,0 +1,6 @@
+python3 .\main.py https://www.youtube.com/playlist?list=PLCgSXQYoBb41x3JaoF9vlpQ7Yo9oIHqqN
+python3 .\main.py https://www.youtube.com/playlist?list=PL1079226855A2942C
+python3 .\main.py https://www.youtube.com/playlist?list=PLF-LvbBunGPLjMJcDrBK36_suZdQtN-x_
+python3 .\main.py https://www.youtube.com/playlist?list=PLF-LvbBunGPLjMJcDrBK36_suZdQtN-x_ https://www.youtube.com/playlist?list=PL1079226855A2942C
+python3 .\main.py https://www.youtube.com/playlist?list=PLjhqCuBTnD_FQdbEmxstArjrxcTjuPaFC https://www.youtube.com/playlist?list=PLmx0cwWL2xwGjHsQD3WvYx_CQRAeMdf_j https://www.youtube.com/playlist?list=PLai6RUSTy_GB4rtoKmg_ZTkjzJWl5xjz_
+python3 .\main.py https://www.youtube.com/playlist?list=PLA4XEe9tV8qaSoneg5s5uJYo6HrWnT7T0

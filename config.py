@@ -1,6 +1,7 @@
 import os.path as path
 import sys
 import os
+
 ROOT_DIR = path.dirname(__file__)
 STREAM_DOWNLOADS = path.join(ROOT_DIR, "stream_downloads")
 
@@ -13,6 +14,7 @@ def create_directory_if_not_exists(directory_path: str):
     """
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
+    return directory_path
 
 
 create_directory_if_not_exists(STREAM_DOWNLOADS)
