@@ -51,28 +51,34 @@ def process_url(url: str):
                 if storage_manager.already_downloaded(vid):
                     print(f"Video already exists. Will skip download: {vid}")
                     continue
-                try:
-                    print(f"Downloading {vid} ...")
-                    res = downloader.download_audio(vid, download_dir)
-                    print(res)
-                    with storage_manager.lock:
-                        storage_manager.mark_successful_download(vid)
-                except Exception as e:
-                    with storage_manager.lock:
-                        storage_manager.troublesome_download(vid)
-                    traceback.print_exc()
+                download_audio(downloader, download_dir, storage_manager, vid)
         elif youtube.is_youtube_video(url):
+            download_dir = path.join(config.STREAM_DOWNLOADS, "random_videos")
+            download_dir = config.create_directory_if_not_exists(download_dir)
+            storage_manager = StorageManager(download_dir)
             print(f"Video detected: {url}")
-            try:
-                print(f"Downloading {url} ...")
-                res = downloader.download_audio(url, config.STREAM_DOWNLOADS)
-                print(res)
-            except Exception as e:
-                traceback.print_exc()
-                raise e
+            download_audio(downloader, download_dir, storage_manager, url)
     else:
         print("Invalid platform specified.")
         exit()
+
+
+def download_audio(
+    downloader: youtube.YoutubeDownloader,
+    download_dir: str,
+    storage_manager: StorageManager,
+    url: str,
+):
+    try:
+        print(f"Downloading {url} ...")
+        res = downloader.download_audio(url, download_dir)
+        print(res)
+        with storage_manager.lock:
+            storage_manager.mark_successful_download(url)
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_download(url)
+        traceback.print_exc()
 
 
 def main():
