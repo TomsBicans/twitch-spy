@@ -78,10 +78,16 @@ def main():
         description="Download and convert videos from different platforms"
     )
     parser.add_argument("urls", nargs="*", help="URLs of the videos to download")
+    parser.add_argument(
+        "--num-worker-threads",
+        type=int,
+        default=4,
+        help="Number of worker threads (default: 4)",
+    )
     args = parser.parse_args()
 
     q = queue.Queue()
-    num_worker_threads = 4
+    num_worker_threads = args.num_worker_threads
     threads = []
 
     for url in args.urls:
