@@ -161,7 +161,7 @@ def get_playlist_video_urls(playlist_url: str) -> list[str]:
 
 def get_playlist_name(playlist_url):
     playlist = pytube.Playlist(playlist_url)
-    return playlist.title
+    return playlist.title()
 
 
 def safe_pathname(dir: str) -> str:
