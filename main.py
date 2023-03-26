@@ -30,22 +30,6 @@ def process_queue(q: queue.Queue):
             traceback.print_exc()
 
 
-def download_video(
-    downloader: youtube.YoutubeDownloader,
-    vid: str,
-    download_dir: str,
-    storage_manager: StorageManager,
-):
-    try:
-        print(f"Downloading {vid} ...")
-        res = downloader.download_audio(vid, download_dir)
-        print(res)
-        with storage_manager.lock:
-            storage_manager.mark_successful_download(vid)
-    except Exception as e:
-        traceback.print_exc()
-
-
 def process_url(url: str):
     if "twitch.tv" in url:
         downloader = twitch.TwitchDownloader()
