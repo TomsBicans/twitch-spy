@@ -9,7 +9,6 @@ from mutagen.id3 import ID3, APIC
 import requests
 
 import googleapiclient.discovery
-
 import re
 
 
@@ -165,11 +164,25 @@ def get_playlist_name(playlist_url):
     return playlist.title
 
 
-def get_playlist_download_directory(playlist_url: str):
+def safe_pathname(dir: str) -> str:
+    # Replace any character that is not allowed in Windows filenames with an underscore
+    return re.sub(r'[\\/:*?"<>| ]', "_", dir)
+
+
+def get_playlist_download_directory(downloads_dir: str, playlist_url: str):
     # playlist_id = re.search(r"list=(\w+)", playlist_url).group(1)
     playlist_id = re.search(r"list=([\w-]+)", playlist_url).group(1)
+
+    for entry in os.listdir(downloads_dir):
+        entry_path = path.join(downloads_dir, entry)
+        if path.isdir(entry_path) and playlist_id in entry:
+            print(f"Found existing directory by project id: {playlist_id}")
+            return entry_path
+
+    print(f"Downloads directory does not exist for {playlist_id}. Creating a new one.")
     playlist_title = get_playlist_name(playlist_url)
-    return f"{playlist_title}_{playlist_id}"
+    playlist_dir = f"{safe_pathname(playlist_title)}_{playlist_id}"
+    return path.join(downloads_dir, playlist_dir)
 
 
 def is_youtube_playlist(url: str) -> bool:

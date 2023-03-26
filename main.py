@@ -5,6 +5,7 @@ from src.twitch_api import api_client
 from concurrent.futures import ThreadPoolExecutor
 import config
 import sys
+import os
 import argparse
 import time
 import traceback
@@ -53,9 +54,9 @@ def process_url(url: str):
         if youtube.is_youtube_playlist(url):
             print(f"Playlist detected: {url}")
             videos = youtube.get_playlist_video_urls(url)
-            playlist_dir = youtube.get_playlist_download_directory(url)
-            playlist_dir = utils.safe_pathname(playlist_dir)
-            download_dir = path.join(config.STREAM_DOWNLOADS, playlist_dir)
+            download_dir = youtube.get_playlist_download_directory(
+                config.STREAM_DOWNLOADS, url
+            )
             download_dir = config.create_directory_if_not_exists(download_dir)
             storage_manager = StorageManager(download_dir)
             for i, vid in enumerate(videos):
@@ -70,7 +71,8 @@ def process_url(url: str):
                     print(f"Downloading {vid} ...")
                     res = downloader.download_audio(vid, download_dir)
                     print(res)
-                    storage_manager.mark_successful_download(vid)
+                    with storage_manager.lock:
+                        storage_manager.mark_successful_download(vid)
                 except Exception as e:
                     traceback.print_exc()
         elif youtube.is_youtube_video(url):
