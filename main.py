@@ -58,6 +58,8 @@ def process_url(url: str):
                     with storage_manager.lock:
                         storage_manager.mark_successful_download(vid)
                 except Exception as e:
+                    with storage_manager.lock:
+                        storage_manager.troublesome_download(vid)
                     traceback.print_exc()
         elif youtube.is_youtube_video(url):
             print(f"Video detected: {url}")
