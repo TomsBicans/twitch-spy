@@ -3,3 +3,4 @@ logs
 stream_downloads
 __pycache__/
 downloads/*
+program.log

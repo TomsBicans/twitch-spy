@@ -22,7 +22,7 @@ class Chat_logger:
         self.nickname = 'Feagleyy'
         self.token = 'oauth:ubyeyu7pbrfpf3dha63eg1hwmmx55d'
         self.channel = "#" + channel
-        self.socket = None
+        self.socket = self.auth_socket()
         self.log_name = f'{self.get_channel()}_chat.log'
         self.process: Process = Process()
         atexit.register(self.__del__)
@@ -48,6 +48,18 @@ class Chat_logger:
 
     def setup_logger(self):
         print(f"Setting up logger. Loggin chat at: {self.get_log_file()}")
+        # file_handler = logging.FileHandler(
+        #     f'{self.get_log_file()}', encoding='utf-8', mode="a")
+        # file_handler.setLevel(logging.INFO)
+        # formatter = logging.Formatter(
+        #     '%(asctime)s — %(message)s', datefmt='%Y-%m-%d_%H:%M:%S')
+        # file_handler.setFormatter(formatter)
+
+        # stream_handler = logging.StreamHandler()
+        # stream_handler.setLevel(logging.DEBUG)
+        # logger = logging.getLogger(self.channel)
+        # logger.addHandler(file_handler)
+        # logger.addHandler(stream_handler)
         logging.basicConfig(level=logging.DEBUG,
                             format='%(asctime)s — %(message)s',
                             datefmt='%Y-%m-%d_%H:%M:%S',
@@ -61,18 +73,18 @@ class Chat_logger:
                     resp = self.socket.recv(2048).decode('utf-8')
                     if resp.startswith('PING'):
                         self.socket.send("PONG\n".encode('utf-8'))
-
                     elif len(resp) > 0:
-                        logging.info(demojize(resp))
+                        logging.debug(demojize(resp))
             except Exception as e:
                 print(f"{bcolors.FAIL}{e}{bcolors.ENDC}")
                 sys.exit(1)
         except KeyboardInterrupt:
             print("Interupted.")
+        except Exception as e:
+            print(e)
 
     def start_process(self):
         if not self.process.is_alive():
-            self.socket = self.auth_socket()
             p = Process(target=self.start_logging)
             p.name = self.channel
             self.process = p
@@ -143,39 +155,7 @@ if __name__ == "__main__":
     parser.add_argument('channels', metavar="chan", type=str, nargs="+",
                         help="Channels you want to log the chat. Put 'fav' if you want to activate loggers for all favorite channels")
     args = parser.parse_args()
-
-    favourite_channels = [
-        "raw_lv",
-        # "mikerics",
-        # "skima_",
-        # "sidratons",
-        # "imkompots",
-        # "speletlvgaming",
-        # "annnn4",
-        # "hyskeee",
-        # "keen_csgo1",
-        # "vadikus007",
-        # "ayrrix",
-        # "kleverrlv",
-        # "thageneral_r2",
-        # "popazik",
-        # "scvodarchives",
-        # "field9",
-        # "melina",
-        # "nanajam777",
-        # "39daph",
-        # "prelidencs",
-        # "cohhcarnage",
-        # "sodapoppin",
-        # "root_supernova",
-        # "trainwreckstv",
-        # "kntent",
-        # "rineksa",
-        # "semmler",
-        # "esl_sc2",
-        "forsen",
-        # "thageneral_r2",
-    ]
+    favourite_channels = config.CONFIG['favourite_channels']
     chat_manager = ChatMultiLogger()
     if is_favourite_channel(args.channels):
         print("Logging favourite channels.")
@@ -186,10 +166,13 @@ if __name__ == "__main__":
         for channel in args.channels:
             channel = str(channel)
             chat_manager.add_logger(channel)
-
     try:
+        # logging.basicConfig(filename='program.log',
+        #                     level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
         chat_manager.start_loggers()
         while True:
+            # logging.info(str(datetime.now()))
+            # logging.info(str(chat_manager))
             print(str(datetime.now()))
             print(chat_manager)
             chat_manager.start_loggers()
