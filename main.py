@@ -3,6 +3,7 @@ import src.video_downloader.youtube as youtube
 from src.video_downloader.storage_manager import StorageManager
 from src.twitch_api import api_client
 from concurrent.futures import ThreadPoolExecutor
+from typing import Set
 import config
 import sys
 import os
@@ -94,11 +95,12 @@ def main():
     )
     args = parser.parse_args()
 
+    urls: Set[str] = set(args.urls)
     q = queue.Queue()
     num_worker_threads = args.num_worker_threads
     threads = []
 
-    for url in args.urls:
+    for url in urls:
         q.put(url)
 
     for _ in range(num_worker_threads):
