@@ -14,6 +14,7 @@ import os.path as path
 import utils
 import threading
 import queue
+import pydub
 
 SENTINEL = "STOP_WORKER"
 stop_workers = threading.Event()
@@ -99,6 +100,12 @@ def main():
     q = queue.Queue()
     num_worker_threads = args.num_worker_threads
     threads = []
+
+    total_songs, total_duration = utils.count_songs_and_duration(
+        config.STREAM_DOWNLOADS
+    )
+    print(f"Total songs: {total_songs}")
+    print(f"Total duration: {utils.format_duration(total_duration)}")
 
     for url in urls:
         q.put(url)
