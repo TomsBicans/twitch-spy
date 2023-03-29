@@ -3,6 +3,7 @@ import os
 from mutagen.mp3 import MP3
 from mutagen.wavpack import WavPack
 from tqdm import tqdm
+import os.path as path
 
 
 def safe_pathname(dir: str) -> str:
@@ -27,22 +28,25 @@ def count_songs_and_duration(directory: str):
 
     for root, dirs, files in tqdm(os.walk(directory)):
         for file in files:
-            if file.endswith(".mp3"):
-                # Count song
-                total_songs += 1
+            try:
+                if file.endswith(".mp3"):
+                    # Count song
+                    total_songs += 1
 
-                # Get song duration
-                filepath = os.path.join(root, file)
-                audio = MP3(filepath)
-                total_duration += audio.info.length
+                    # Get song duration
+                    filepath = os.path.join(root, file)
+                    audio = MP3(filepath)
+                    total_duration += audio.info.length
 
-            elif file.endswith(".wav"):
-                # Count song
-                total_songs += 1
+                elif file.endswith(".wav"):
+                    # Count song
+                    total_songs += 1
 
-                # Get song duration
-                filepath = os.path.join(root, file)
-                audio = WavPack(filepath)
-                total_duration += audio.info.length
+                    # Get song duration
+                    filepath = os.path.join(root, file)
+                    audio = WavPack(filepath)
+                    total_duration += audio.info.length
+            except:
+                print(f"Error analyzing this file: {path.abspath(file)}")
 
     return total_songs, total_duration

@@ -14,7 +14,6 @@ import os.path as path
 import utils
 import threading
 import queue
-import pydub
 
 SENTINEL = "STOP_WORKER"
 stop_workers = threading.Event()
