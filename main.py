@@ -34,7 +34,12 @@ def process_queue(q: queue.Queue):
 
 def process_url(url: str):
     if "twitch.tv" in url:
+        print("Twitch url detected.")
         downloader = twitch.TwitchDownloader()
+        ttv_streams = path.join(config.STREAM_DOWNLOADS, "twitch_streams")
+        config.create_directory_if_not_exists(ttv_streams)
+        print(f"Starting twitch stream download: {url}")
+        downloader.download_stream_audio(url, ttv_streams)
     elif "youtube.com" in url:
         downloader = youtube.YoutubeDownloader()
         if youtube.is_youtube_playlist(url):

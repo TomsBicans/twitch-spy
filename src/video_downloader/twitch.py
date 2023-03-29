@@ -6,16 +6,17 @@ import config
 import os.path as path
 import datetime
 import re
+import traceback
 
 
 class TwitchDownloader:
     def __init__(self, ffmpeg_path=None):
-        self.ffmpeg_path = ffmpeg_path or 'ffmpeg'
+        self.ffmpeg_path = ffmpeg_path or "ffmpeg"
 
     @staticmethod
     def create_output_file_name(channel_url: str):
         # Extract the channel name from the channel URL
-        match = re.search(r'twitch.tv/(\w+)', channel_url)
+        match = re.search(r"twitch.tv/(\w+)", channel_url)
         if match:
             channel_name = match.group(1)
         else:
@@ -27,27 +28,64 @@ class TwitchDownloader:
 
         return output_filename
 
-    def download_stream(self, channel_url, download_directory: str):
+    def download_stream_video(self, channel_url, download_directory: str):
         try:
             streams = streamlink.streams(channel_url)
             stream_options = streams.keys()
-            stream = streams['best']
+            stream = streams["best"]
 
             output_filename = self.create_output_file_name(channel_url)
             command = [
                 self.ffmpeg_path,
-                '-i', stream.url,
-                '-c', 'copy',
-                '-bsf:a', 'aac_adtstoasc',
-                path.join(download_directory, output_filename)
+                "-i",
+                stream.url,
+                "-c",
+                "copy",
+                "-bsf:a",
+                "aac_adtstoasc",
+                path.join(download_directory, output_filename),
             ]
 
-            process = subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            process = subprocess.Popen(
+                command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            )
             process.communicate()
         except Exception as e:
+            traceback.print_exc()
+            print(f"An error occurred: {e}")
+
+    def download_stream_audio(self, channel_url, download_directory: str):
+        try:
+            streams = streamlink.streams(channel_url)
+            stream_options = streams.keys()
+            stream = streams["best"]
+
+            output_filename = self.create_output_file_name(channel_url)
+            audio_output_filename = output_filename.replace(".mp4", ".mp3")
+
+            command = [
+                self.ffmpeg_path,
+                "-i",
+                stream.url,
+                "-vn",  # No video
+                "-c:a",  # Codec for audio
+                "libmp3lame",  # Use the LAME MP3 encoder
+                "-q:a",  # Audio quality
+                "2",  # Set audio quality (0 - 9, where 0 is the best quality and 9 is the worst)
+                path.join(download_directory, audio_output_filename),
+            ]
+
+            process = subprocess.Popen(
+                command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            )
+            process.communicate()
+        except Exception as e:
+            traceback.print_exc()
             print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
     downloader = TwitchDownloader()
-    downloader.download_stream("https://www.twitch.tv/rawchixx", config.STREAM_DOWNLOADS)
+    downloader.download_stream_video(
+        "https://www.twitch.tv/rawchixx", config.STREAM_DOWNLOADS
+    )
