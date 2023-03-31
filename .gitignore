@@ -5,3 +5,4 @@ __pycache__/
 downloads/*
 program.log
 venv/*
+py3.10/*

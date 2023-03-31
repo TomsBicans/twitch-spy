@@ -105,11 +105,11 @@ def main():
     num_worker_threads = args.num_worker_threads
     threads = []
 
-    total_songs, total_duration = utils.count_songs_and_duration(
-        config.STREAM_DOWNLOADS
-    )
-    print(f"Total songs: {total_songs}")
-    print(f"Total duration: {utils.format_duration(total_duration)}")
+    # total_songs, total_duration = utils.count_songs_and_duration(
+    #     config.STREAM_DOWNLOADS
+    # )
+    # print(f"Total songs: {total_songs}")
+    # print(f"Total duration: {utils.format_duration(total_duration)}")
 
     for url in urls:
         q.put(url)
