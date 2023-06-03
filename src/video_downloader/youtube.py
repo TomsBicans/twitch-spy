@@ -12,23 +12,9 @@ import googleapiclient.discovery
 import re
 
 
-def safe_pathname(dir: str) -> str:
-    # Replace any character that is not allowed in Windows filenames with an underscore
-    return re.sub(r'[\\/:*?"<>| ]', "_", dir)
-
-
 class Utils:
     def __init__(self) -> None:
         pass
-
-    @staticmethod
-    def get_highest_bitrate_audio_stream(yt: pytube.YouTube) -> pytube.Stream:
-        return yt.streams.filter(only_audio=True).order_by("abr").desc().first()
-
-    @staticmethod
-    def download_stream(stream: pytube.Stream, output_directory: str) -> str:
-        filename = stream.download(output_path=output_directory)
-        return filename
 
     @staticmethod
     def convert_to_mp3_extension(filename: str) -> str:
@@ -41,21 +27,13 @@ class Utils:
         os.remove(filename)
         return new_filename
 
-    @staticmethod
-    def add_metadata_to_audio_file(yt: pytube.YouTube, filename: str) -> None:
-        try:
-            audio = EasyID3(filename)
-        except mutagen.id3.ID3NoHeaderError:
-            audio = mutagen.File(filename, easy=True)
-            audio.add_tags()
-        audio["title"] = yt.title
-        audio["artist"] = yt.author
-        audio["album"] = "YouTube Audio"
-        # audio["rating"] = yt.rating
-        audio.save()
+
+class YoutubeDownloader:
+    def __init__(self) -> None:
+        pass
 
     @staticmethod
-    def add_preview_picture_to_audio_file(yt: pytube.YouTube, filename: str) -> None:
+    def add_preview_picture_to_audio_file(yt: pytube.YouTube, filepath: str) -> None:
         thumbnail_url = yt.thumbnail_url
         if not thumbnail_url:
             print("Using google API")
@@ -73,14 +51,14 @@ class Utils:
                 thumbnail_url = thumbnails["medium"]["url"]
         if thumbnail_url:
             print(f"Thumbnail found: {thumbnail_url}")
-            download_dir = path.dirname(filename)
+            download_dir = path.dirname(filepath)
             thumbnails_dir = path.join(download_dir, "thumbnails")
             if not path.exists(thumbnails_dir):
                 os.mkdir(thumbnails_dir)
             thumbnail_loc = path.join(thumbnails_dir, safe_pathname(yt.title) + ".jpg")
             with open(thumbnail_loc, "wb") as thumbnail_file:
                 thumbnail_file.write(requests.get(thumbnail_url).content)
-            audio = ID3(filename)
+            audio = ID3(filepath)
             with open(thumbnail_loc, "rb") as thumbnail_file:
                 audio["APIC"] = APIC(
                     encoding=3,
@@ -93,10 +71,18 @@ class Utils:
         else:
             print(f"Thumbnail not found: {yt}")
 
-
-class YoutubeDownloader:
-    def __init__(self) -> None:
-        pass
+    @staticmethod
+    def add_metadata_to_audio_file(yt: pytube.YouTube, filepath: str) -> None:
+        try:
+            audio = EasyID3(filepath)
+        except mutagen.id3.ID3NoHeaderError:
+            audio = mutagen.File(filepath, easy=True)
+            audio.add_tags()
+        audio["title"] = yt.title
+        audio["artist"] = yt.author
+        audio["album"] = "YouTube Audio"
+        # audio["rating"] = yt.rating
+        audio.save()
 
     @staticmethod
     def download_video(url: str, output_directory: str) -> str:
@@ -115,17 +101,26 @@ class YoutubeDownloader:
         return stream.download(output_path=output_directory)
 
     @staticmethod
+    def get_highest_bitrate_audio_stream(yt: pytube.YouTube) -> pytube.Stream:
+        return yt.streams.filter(only_audio=True).order_by("abr").desc().first()
+
+    @staticmethod
+    def download_stream(stream: pytube.Stream, output_directory: str) -> str:
+        filename = stream.download(output_path=output_directory)
+        return filename
+
+    @staticmethod
     def download_audio(url: str, output_directory: str) -> str:
         yt = pytube.YouTube(url)
-        stream = Utils.get_highest_bitrate_audio_stream(yt)
-        filename = Utils.download_stream(stream, output_directory)
+        stream = YoutubeDownloader.get_highest_bitrate_audio_stream(yt)
+        filename = YoutubeDownloader.download_stream(stream, output_directory)
         new_filename = Utils.convert_to_mp3_extension(filename)
         try:
-            Utils.add_metadata_to_audio_file(yt, new_filename)
+            YoutubeDownloader.add_metadata_to_audio_file(yt, new_filename)
         except Exception as e:
             raise e
         try:
-            Utils.add_preview_picture_to_audio_file(yt, new_filename)
+            YoutubeDownloader.add_preview_picture_to_audio_file(yt, new_filename)
         except Exception as e:
             raise e
         return new_filename
