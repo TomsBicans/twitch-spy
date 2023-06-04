@@ -34,6 +34,9 @@ class StorageManager:
         self.failed_downloads = path.join(self.storage_folder, "failed_downloads.txt")
         if not path.exists(self.failed_downloads):
             create_file(self.failed_downloads)
+        self.failed_split = path.join(self.storage_folder, "failed_split.txt")
+        if not path.exists(self.failed_split):
+            create_file(self.failed_split)
 
     def already_downloaded(self, url: str) -> bool:
         if not path.exists(self.storage_file):
@@ -50,3 +53,7 @@ class StorageManager:
     def troublesome_download(self, url: str):
         if not url in read_file(self.failed_downloads):
             append_to_file(self.failed_downloads, url)
+
+    def troublesome_split(self, url: str):
+        if not url in read_file(self.failed_split):
+            append_to_file(self.failed_split, url)

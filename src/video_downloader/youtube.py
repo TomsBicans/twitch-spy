@@ -1,4 +1,3 @@
-import pytube
 from moviepy.editor import VideoFileClip, AudioFileClip
 import os
 import os.path as path
@@ -27,13 +26,147 @@ class Utils:
         os.remove(filename)
         return new_filename
 
+    @staticmethod
+    def audio_length(audio_file: str) -> float:
+        # Load the audio or video file with moviepy
+        if audio_file.endswith(".mp4"):
+            clip = VideoFileClip(audio_file)
+        else:
+            clip = AudioFileClip(audio_file)
+
+        # Return the duration in seconds
+        return float(clip.duration)
+
+    @staticmethod
+    def create_subdir_for_video_split(audio_file: str) -> str:
+        save_dir = Utils.filepath_without_extension(audio_file)
+        save_dir = path.join(
+            path.dirname(save_dir), safe_pathname(path.basename(save_dir))
+        )
+        if not path.exists(save_dir):
+            os.mkdir(save_dir)
+        return save_dir
+
+    @staticmethod
+    def filepath_without_extension(filepath: str) -> str:
+        return os.path.splitext(filepath)[0]
+
+    @staticmethod
+    def baseline_timestamp_pairs(timestamp_title_pairs: list, audio_length: float):
+        """The incoming data is tuples with 3 elements, but they are not always in the same order.
+        Return a list of tuples with this data (title, start_time, end_time)"""
+
+        def time_to_seconds(time_str):
+            """Convert a time string in HH:MM:SS or HH:MM format to seconds."""
+            parts = list(map(int, time_str.split(":")))
+            if len(parts) == 3:
+                return parts[0] * 3600 + parts[1] * 60 + parts[2]
+            elif len(parts) == 2:
+                return parts[0] * 60 + parts[1]
+            else:
+                raise ValueError(f"Invalid time format: {time_str}")
+
+        normalized_pairs = []
+        for pair in timestamp_title_pairs:
+            # Check if the potential time fields are indeed times by trying to convert them to seconds
+            try:
+                start_time = time_to_seconds(pair[1])
+                end_time = time_to_seconds(pair[2])
+                # If the above lines do not raise an exception, then the order is correct
+                normalized_pairs.append((pair[0], start_time, end_time))
+            except ValueError:
+                # If an exception is raised, the order is incorrect and needs to be swapped
+                start_time = time_to_seconds(pair[0])
+                end_time = time_to_seconds(pair[1])
+                normalized_pairs.append((pair[2], start_time, end_time))
+        return normalized_pairs
+
+    @staticmethod
+    def split_file_by_tracks(youtube_url: str, audio_file: str):
+        # Use yt-dlp to extract the video description and top comments
+        ydl_opts = {"writecomments": True, "ignoreerrors": True, "quiet": True}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(youtube_url, download=False)
+
+        description = info_dict.get("description", "")
+        comments = info_dict.get("comments", [])
+
+        # Combine the description and the text of the top 40 comments into one string
+        text = description + "\n".join(comment["text"] for comment in comments[:40])
+
+        # List of possible regular expressions
+        regexes = [
+            r"(.+?): (\d{1,2}:\d{2}(?:\:\d{2})?) - (\d{1,2}:\d{2}(?:\:\d{2})?)",  # Title: HH:MM(:SS) - HH:MM(:SS)
+            r"(\d{1,2}:\d{2}(?:\:\d{2})?) (.+)",  # HH:MM(:SS) Title
+            # Add more regular expressions if needed
+        ]
+
+        # Choose the regex that gives the most matches
+        best_regex = max(regexes, key=lambda r: len(re.findall(r, text)))
+        timestamp_title_pairs = re.findall(best_regex, text)
+        print(timestamp_title_pairs)
+        timestamp_title_pairs = Utils.baseline_timestamp_pairs(
+            timestamp_title_pairs, Utils.audio_length(audio_file)
+        )
+        thumbnail_url = YoutubeDownloader.get_thumbnail_url(youtube_url)
+        print(timestamp_title_pairs)
+
+        # Load the audio file with moviepy
+        audio = AudioFileClip(audio_file)
+        for title, start_time, end_time in timestamp_title_pairs:
+            # Use moviepy to cut the audio segment
+            chunk = audio.subclip(start_time, end_time)
+            save_dir = Utils.create_subdir_for_video_split(audio_file)
+            save_location = path.join(save_dir, f"{title}.mp3")
+            print(save_location)
+            # Save each chunk as a separate audio file
+            chunk.write_audiofile(save_location)
+            Utils.add_title_to_audio_file(title, save_location)
+            YoutubeDownloader.add_preview_picture_to_audio_file(
+                title, thumbnail_url, save_location
+            )
+
+    @staticmethod
+    def add_title_to_audio_file(title: str, filepath: str) -> None:
+        try:
+            audio = EasyID3(filepath)
+        except mutagen.id3.ID3NoHeaderError:
+            audio = mutagen.File(filepath, easy=True)
+            audio.add_tags()
+        audio["title"] = title
+        audio.save()
+
+    @staticmethod
+    def add_artist_to_audio_file(artist: str, filepath: str) -> None:
+        try:
+            audio = EasyID3(filepath)
+        except mutagen.id3.ID3NoHeaderError:
+            audio = mutagen.File(filepath, easy=True)
+            audio.add_tags()
+        audio["artist"] = artist
+        audio.save()
+
+    @staticmethod
+    def add_album_to_audio_file(album: str, filepath: str) -> None:
+        try:
+            audio = EasyID3(filepath)
+        except mutagen.id3.ID3NoHeaderError:
+            audio = mutagen.File(filepath, easy=True)
+            audio.add_tags()
+        audio["album"] = album
+        audio.save()
+
 
 class YoutubeDownloader:
     def __init__(self) -> None:
         pass
 
     @staticmethod
-    def add_preview_picture_to_audio_file(info_dict: dict, filepath: str) -> None:
+    def get_thumbnail_url(youtube_video_url: str) -> str:
+        ydl_opts = {}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(youtube_video_url, download=False)
+
         thumbnail_url = info_dict.get("thumbnail", None)
         if not thumbnail_url:
             print("Using google API")
@@ -49,18 +182,24 @@ class YoutubeDownloader:
                 thumbnail_url = thumbnails["high"]["url"]
             elif "medium" in thumbnails:
                 thumbnail_url = thumbnails["medium"]["url"]
+        return thumbnail_url
+
+    @staticmethod
+    def add_preview_picture_to_audio_file(
+        thumbnail_name: str, thumbnail_url: str, audio_path: str
+    ) -> None:
         if thumbnail_url:
             print(f"Thumbnail found: {thumbnail_url}")
-            download_dir = path.dirname(filepath)
+            download_dir = path.dirname(audio_path)
             thumbnails_dir = path.join(download_dir, "thumbnails")
             if not path.exists(thumbnails_dir):
                 os.mkdir(thumbnails_dir)
             thumbnail_loc = path.join(
-                thumbnails_dir, safe_pathname(info_dict.get("title", None)) + ".jpg"
+                thumbnails_dir, safe_pathname(thumbnail_name) + ".jpg"
             )
             with open(thumbnail_loc, "wb") as thumbnail_file:
                 thumbnail_file.write(requests.get(thumbnail_url).content)
-            audio = ID3(filepath)
+            audio = ID3(audio_path)
             with open(thumbnail_loc, "rb") as thumbnail_file:
                 audio["APIC"] = APIC(
                     encoding=3,
@@ -71,7 +210,7 @@ class YoutubeDownloader:
                 )
             audio.save()
         else:
-            print(f"Thumbnail not found: {info_dict.get('url', None)}")
+            print(f"Thumbnail not found: {thumbnail_url}")
 
     @staticmethod
     def add_metadata_to_audio_file(info_dict: dict, filepath: str) -> None:
@@ -114,19 +253,28 @@ class YoutubeDownloader:
             ],
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
+            info_dict = ydl.extract_info(url, download=False)
             filename = ydl.prepare_filename(info_dict)
             filename = path.abspath(filename)
             # Change the extension to mp3
             base = os.path.splitext(filename)[0]
             filename = base + ".mp3"
 
+            if not os.path.isfile(filename):
+                ydl.download([url])  # Download the file here
+            else:
+                print(f"File already exists. {filename}")
+                return filename
+
             try:
                 YoutubeDownloader.add_metadata_to_audio_file(info_dict, filename)
             except Exception as e:
                 raise e
             try:
-                YoutubeDownloader.add_preview_picture_to_audio_file(info_dict, filename)
+                thumbnail_url = YoutubeDownloader.get_thumbnail_url(url)
+                YoutubeDownloader.add_preview_picture_to_audio_file(
+                    info_dict.get("title", None), thumbnail_url, filename
+                )
             except Exception as e:
                 raise e
             return filename
