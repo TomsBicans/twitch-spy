@@ -77,13 +77,32 @@ def download_audio(
 ):
     try:
         print(f"Downloading {url} ...")
-        res = downloader.download_audio(url, download_dir)
-        print(res)
+        audio_file = downloader.download_audio(url, download_dir)
+        print(audio_file)
         with storage_manager.lock:
             storage_manager.mark_successful_download(url)
     except Exception as e:
         with storage_manager.lock:
             storage_manager.troublesome_download(url)
+        traceback.print_exc()
+        return
+
+    try:
+        print(f"Splitting {audio_file} ...")
+        split_length_criteria = 60 * 20  # 20 minutes
+        if youtube.Utils.audio_length(audio_file) > (split_length_criteria):
+            print(
+                f"Video is longer than {split_length_criteria} seconds. Splitting video."
+            )
+            youtube.Utils.split_file_by_tracks(url, audio_file)
+        else:
+            print(
+                f"Video is not longer than {split_length_criteria} seconds. Doing nothing."
+            )
+            return
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_split(url)
         traceback.print_exc()
 
 
