@@ -7,7 +7,7 @@ import mutagen
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 import requests
-
+import yt_dlp
 import googleapiclient.discovery
 import re
 
@@ -33,14 +33,14 @@ class YoutubeDownloader:
         pass
 
     @staticmethod
-    def add_preview_picture_to_audio_file(yt: pytube.YouTube, filepath: str) -> None:
-        thumbnail_url = yt.thumbnail_url
+    def add_preview_picture_to_audio_file(info_dict: dict, filepath: str) -> None:
+        thumbnail_url = info_dict.get("thumbnail", None)
         if not thumbnail_url:
             print("Using google API")
             youtube = googleapiclient.discovery.build(
                 "youtube", "v3", developerKey="AIzaSyCtvDiw629vvfQr84XQGjY8seKfFSuInVg"
             )
-            video_id = yt.video_id
+            video_id = info_dict.get("id", None)
             response = youtube.videos().list(part="snippet", id=video_id).execute()
             thumbnails = response["items"][0]["snippet"]["thumbnails"]
             if "maxres" in thumbnails:
@@ -55,7 +55,9 @@ class YoutubeDownloader:
             thumbnails_dir = path.join(download_dir, "thumbnails")
             if not path.exists(thumbnails_dir):
                 os.mkdir(thumbnails_dir)
-            thumbnail_loc = path.join(thumbnails_dir, safe_pathname(yt.title) + ".jpg")
+            thumbnail_loc = path.join(
+                thumbnails_dir, safe_pathname(info_dict.get("title", None)) + ".jpg"
+            )
             with open(thumbnail_loc, "wb") as thumbnail_file:
                 thumbnail_file.write(requests.get(thumbnail_url).content)
             audio = ID3(filepath)
@@ -69,19 +71,21 @@ class YoutubeDownloader:
                 )
             audio.save()
         else:
-            print(f"Thumbnail not found: {yt}")
+            print(f"Thumbnail not found: {info_dict.get('url', None)}")
 
     @staticmethod
-    def add_metadata_to_audio_file(yt: pytube.YouTube, filepath: str) -> None:
+    def add_metadata_to_audio_file(info_dict: dict, filepath: str) -> None:
         try:
             audio = EasyID3(filepath)
         except mutagen.id3.ID3NoHeaderError:
             audio = mutagen.File(filepath, easy=True)
             audio.add_tags()
-        audio["title"] = yt.title
-        audio["artist"] = yt.author
-        audio["album"] = "YouTube Audio"
-        # audio["rating"] = yt.rating
+        if info_dict.get("title", None):
+            audio["title"] = info_dict.get("title", None)
+        if info_dict.get("artist", None):
+            audio["artist"] = info_dict.get("artist", None)
+        if info_dict.get("album", None):
+            audio["album"] = info_dict.get("album", None)
         audio.save()
 
     @staticmethod
@@ -111,19 +115,34 @@ class YoutubeDownloader:
 
     @staticmethod
     def download_audio(url: str, output_directory: str) -> str:
-        yt = pytube.YouTube(url)
-        stream = YoutubeDownloader.get_highest_bitrate_audio_stream(yt)
-        filename = YoutubeDownloader.download_stream(stream, output_directory)
-        new_filename = Utils.convert_to_mp3_extension(filename)
-        try:
-            YoutubeDownloader.add_metadata_to_audio_file(yt, new_filename)
-        except Exception as e:
-            raise e
-        try:
-            YoutubeDownloader.add_preview_picture_to_audio_file(yt, new_filename)
-        except Exception as e:
-            raise e
-        return new_filename
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "outtmpl": os.path.join(output_directory, "%(title)s.%(ext)s"),
+            "postprocessors": [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }
+            ],
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info_dict)
+            filename = path.abspath(filename)
+            # Change the extension to mp3
+            base = os.path.splitext(filename)[0]
+            filename = base + ".mp3"
+
+            try:
+                YoutubeDownloader.add_metadata_to_audio_file(info_dict, filename)
+            except Exception as e:
+                raise e
+            try:
+                YoutubeDownloader.add_preview_picture_to_audio_file(info_dict, filename)
+            except Exception as e:
+                raise e
+            return filename
 
     @staticmethod
     def convert_to_mp3(video_path: str):
@@ -154,7 +173,7 @@ def get_playlist_video_urls(playlist_url: str) -> list[str]:
     return playlist.video_urls
 
 
-def get_playlist_name(playlist_url):
+def get_playlist_name(playlist_url: str):
     playlist = pytube.Playlist(playlist_url)
     return playlist.title
 
