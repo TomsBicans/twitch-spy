@@ -90,28 +90,15 @@ class YoutubeDownloader:
 
     @staticmethod
     def download_video(url: str, output_directory: str) -> str:
-        # Create a YouTube object
-        yt = pytube.YouTube(url)
+        ydl_opts = {
+            "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            "outtmpl": os.path.join(output_directory, "%(title)s.%(ext)s"),
+        }
 
-        # Get the first stream with the highest resolution
-        stream = (
-            yt.streams.filter(progressive=True, file_extension="mp4")
-            .order_by("resolution")
-            .desc()
-            .first()
-        )
-
-        # Download the video
-        return stream.download(output_path=output_directory)
-
-    @staticmethod
-    def get_highest_bitrate_audio_stream(yt: pytube.YouTube) -> pytube.Stream:
-        return yt.streams.filter(only_audio=True).order_by("abr").desc().first()
-
-    @staticmethod
-    def download_stream(stream: pytube.Stream, output_directory: str) -> str:
-        filename = stream.download(output_path=output_directory)
-        return filename
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info_dict)
+            return filename
 
     @staticmethod
     def download_audio(url: str, output_directory: str) -> str:
@@ -169,13 +156,23 @@ class YoutubeDownloader:
 
 
 def get_playlist_video_urls(playlist_url: str) -> list[str]:
-    playlist = pytube.Playlist(playlist_url)
-    return playlist.video_urls
+    with yt_dlp.YoutubeDL({"ignoreerrors": True, "quiet": True}) as ydl:
+        playlist_dict = ydl.extract_info(playlist_url, download=False)
+
+    video_urls = []
+    for video in playlist_dict["entries"]:
+        if video is not None:
+            video_id = video.get("id")
+            video_urls.append(f"https://www.youtube.com/watch?v={video_id}")
+
+    return video_urls
 
 
-def get_playlist_name(playlist_url: str):
-    playlist = pytube.Playlist(playlist_url)
-    return playlist.title
+def get_playlist_name(playlist_url: str) -> str:
+    with yt_dlp.YoutubeDL({"ignoreerrors": True, "quiet": True}) as ydl:
+        playlist_dict = ydl.extract_info(playlist_url, download=False)
+
+    return playlist_dict.get("title")
 
 
 def safe_pathname(dir: str) -> str:
