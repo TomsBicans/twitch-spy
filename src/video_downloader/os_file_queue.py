@@ -18,6 +18,19 @@ class OSFileQueue:
             if not path.isfile(file):
                 open(file, "w").close()
 
+    def format_input_file(self):
+        with self.file_lock:
+            with open(self.input_file, "r+") as input_file:
+                lines = input_file.readlines()
+                input_file.seek(0)
+                input_file.truncate()
+
+                for line in lines:
+                    urls = line.strip().split()
+                    unique_urls = set(urls)
+                    for url in unique_urls:
+                        input_file.write(url + "\n")
+
     def add_to_input(self, url: str):
         url = url.strip()
         with self.file_lock:
@@ -59,10 +72,15 @@ class OSFileQueue:
                     if line.strip("\n") != url:
                         file.write(line)
 
-    def add_to_finished(self, url):
+    def add_to_finished(self, url: str):
+        url = url.strip()
         with self.file_lock:
-            with open(self.finished_file, "a") as file:
-                file.write(url + "\n")
+            with open(self.finished_file, "r") as file:
+                lines = file.readlines()
+                lines = [line.strip() for line in lines]
+            if url not in lines:
+                with open(self.finished_file, "a") as file:
+                    file.write(url + "\n")
 
     def remove_from_input(self, url):
         with self.file_lock:

@@ -79,7 +79,7 @@ def download_audio(
 
     try:
         print(f"Splitting {audio_file} ...")
-        split_length_criteria = 60 * 20  # 20 minutes
+        split_length_criteria = 60 * 180  # 180 minutes
         if youtube.Utils.audio_length(audio_file) > (split_length_criteria):
             print(
                 f"Video is longer than {split_length_criteria} seconds. Splitting video."
@@ -173,6 +173,7 @@ def load_ongoing(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
 def handle_file_input(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
     queued_urls = set()  # keep track of urls that have been added to the queue
     while not stop_workers.is_set():
+        file_queue.format_input_file()
         urls = file_queue.read_from_input()
         print(f"{len(urls)} urls found in input file.")
         for url in urls:
