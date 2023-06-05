@@ -19,17 +19,22 @@ class OSFileQueue:
                 open(file, "w").close()
 
     def format_input_file(self):
-        with self.file_lock:
-            with open(self.input_file, "r+") as input_file:
-                lines = input_file.readlines()
-                input_file.seek(0)
-                input_file.truncate()
+        def gather_unique_urls(lines: List[str]):
+            unique_urls = []
+            for line in lines:
+                urls = line.strip().split()
+                for url in urls:
+                    if url not in unique_urls:
+                        unique_urls.append(url)
+            return unique_urls
 
-                for line in lines:
-                    urls = line.strip().split()
-                    unique_urls = set(urls)
-                    for url in unique_urls:
-                        input_file.write(url + "\n")
+        with self.file_lock:
+            with open(self.input_file, "r") as input_file:
+                lines = input_file.readlines()
+            unique_urls = gather_unique_urls(lines)
+            with open(self.input_file, "w") as file:
+                for url in unique_urls:
+                    file.write(url + "\n")
 
     def add_to_input(self, url: str):
         url = url.strip()

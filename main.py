@@ -4,7 +4,7 @@ import src.video_downloader.os_file_queue as FileQueue
 from src.video_downloader.storage_manager import StorageManager
 from src.twitch_api import api_client
 from concurrent.futures import ThreadPoolExecutor
-from typing import Set, List
+from typing import Set, List, Union
 import config
 import sys
 import os
@@ -15,12 +15,19 @@ import os.path as path
 import utils
 import threading
 import queue
+from enum import Enum
 
 SENTINEL = "STOP_WORKER"
 stop_workers = threading.Event()
 
 
-def process_url(url: str):
+class PROCESS_STATUS(Enum):
+    SUCCESS = 1
+    CANCELLED = 2
+    FAILED = 3
+
+
+def process_url(url: str) -> PROCESS_STATUS:
     if "twitch.tv" in url:
         print("Twitch url detected.")
         downloader = twitch.TwitchDownloader()
@@ -28,6 +35,7 @@ def process_url(url: str):
         config.create_directory_if_not_exists(ttv_streams)
         print(f"Starting twitch stream download: {url}")
         downloader.download_stream_audio(url, ttv_streams)
+        return PROCESS_STATUS.SUCCESS
     elif "youtube.com" in url:
         downloader = youtube.YoutubeDownloader()
         if youtube.is_youtube_playlist(url):
@@ -43,20 +51,22 @@ def process_url(url: str):
                 print(f"Processing: {i+1}/{len(videos)} ...")
                 if stop_workers.is_set():
                     print("Stop workers flag is set. Exiting...")
-                    return
+                    return PROCESS_STATUS.CANCELLED
                 if storage_manager.already_downloaded(vid):
                     print(f"Video already exists. Will skip download: {vid}")
                     continue
                 download_audio(downloader, download_dir, storage_manager, vid)
+            return PROCESS_STATUS.SUCCESS
         elif youtube.is_youtube_video(url):
             download_dir = path.join(config.STREAM_DOWNLOADS, "random_videos")
             download_dir = config.create_directory_if_not_exists(download_dir)
             storage_manager = StorageManager(download_dir)
             print(f"Video detected: {url}")
             download_audio(downloader, download_dir, storage_manager, url)
+            return PROCESS_STATUS.SUCCESS
     else:
         print("Invalid platform specified.")
-        exit()
+        return PROCESS_STATUS.FAILED
 
 
 def download_audio(
@@ -144,9 +154,10 @@ def process_queue(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
                 break
             file_queue.remove_from_input(url)
             file_queue.add_to_ongoing(url)
-            process_url(url)
-            file_queue.remove_from_ongoing(url)
-            file_queue.add_to_finished(url)
+            status = process_url(url)
+            if status == PROCESS_STATUS.SUCCESS:
+                file_queue.remove_from_ongoing(url)
+                file_queue.add_to_finished(url)
             q.task_done()
         except Exception as e:
             traceback.print_exc()
