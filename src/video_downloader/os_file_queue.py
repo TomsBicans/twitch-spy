@@ -5,14 +5,14 @@ from typing import List
 
 
 class OSFileQueue:
-    def __init__(self, library_location: str):
+    def __init__(self, library_location: str, file_type: str):
         self.file_lock = threading.Lock()
         self.work_dir = path.join(library_location, ".work_stats")
         os.makedirs(self.work_dir, exist_ok=True)
 
-        self.input_file = path.join(self.work_dir, "input.txt")
-        self.ongoing_file = path.join(self.work_dir, "ongoing.txt")
-        self.finished_file = path.join(self.work_dir, "finished.txt")
+        self.input_file = path.join(self.work_dir, f"{file_type}_input.txt")
+        self.ongoing_file = path.join(self.work_dir, f"{file_type}_ongoing.txt")
+        self.finished_file = path.join(self.work_dir, f"{file_type}_finished.txt")
         # Create the files if they don't exist
         for file in [self.input_file, self.ongoing_file, self.finished_file]:
             if not path.isfile(file):
