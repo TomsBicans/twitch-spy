@@ -231,6 +231,12 @@ def start_worker_threads(
     return threads
 
 
+def preprocess_url(url: str) -> str:
+    if "watch?v" in url and "&list=" in url:
+        url = url.split("&list=")[0]
+    return url
+
+
 def process_queue(
     q: queue.Queue, file_queue: FileQueue.OSFileQueue, mode: CONTENT_MODE
 ):
@@ -240,6 +246,7 @@ def process_queue(
             if url == SENTINEL:
                 break
             file_queue.remove_from_input(url)
+            url = preprocess_url(url)
             file_queue.add_to_ongoing(url)
             status = process_url(url, mode)
             if status == PROCESS_STATUS.SUCCESS:
