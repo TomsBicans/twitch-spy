@@ -2,11 +2,12 @@ import os
 import sys
 import subprocess
 import streamlink
-import config
 import os.path as path
 import datetime
 import re
 import traceback
+import src.video_downloader.constants as const
+import src.video_downloader.config as config
 
 
 class TwitchDownloader:
@@ -82,6 +83,16 @@ class TwitchDownloader:
         except Exception as e:
             traceback.print_exc()
             print(f"An error occurred: {e}")
+
+
+def process_twitch_url(url: str, mode: const.CONTENT_MODE) -> const.PROCESS_STATUS:
+    print("Twitch url detected.")
+    downloader = TwitchDownloader()
+    ttv_streams = path.join(config.STREAM_DOWNLOADS, "twitch_streams")
+    config.create_directory_if_not_exists(ttv_streams)
+    print(f"Starting twitch stream download: {url}")
+    downloader.download_stream_audio(url, ttv_streams)
+    return const.PROCESS_STATUS.SUCCESS
 
 
 if __name__ == "__main__":

@@ -1,14 +1,20 @@
-from moviepy.editor import VideoFileClip, AudioFileClip
+import re
+import traceback
 import os
 import os.path as path
 import re
+import requests
 import mutagen
+from moviepy.editor import VideoFileClip, AudioFileClip
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
-import requests
 import yt_dlp
 import googleapiclient.discovery
-import re
+import src.video_downloader.constants as const
+import config
+
+# import src.video_downloader.config as config
+from src.video_downloader.storage_manager import StorageManager
 
 
 class Utils:
@@ -356,6 +362,138 @@ def is_youtube_video(url: str) -> bool:
         return True
     else:
         return False
+
+
+def process_youtube_url(url: str, mode: const.CONTENT_MODE) -> const.PROCESS_STATUS:
+    downloader = YoutubeDownloader()
+    if is_youtube_playlist(url):
+        return process_youtube_playlist(url, downloader, mode)
+    elif is_youtube_video(url):
+        return process_youtube_video(url, downloader, mode)
+    else:
+        print("Invalid YouTube URL.")
+        return const.PROCESS_STATUS.FAILED
+
+
+def process_youtube_playlist(
+    url: str, downloader: YoutubeDownloader, mode: const.CONTENT_MODE
+) -> const.PROCESS_STATUS:
+    print(f"Playlist detected: {url}")
+    videos = get_playlist_video_urls(url)
+    print(f"Got {len(videos)} videos.")
+    if mode == const.CONTENT_MODE.AUDIO:
+        download_dir = path.join(config.STREAM_DOWNLOADS, "audio_library")
+    elif mode == const.CONTENT_MODE.VIDEO:
+        download_dir = path.join(config.STREAM_DOWNLOADS, "video_library")
+    download_dir = get_playlist_download_directory(download_dir, url)
+    download_dir = config.create_directory_if_not_exists(download_dir)
+    storage_manager = StorageManager(download_dir)
+    for i, vid in enumerate(videos):
+        print(f"Processing: {i+1}/{len(videos)} ...")
+        if const.stop_workers.is_set():
+            print("Stop workers flag is set. Exiting...")
+            return const.PROCESS_STATUS.CANCELLED
+        if storage_manager.already_downloaded(vid):
+            print(f"Video already exists. Will skip download: {vid}")
+            continue
+        if mode == const.CONTENT_MODE.AUDIO:
+            download_audio(downloader, download_dir, storage_manager, vid)
+        elif mode == const.CONTENT_MODE.VIDEO:
+            download_video(downloader, download_dir, storage_manager, url)
+    return const.PROCESS_STATUS.SUCCESS
+
+
+def download_audio(
+    downloader: YoutubeDownloader,
+    download_dir: str,
+    storage_manager: StorageManager,
+    url: str,
+):
+    try:
+        print(f"Downloading {url} ...")
+        audio_file = downloader.download_audio(url, download_dir)
+        print(audio_file)
+        with storage_manager.lock:
+            storage_manager.mark_successful_download(url)
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_download(url)
+        traceback.print_exc()
+        return
+
+    try:
+        print(f"Splitting {audio_file} ...")
+        split_length_criteria = 60 * 180  # 180 minutes
+        if Utils.audio_length(audio_file) > (split_length_criteria):
+            print(
+                f"Video is longer than {split_length_criteria} seconds. Splitting video."
+            )
+            Utils.split_file_by_tracks(url, audio_file)
+        else:
+            print(
+                f"Video is not longer than {split_length_criteria} seconds. Doing nothing."
+            )
+            return
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_split(url)
+        traceback.print_exc()
+
+
+def download_video(
+    downloader: YoutubeDownloader,
+    download_dir: str,
+    storage_manager: StorageManager,
+    url: str,
+):
+    try:
+        print(f"Downloading {url} ...")
+        audio_file = downloader.download_video(url, download_dir)
+        print(audio_file)
+        with storage_manager.lock:
+            storage_manager.mark_successful_download(url)
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_download(url)
+        traceback.print_exc()
+        return
+
+    try:
+        print(f"Splitting {audio_file} ...")
+        split_length_criteria = 60 * 180  # 180 minutes
+        if Utils.audio_length(audio_file) > (split_length_criteria):
+            print(
+                f"Video is longer than {split_length_criteria} seconds. Splitting video."
+            )
+            Utils.split_file_by_tracks(url, audio_file)
+        else:
+            print(
+                f"Video is not longer than {split_length_criteria} seconds. Doing nothing."
+            )
+            return
+    except Exception as e:
+        with storage_manager.lock:
+            storage_manager.troublesome_split(url)
+        traceback.print_exc()
+
+
+def process_youtube_video(
+    url: str, downloader: YoutubeDownloader, mode: const.CONTENT_MODE
+) -> const.PROCESS_STATUS:
+    print(f"Video detected: {url}")
+    if mode == const.CONTENT_MODE.AUDIO:
+        download_dir = path.join(config.STREAM_DOWNLOADS, "audio_library")
+        download_dir = path.join(download_dir, "random_audio")
+        download_dir = config.create_directory_if_not_exists(download_dir)
+        storage_manager = StorageManager(download_dir)
+        download_audio(downloader, download_dir, storage_manager, url)
+    elif mode == const.CONTENT_MODE.VIDEO:
+        download_dir = path.join(config.STREAM_DOWNLOADS, "video_library")
+        download_dir = path.join(download_dir, "random_videos")
+        download_dir = config.create_directory_if_not_exists(download_dir)
+        storage_manager = StorageManager(download_dir)
+        download_video(downloader, download_dir, storage_manager, url)
+    return const.PROCESS_STATUS.SUCCESS
 
 
 if __name__ == "__main__":
