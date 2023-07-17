@@ -1,3 +1,4 @@
+from flask import Flask
 import src.video_downloader.os_file_queue as FileQueue
 import src.video_downloader.core as vcore
 import src.video_downloader.constants as vconst
@@ -37,7 +38,7 @@ def parse_args() -> SystemConfiguration:
     return SystemConfiguration(args.urls, args.num_worker_threads, args.file_queue_mode)
 
 
-def main():
+def main_cli():
     args = parse_args()
     audio_file_queue = FileQueue.OSFileQueue(config.STREAM_DOWNLOADS, "audio")
     video_file_queue = FileQueue.OSFileQueue(config.STREAM_DOWNLOADS, "video")
@@ -103,8 +104,18 @@ def main():
         t.join()
 
 
+from src.routes.home_routes import home_routes
+
+app = Flask(__name__)
+app.register_blueprint(home_routes)
+
+
+def main_web():
+    app.run(debug=True)
+
+
 if __name__ == "__main__":
     start_time = time.time()
-    main()
+    main_web()
     end_time = time.time()
     print(f"Program finished in {end_time - start_time:.2f} seconds.")
