@@ -52,13 +52,13 @@ def process_queue(
             url = q.get(block=True)
             if url == const.SENTINEL:
                 break
-            file_queue.remove_from_input(url)
+            file_queue.input_file.remove(url)
             url = preprocess_url(url)
-            file_queue.add_to_ongoing(url)
+            file_queue.ongoing_file.add(url)
             status = process_url(url, mode)
             if status == const.PROCESS_STATUS.SUCCESS:
-                file_queue.remove_from_ongoing(url)
-                file_queue.add_to_finished(url)
+                file_queue.ongoing_file.remove(url)
+                file_queue.finished_file.add(url)
             q.task_done()
         except Exception as e:
             traceback.print_exc()
@@ -76,7 +76,7 @@ def handle_user_input(q: queue.Queue):
 
 
 def load_ongoing(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
-    urls = file_queue.read_from_ongoing()
+    urls = file_queue.ongoing_file.read()
     for url in urls:
         url = url.strip()
         q.put(url)
@@ -86,7 +86,7 @@ def handle_file_input(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
     queued_urls = set()  # keep track of urls that have been added to the queue
     while not const.stop_workers.is_set():
         file_queue.format_input_file()
-        urls = file_queue.read_from_input()
+        urls = file_queue.input_file.read()
         print(f"{len(urls)} urls found in input file.")
         for url in urls:
             url = url.strip()
