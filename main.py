@@ -1,13 +1,20 @@
+import logging
 from flask import Flask
 import src.video_downloader.os_file_queue as FileQueue
 import src.video_downloader.core as vcore
 import src.video_downloader.constants as vconst
-from typing import Set, List
+from typing import List
 import config
 import argparse
 import time
 import threading
 import queue
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()],
+)
 
 
 class SystemConfiguration:
@@ -114,8 +121,15 @@ def main_web():
     app.run(debug=True)
 
 
+def main():
+    cli_thread = threading.Thread(target=main_cli)
+    cli_thread.start()
+    main_web()
+    cli_thread.join()
+
+
 if __name__ == "__main__":
     start_time = time.time()
-    main_web()
+    main()
     end_time = time.time()
-    print(f"Program finished in {end_time - start_time:.2f} seconds.")
+    logging.info(f"Program finished in {end_time - start_time:.2f} seconds.")
