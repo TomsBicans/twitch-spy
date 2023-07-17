@@ -47,7 +47,7 @@ class Application:
     def __init__(self):
         self.audio_file_queue = FileQueue.OSFileQueue(config.STREAM_DOWNLOADS, "audio")
         self.video_file_queue = FileQueue.OSFileQueue(config.STREAM_DOWNLOADS, "video")
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, template_folder="../templates")
         self.app.register_blueprint(home_routes)
 
     def main_cli(self):
