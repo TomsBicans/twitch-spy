@@ -87,7 +87,7 @@ def handle_file_input(q: queue.Queue, file_queue: FileQueue.OSFileQueue):
     while not const.stop_workers.is_set():
         file_queue.format_input_file()
         urls = file_queue.input_file.read()
-        print(f"{len(urls)} urls found in input file.")
+        # print(f"{len(urls)} urls found in input file.")
         for url in urls:
             url = url.strip()
             if url not in queued_urls:
