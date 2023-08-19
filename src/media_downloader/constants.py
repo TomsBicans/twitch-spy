@@ -9,6 +9,7 @@ class PROCESS_STATUS(Enum):
     SUCCESS = 1
     CANCELLED = 2
     FAILED = 3
+    INVALID = 4
 
 
 class CONTENT_MODE(Enum):

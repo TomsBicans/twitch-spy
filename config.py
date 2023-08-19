@@ -4,6 +4,7 @@ import os
 
 ROOT_DIR = path.dirname(__file__)
 STREAM_DOWNLOADS = path.join(ROOT_DIR, "stream_downloads")
+LOG_DIR = path.abspath(path.join(ROOT_DIR, "logs"))
 
 
 def create_directory_if_not_exists(directory_path: str):

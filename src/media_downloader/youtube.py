@@ -10,11 +10,11 @@ from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 import yt_dlp
 import googleapiclient.discovery
-import src.video_downloader.constants as const
+import src.media_downloader.constants as const
 import config
 
 # import src.video_downloader.config as config
-from src.video_downloader.storage_manager import StorageManager
+from src.media_downloader.storage_manager import StorageManager
 
 
 class Utils:

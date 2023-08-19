@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Queue Status</title>
+    <title>YT-DLP-music panel</title>
     <style>
         textarea {
             width: 100%;
@@ -16,8 +16,14 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <h1>Queue Status</h1>
+    <h1>yt-dlp-music panel</h1>
 
+    <h2>Enter URLs to download</h2>
+    <form action="/" method="post">
+        <textarea name="urls" rows="4" cols="50" placeholder="Enter URLs comma-separated..."></textarea><br>
+        <input type="submit" value="Submit URLs for processing">
+    </form>
+    <br>
     <button onclick="location.reload()" id="refreshButton">Refresh</button>
 
     <table>
