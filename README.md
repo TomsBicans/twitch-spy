@@ -12,6 +12,8 @@ User Input: Manages user input, allowing the addition of new video URLs while th
 
 Performance: Tracks the time taken by the program to complete its tasks and prints it to the console at the end.
 
+# View the progress of development here:
+https://trello.com/b/0DEbMAds/development-board
 
 
 
