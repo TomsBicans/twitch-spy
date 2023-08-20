@@ -310,7 +310,14 @@ class YoutubeDownloader:
 
 
 def get_playlist_video_urls(playlist_url: str) -> list[str]:
-    with yt_dlp.YoutubeDL({"ignoreerrors": True, "quiet": True}) as ydl:
+    with yt_dlp.YoutubeDL(
+        {
+            "ignoreerrors": True,
+            "quiet": True,
+            "extract_flat": True,
+            "force_generic_extractor": True,
+        }
+    ) as ydl:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
     video_urls = []
@@ -323,7 +330,17 @@ def get_playlist_video_urls(playlist_url: str) -> list[str]:
 
 
 def get_playlist_name(playlist_url: str) -> str:
-    with yt_dlp.YoutubeDL({"ignoreerrors": True, "quiet": True}) as ydl:
+    ydl_opts = {
+        "ignoreerrors": True,
+        "quiet": True,
+        "extract_flat": True,
+        "extractor_args": [
+            "youtube:skip:video_list"
+        ],  # skip fetching details of individual videos
+        "skip_download": True,  # make sure no downloading happens
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
     return playlist_dict.get("title")
