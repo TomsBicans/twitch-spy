@@ -12,6 +12,7 @@ import yt_dlp
 import googleapiclient.discovery
 import src.media_downloader.constants as const
 import config
+from typing import Optional
 
 # import src.video_downloader.config as config
 from src.media_downloader.storage_manager import StorageManager
@@ -351,20 +352,33 @@ def safe_pathname(dir: str) -> str:
     return re.sub(r'[\\/:*?"<>| ]', "_", dir)
 
 
-def get_playlist_download_directory(downloads_dir: str, playlist_url: str):
-    # playlist_id = re.search(r"list=(\w+)", playlist_url).group(1)
-    playlist_id = re.search(r"list=([\w-]+)", playlist_url).group(1)
+def extract_playlist_id(url: str) -> str:
+    """Extract the playlist ID from the URL."""
+    return re.search(r"list=([\w-]+)", url).group(1)
 
-    for entry in os.listdir(downloads_dir):
-        entry_path = path.join(downloads_dir, entry)
-        if path.isdir(entry_path) and playlist_id in entry:
-            print(f"Found existing directory by project id: {playlist_id}")
-            return entry_path
 
-    print(f"Downloads directory does not exist for {playlist_id}. Creating a new one.")
+def get_playlist_download_directory(playlists_directory: str, playlist_url: str):
+    def find_existing_directory(
+        playlist_directory: str, playlist_id: str
+    ) -> Optional[str]:
+        """Search for an existing directory by playlist ID."""
+        for entry in os.listdir(playlist_directory):
+            entry_path = path.join(playlist_directory, entry)
+            if path.isdir(entry_path) and playlist_id in entry:
+                return entry_path
+        return None
+
+    playlist_id = extract_playlist_id(playlist_url)
+    existing_dir = find_existing_directory(playlists_directory, playlist_id)
+    if existing_dir:
+        print(f"Found existing directory by project id: {playlist_id}")
+        return existing_dir
+
+    print(f"Downloads directory does not exist for {playlist_id}.")
+    # print("Creating a new one.")
     playlist_title = get_playlist_name(playlist_url)
     playlist_dir = f"{safe_pathname(playlist_title)}_{playlist_id}"
-    return path.join(downloads_dir, playlist_dir)
+    return path.join(playlists_directory, playlist_dir)
 
 
 def is_youtube_playlist(url: str) -> bool:
