@@ -11,17 +11,19 @@ import src.media_downloader.twitch as twitch
 import src.media_downloader.os_file_queue as FileQueue
 import src.media_downloader.constants as const
 from src.system_logger import logger
+from abc import ABC, abstractmethod
 
 
 class Atom:
     def __init__(
-        self, url: str, content_type: const.CONTENT_MODE, base_download_dir: str
+        self, url: str, content_type: const.CONTENT_MODE, download_dir: str
     ) -> None:
         self.url = url
+        self.url_valid = self._is_url_valid(url)
         self.platform = self._determine_platform(url)
         self.single_item = self._is_single_item(url)
         self.content_type = content_type
-        self.download_dir = self._determine_download_dir(url, base_download_dir)
+        self.download_dir = download_dir
 
     @staticmethod
     def _determine_platform(url: str) -> const.PLATFORM:
@@ -39,40 +41,95 @@ class Atom:
             # Playlist or single video
             return "watch?v=" in url and "list=" not in url
         elif platform == const.PLATFORM.TWITCH:
-            # I do not know if there is any thing as a multiple item in twitch
+            # I do not know if there is any thing as a multiple item in twitch streaming service
             return True
         elif platform == const.PLATFORM.UNDEFINED:
             return True
 
-    def _determine_download_dir(self, url: str, base_download_dir: str) -> [str, None]:
-        if Atom._is_single_item(url):
-            # Random audio download directory.
-            if self.content_type == const.CONTENT_MODE.AUDIO:
-                return path.join(base_download_dir, "audio_library", "random_audio")
-            elif self.content_type == const.CONTENT_MODE.VIDEO:
-                return path.join(base_download_dir, "video_library", "random_videos")
-        else:
-            ...
-        ...
+    @staticmethod
+    def _is_url_valid(url: str) -> bool:
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except [ValueError, Exception]:
+            return False
+
+    def __str__(self) -> str:
+        return (
+            f"Atom(url={self.url}, "
+            f"valid_url={self.url_valid}, "
+            f"platform={self.platform.name}, "
+            f"single_item={self.single_item}, "
+            f"content_type={self.content_type.name}, "
+            f"download_dir={self.download_dir})"
+        )
+
+
+class PlatformHandler(ABC):
+    @abstractmethod
+    def atomize(self, atom: Atom) -> List[Atom]:
+        pass
+
+
+class YouTubeHandler(PlatformHandler):
+    CONTENT_TYPE_TO_DIR = {
+        const.CONTENT_MODE.AUDIO: "random_audio",
+        const.CONTENT_MODE.VIDEO: "random_videos",
+        const.CONTENT_MODE.STREAM: "random_videos",
+    }
+
+    def atomize(self, atom: Atom) -> List[Atom]:
+        if atom.single_item:
+            subdir = self.CONTENT_TYPE_TO_DIR.get(atom.content_type, "")
+            new_download_dir = (
+                path.join(atom.download_dir, subdir) if subdir else atom.download_dir
+            )
+            new_atom = Atom(atom.url, atom.content_type, new_download_dir)
+            return [new_atom]
+        video_urls = youtube.get_playlist_video_urls(atom.url)
+        playlist_directory = youtube.get_playlist_download_directory(
+            atom.download_dir, atom.url
+        )
+        return [Atom(url, atom.content_type, playlist_directory) for url in video_urls]
+
+
+class TwitchHandler(PlatformHandler):
+    CONTENT_TYPE_TO_DIR = {
+        const.CONTENT_MODE.AUDIO: "random_stream_audio",
+        const.CONTENT_MODE.VIDEO: "random_stream_videos",
+        const.CONTENT_MODE.STREAM: "random_stream_videos",
+    }
+
+    def atomize(self, atom: Atom) -> List[Atom]:
+        subdir = self.CONTENT_TYPE_TO_DIR.get(atom.content_type, "")
+        new_download_dir = (
+            path.join(atom.download_dir, subdir) if subdir else atom.download_dir
+        )
+        return [Atom(atom.url, atom.content_type, new_download_dir)]
 
 
 class Atomizer:
-    @staticmethod
-    def atomize_urls(urls: List[str]):
-        """"""
-        ...
+    # Map platforms to their handlers
+    PLATFORM_HANDLERS = {
+        const.PLATFORM.YOUTUBE: YouTubeHandler(),
+        const.PLATFORM.TWITCH: TwitchHandler(),
+        # add other platforms here...
+    }
 
     @staticmethod
-    def atomize(atom: Atom):
-        ...
-
-
-def is_url_valid(url: str) -> bool:
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except [ValueError, Exception]:
-        return False
+    def atomize_urls(
+        urls: List[str], content_mode: const.CONTENT_MODE, root_download_dir: str
+    ):
+        valid_urls = list(filter(Atom._is_url_valid, urls))
+        atoms = []
+        for url in valid_urls:
+            atom = Atom(url, content_mode, root_download_dir)
+            handler: PlatformHandler = Atomizer.PLATFORM_HANDLERS.get(atom.platform)
+            if handler:
+                atoms.extend(handler.atomize(atom))
+            else:
+                atoms.append(atom)  # Default behavior for unsupported platforms
+        return atoms
 
 
 def preprocess_url(url: str) -> str:
@@ -99,7 +156,7 @@ def process_queue(
             url = q.get(block=True)
             if url == const.SENTINEL or url is None:
                 break
-            if not is_url_valid(url):
+            if not Atom._is_url_valid(url):
                 logger.warning(f"This is an invalid URL: {url}")
                 q.task_done()
                 continue

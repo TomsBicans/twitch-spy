@@ -1,7 +1,11 @@
 from flask import Blueprint, render_template, jsonify
+import config
 import src.app as app
 import src.util as util
+import src.media_downloader.atomizer as atomizer
+import src.media_downloader.constants as const
 import flask
+import os.path as path
 
 home_routes = Blueprint("home_routes", __name__)
 
@@ -20,9 +24,13 @@ def get_queue():
         urls = flask.request.form.get("urls")
         if urls:
             urls_list = [url.strip() for url in urls.split("\n")]
-            # cli_thread = threading.Thread(target=my_app.main_cli, args=(urls_list,))
-            # cli_thread.start()
-            print(urls_list)
+            jobs = atomizer.Atomizer.atomize_urls(
+                urls_list,
+                const.CONTENT_MODE.AUDIO,
+                path.join(config.STREAM_DOWNLOADS, "audio_library"),
+            )
+            [print(job) for job in jobs]
+            print(len(jobs))
             return flask.redirect(
                 flask.url_for("home_routes.get_queue")
             )  # Redirect to the same page to show updated status
