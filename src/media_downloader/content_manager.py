@@ -1,6 +1,6 @@
 import src.media_downloader.os_file_queue as FileQueue
 import src.media_downloader.constants as vconst
-import src.media_downloader.core as vcore
+import src.media_downloader.atomizer as vcore
 import src.media_downloader.queue_manager as queue_manager
 import threading
 from typing import Callable

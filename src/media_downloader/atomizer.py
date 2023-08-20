@@ -4,6 +4,7 @@ import threading
 import queue
 import traceback
 import time
+import os.path as path
 from urllib.parse import urlparse
 import src.media_downloader.youtube as youtube
 import src.media_downloader.twitch as twitch
@@ -12,11 +13,65 @@ import src.media_downloader.constants as const
 from src.system_logger import logger
 
 
-def is_valid_url(url: str) -> bool:
+class Atom:
+    def __init__(
+        self, url: str, content_type: const.CONTENT_MODE, base_download_dir: str
+    ) -> None:
+        self.url = url
+        self.platform = self._determine_platform(url)
+        self.single_item = self._is_single_item(url)
+        self.content_type = content_type
+        self.download_dir = self._determine_download_dir(url, base_download_dir)
+
+    @staticmethod
+    def _determine_platform(url: str) -> const.PLATFORM:
+        if "twitch.tv" in url:
+            return const.PLATFORM.TWITCH
+        elif "youtube.com" in url or "youtu.be" in url:
+            return const.PLATFORM.YOUTUBE
+        else:
+            return const.PLATFORM.UNDEFINED
+
+    @staticmethod
+    def _is_single_item(url: str) -> bool:
+        platform = Atom._determine_platform(url)
+        if platform == const.PLATFORM.YOUTUBE:
+            # Playlist or single video
+            return "watch?v=" in url and "list=" not in url
+        elif platform == const.PLATFORM.TWITCH:
+            # I do not know if there is any thing as a multiple item in twitch
+            return True
+        elif platform == const.PLATFORM.UNDEFINED:
+            return True
+
+    def _determine_download_dir(self, url: str, base_download_dir: str) -> [str, None]:
+        if Atom._is_single_item(url):
+            # Random audio download directory.
+            if self.content_type == const.CONTENT_MODE.AUDIO:
+                return path.join(base_download_dir, "audio_library", "random_audio")
+            elif self.content_type == const.CONTENT_MODE.VIDEO:
+                return path.join(base_download_dir, "video_library", "random_videos")
+        else:
+            ...
+        ...
+
+
+class Atomizer:
+    @staticmethod
+    def atomize_urls(urls: List[str]):
+        """"""
+        ...
+
+    @staticmethod
+    def atomize(atom: Atom):
+        ...
+
+
+def is_url_valid(url: str) -> bool:
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
-    except ValueError:
+    except [ValueError, Exception]:
         return False
 
 
@@ -44,7 +99,7 @@ def process_queue(
             url = q.get(block=True)
             if url == const.SENTINEL or url is None:
                 break
-            if not is_valid_url(url):
+            if not is_url_valid(url):
                 logger.warning(f"This is an invalid URL: {url}")
                 q.task_done()
                 continue

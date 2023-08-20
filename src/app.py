@@ -1,7 +1,7 @@
 import logging
 from flask import Flask
 from flask_socketio import SocketIO, emit
-import src.media_downloader.core as vcore
+import src.media_downloader.atomizer as vcore
 import src.media_downloader.constants as vconst
 from src.media_downloader.content_manager import ContentManager
 import src.util as util
