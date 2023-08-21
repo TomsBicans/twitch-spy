@@ -115,6 +115,7 @@
                     $('#videoFinished').text(data.video_finished.join('\n'));
                 });
             });
+            socket.emit('request_initial_data');
         });
     </script>
 </body>

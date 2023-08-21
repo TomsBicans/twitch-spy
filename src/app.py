@@ -3,6 +3,8 @@ from flask import Flask
 import src.media_downloader.atomizer as vcore
 import src.media_downloader.constants as vconst
 from src.media_downloader.content_manager import ContentManager
+from src.media_downloader.job_manager import JobManager
+from src.media_downloader.atomizer import Atom
 from src.socket_instance import socketio
 import src.event_dispatcher as event_dispatcher
 import src.util as util
@@ -41,6 +43,13 @@ class Application:
 
         self.event_dispatcher = event_dispatcher.EventDispatcher()
         self.event_dispatcher.register_listener(event_dispatcher.atom_status_listener)
+        self.job_manager = JobManager(
+            job_update_callback=self.job_update_callback, max_workers=5
+        )
+
+    def job_update_callback(self, job: Atom):
+        """Callback to handle job updates."""
+        self.event_dispatcher.dispatch_event("job_update", job)
 
     def shutdown(self):
         self.shutdown_event.set()
