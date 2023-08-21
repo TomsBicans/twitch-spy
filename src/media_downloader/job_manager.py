@@ -1,4 +1,6 @@
 from typing import Dict, List, Optional, Union, Any, Callable
+from collections import OrderedDict
+
 from concurrent.futures import Future
 
 from src.media_downloader.atomizer import Atom
@@ -13,7 +15,7 @@ class JobManager:
     def __init__(
         self, job_update_callback: Callable, max_workers: Optional[int] = None
     ):
-        self.jobs: Dict[UUID, Atom] = {}
+        self.jobs: Dict[UUID, Atom] = OrderedDict()
         self.job_update_callback = job_update_callback
         self.executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
 
@@ -33,7 +35,7 @@ class JobManager:
         # For example, downloading a video or audio
         # ...
         # Once done, you can update the status or any other attributes of the job
-        job.update_status(const.PROCESS_STATUS.STARTED)
+        job.update_status(const.PROCESS_STATUS.PROCESSING)
         self.job_update_callback(job)
 
         job_time = int(random.random() * 10)
