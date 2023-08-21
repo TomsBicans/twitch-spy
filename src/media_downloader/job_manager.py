@@ -33,6 +33,9 @@ class JobManager:
         # For example, downloading a video or audio
         # ...
         # Once done, you can update the status or any other attributes of the job
+        job.update_status(const.PROCESS_STATUS.STARTED)
+        self.job_update_callback(job)
+
         job_time = int(random.random() * 10)
         time.sleep(job_time)
         job.update_status(const.PROCESS_STATUS.FINISHED)
