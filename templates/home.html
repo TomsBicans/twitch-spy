@@ -54,6 +54,23 @@
         .status-failed {
             color: #ff0000; /* red for failed jobs */
         }
+
+        /* Background colors for rows based on job statuses */
+        .tr-status-queued {
+            background-color: rgba(255, 165, 0, 0.2); /* Low opacity orange */
+        }
+
+        .tr-status-processing {
+            background-color: rgba(0, 0, 255, 0.2); /* Low opacity blue */
+        }
+
+        .tr-status-finished {
+            background-color: rgba(0, 128, 0, 0.2); /* Low opacity green */
+        }
+
+        .tr-status-failed {
+            background-color: rgba(255, 0, 0, 0.2); /* Low opacity red */
+        }
         
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -127,17 +144,20 @@
         function updateAtomStatus(data) {
             var tableBody = document.getElementById('jobStatuses');
             var row = document.getElementById(data.id);
-            
+            var statusClass = 'tr-status-' + data.status.toLowerCase();
+        
             if (row) {
                 // Update existing row
                 var statusCell = row.querySelector('.statusColumn');
                 statusCell.innerText = data.status;
                 statusCell.className = 'statusColumn status-' + data.status.toLowerCase();
+                row.className = statusClass;
             } else {
                 // Create a new row and append to the table
                 var newRow = tableBody.insertRow(0);
                 newRow.id = data.id;
-            
+                newRow.className = statusClass;
+        
                 var contentNameCell = newRow.insertCell(0);
                 var contentTypeCell = newRow.insertCell(1);
                 var urlCell = newRow.insertCell(2);
@@ -150,6 +170,7 @@
                 statusCell.className = 'statusColumn status-' + data.status.toLowerCase();
             }
         }
+        
         
         
         
