@@ -14,18 +14,34 @@
         }
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+
 </head>
 <body>
     <h1>yt-dlp-music panel</h1>
 
     <h2>Enter URLs to download</h2>
-    <form action="/" method="post">
-        <textarea name="urls" rows="4" cols="50" placeholder="Enter URLs comma-separated..."></textarea><br>
-        <input type="submit" value="Submit URLs for processing">
+    <form id="urlForm">
+        <textarea name="urls" rows="2" cols="20" placeholder="Enter URLs comma-separated..."></textarea><br>
+        <input type="button" value="Submit URLs for processing" onclick="submitForm()">
     </form>
     <br>
     <button onclick="location.reload()" id="refreshButton">Refresh</button>
 
+    <h2>Job Statuses</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>URL</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="jobStatuses">
+            <!-- Rows will be dynamically added here -->
+        </tbody>
+    </table>
+    
     <table>
         <tr>
             <th></th>
@@ -48,6 +64,46 @@
     </table>
 
     <script>
+        var socket = io.connect(window.location.origin);
+        socket.on('atom_update_status', function(data) {
+            console.log(data);
+            // Now, use the data to update your frontend.
+            // For example, if you have a table or list where you display the atoms:
+            updateAtomStatus(data);
+        });
+
+        function submitForm() {
+            var formData = $("#urlForm").serialize();
+        
+            $.post("/", formData, function(data) {
+                console.log("Server response:", data);
+            });
+        }
+
+        function updateAtomStatus(data) {
+            var tableBody = document.getElementById('jobStatuses');
+            var row = document.getElementById(data.id);
+            
+            if (row) {
+                // Update existing row
+                row.querySelector('.statusColumn').innerText = data.status;
+            } else {
+                // Create a new row and append to the table
+                var newRow = tableBody.insertRow();
+                newRow.id = data.id;
+        
+                var idCell = newRow.insertCell(0);
+                var urlCell = newRow.insertCell(1);
+                var statusCell = newRow.insertCell(2);
+                
+                idCell.innerText = data.id;
+                urlCell.innerText = data.url;
+                statusCell.innerText = data.status;
+                statusCell.className = 'statusColumn';
+            }
+        }
+        
+        
         $(document).ready(function() {
             $('#refreshButton').click(function() {
                 $.get('/queue', function(data) {
