@@ -6,6 +6,7 @@ import src.media_downloader.atomizer as atomizer
 import src.media_downloader.constants as const
 import flask
 import os.path as path
+from src.socket_instance import socketio
 
 home_routes = Blueprint("home_routes", __name__)
 
@@ -31,33 +32,16 @@ def get_queue():
             )
             [print(job) for job in jobs]
             print(len(jobs))
-            return flask.redirect(
-                flask.url_for("home_routes.get_queue")
-            )  # Redirect to the same page to show updated status
+            for job in jobs:
+                my_app.event_dispatcher.dispatch_event("job_created", job)
+                my_app.job_manager.add_job(job)
 
-    # Get the state of the queues
-    audio_in = [s.strip() for s in my_app.audio_manager.file_queue.input_file.read()]
-    audio_ongoing = [
-        s.strip() for s in my_app.audio_manager.file_queue.ongoing_file.read()
-    ]
-    audio_finished = [
-        s.strip() for s in my_app.audio_manager.file_queue.finished_file.read()
-    ]
+            return jsonify({"success": True})
+    return render_template("home.html")
 
-    video_in = [s.strip() for s in my_app.video_manager.file_queue.input_file.read()]
-    video_ongoing = [
-        s.strip() for s in my_app.video_manager.file_queue.ongoing_file.read()
-    ]
-    video_finished = [
-        s.strip() for s in my_app.video_manager.file_queue.finished_file.read()
-    ]
 
-    return render_template(
-        "home.html",
-        audio_in=audio_in,
-        audio_ongoing=audio_ongoing,
-        audio_finished=audio_finished,
-        video_in=video_in,
-        video_ongoing=video_ongoing,
-        video_finished=video_finished,
-    )
+@socketio.on("request_initial_data")
+def handle_ready_for_data():
+    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    for job in my_app.job_manager.get_all_jobs():
+        my_app.event_dispatcher.dispatch_event("job_render", job)
