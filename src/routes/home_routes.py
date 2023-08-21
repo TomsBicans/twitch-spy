@@ -32,6 +32,7 @@ def get_queue():
             )
             [print(job) for job in jobs]
             print(len(jobs))
+            jobs = reversed(jobs)
             for job in jobs:
                 my_app.event_dispatcher.dispatch_event("job_created", job)
                 my_app.job_manager.add_job(job)
@@ -43,5 +44,5 @@ def get_queue():
 @socketio.on("request_initial_data")
 def handle_ready_for_data():
     my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
-    for job in my_app.job_manager.get_all_jobs():
+    for job in reversed(my_app.job_manager.get_all_jobs()):
         my_app.event_dispatcher.dispatch_event("job_render", job)
