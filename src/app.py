@@ -1,9 +1,10 @@
 import logging
 from flask import Flask
-from flask_socketio import SocketIO, emit
 import src.media_downloader.atomizer as vcore
 import src.media_downloader.constants as vconst
 from src.media_downloader.content_manager import ContentManager
+from src.socket_instance import socketio
+import src.event_dispatcher as event_dispatcher
 import src.util as util
 import src.cli as cli
 import config
@@ -14,8 +15,6 @@ from flask import request
 
 # Routes
 from src.routes.home_routes import home_routes
-
-socketio = SocketIO()
 
 
 class Application:
@@ -40,6 +39,9 @@ class Application:
         self.app.register_blueprint(home_routes)
         socketio.init_app(self.app)
 
+        self.event_dispatcher = event_dispatcher.EventDispatcher()
+        self.event_dispatcher.register_listener(event_dispatcher.atom_status_listener)
+
     def shutdown(self):
         self.shutdown_event.set()
         try:
@@ -63,18 +65,7 @@ class Application:
         self.audio_manager.start_processing()
         self.video_manager.start_processing()
 
-        # user_input_thread = threading.Thread(
-        #     target=vcore.handle_user_input,
-        #     args=(self.audio_manager.content_queue.queue, self.shutdown_event),
-        # )
-        # user_input_thread.setDaemon(True)
-        # user_input_thread.start()
-
         while not self.shutdown_event.is_set():
-            # user_input_thread.join(timeout=1)
-            # logger.info(
-            #     f"System active. Shutdown event status: {self.shutdown_event.is_set()}"
-            # )
             time.sleep(1)
 
         logger.info("Shutting down...")
@@ -88,16 +79,8 @@ class Application:
 
 def main():
     my_app = Application()
-
-    # cli_thread = threading.Thread(target=my_app.main_cli)
-    # cli_thread.start()
-
-    try:
-        my_app.main_web()
-    except KeyboardInterrupt:
-        pass
+    my_app.main_web()
     my_app.shutdown()
-    # cli_thread.join()
 
 
 if __name__ == "__main__":
