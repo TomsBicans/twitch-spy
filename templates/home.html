@@ -72,10 +72,11 @@
     <button onclick="location.reload()" id="refreshButton">Refresh</button>
 
     <h2>Job Statuses</h2>
-    <table>
+    <table class="jobs-table">
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Content type</th>
                 <th>URL</th>
                 <th>Status</th>
             </tr>
@@ -138,9 +139,11 @@
                 newRow.id = data.id;
             
                 var idCell = newRow.insertCell(0);
-                var urlCell = newRow.insertCell(1);
-                var statusCell = newRow.insertCell(2);
+                var contentCell = newRow.insertCell(1);
+                var urlCell = newRow.insertCell(2);
+                var statusCell = newRow.insertCell(3);
                 
+                contentCell.innerText = data.content_type
                 idCell.innerText = data.id;
                 urlCell.innerText = data.url;
                 statusCell.innerText = data.status;
