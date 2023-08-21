@@ -6,10 +6,12 @@ stop_workers = threading.Event()
 
 
 class PROCESS_STATUS(Enum):
-    SUCCESS = 1
-    CANCELLED = 2
-    FAILED = 3
-    INVALID = 4
+    QUEUED = "queued"
+    STARTED = "started"
+    FINISHED = "finished"
+    CANCELLED = "cancelled"
+    FAILED = "failed"
+    INVALID = "invalid"
 
 
 class CONTENT_MODE(Enum):
