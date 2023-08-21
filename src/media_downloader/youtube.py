@@ -14,8 +14,13 @@ import src.media_downloader.constants as const
 import config
 from typing import Optional
 
-# import src.video_downloader.config as config
 from src.media_downloader.storage_manager import StorageManager
+
+
+class VideoMetadata:
+    def __init__(self, title: str, url: str) -> None:
+        self.title = title
+        self.url = url
 
 
 class Utils:
@@ -310,7 +315,7 @@ class YoutubeDownloader:
         return self.convert_to_mp3(video_path)
 
 
-def get_playlist_video_urls(playlist_url: str) -> list[str]:
+def get_playlist_video_urls(playlist_url: str) -> list[VideoMetadata]:
     with yt_dlp.YoutubeDL(
         {
             "ignoreerrors": True,
@@ -321,13 +326,15 @@ def get_playlist_video_urls(playlist_url: str) -> list[str]:
     ) as ydl:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
-    video_urls = []
+    res = []
     for video in playlist_dict["entries"]:
         if video is not None:
             video_id = video.get("id")
-            video_urls.append(f"https://www.youtube.com/watch?v={video_id}")
-
-    return video_urls
+            video_title = video.get("title")
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            video_metadata = VideoMetadata(title=video_title, url=video_url)
+            res.append(video_metadata)
+    return res
 
 
 def get_playlist_name(playlist_url: str) -> str:
@@ -345,6 +352,34 @@ def get_playlist_name(playlist_url: str) -> str:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
     return playlist_dict.get("title")
+
+
+def get_video_title(video_url: str) -> Optional[str]:
+    """
+    Get the video title for a given YouTube video URL using yt_dlp.
+
+    Args:
+        video_url (str): The URL of the YouTube video.
+
+    Returns:
+        Optional[str]: The title of the video or None if an error occurred.
+    """
+    try:
+        ydl_opts = {
+            "quiet": True,  # Makes sure yt_dlp doesn't print output to console
+            "skip_download": True,  # We only want to extract info, no download
+            "force_generic_extractor": True,  # Avoid unnecessary network requests
+            "extract_flat": True,  # Don't go deeper into playlists, etc.
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            return info.get("title", None)
+
+    except Exception as e:
+        # It's a good practice to log any exceptions for debugging purposes
+        print("Error while extracting video title:", str(e))
+        return None
 
 
 def safe_pathname(dir: str) -> str:
@@ -410,7 +445,9 @@ def process_youtube_playlist(
     url: str, downloader: YoutubeDownloader, mode: const.CONTENT_MODE
 ) -> const.PROCESS_STATUS:
     print(f"Playlist detected: {url}")
-    videos = get_playlist_video_urls(url)
+    videos = get_playlist_video_urls(
+        url
+    )  # THIS WILL NOT WORK DUE TO OLD CODE. FIX NOW.
     print(f"Got {len(videos)} videos.")
     if mode == const.CONTENT_MODE.AUDIO:
         download_dir = path.join(config.STREAM_DOWNLOADS, "audio_library")

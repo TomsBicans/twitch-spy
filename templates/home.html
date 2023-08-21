@@ -138,13 +138,13 @@
                 var newRow = tableBody.insertRow(0);
                 newRow.id = data.id;
             
-                var idCell = newRow.insertCell(0);
-                var contentCell = newRow.insertCell(1);
+                var contentNameCell = newRow.insertCell(0);
+                var contentTypeCell = newRow.insertCell(1);
                 var urlCell = newRow.insertCell(2);
                 var statusCell = newRow.insertCell(3);
                 
-                contentCell.innerText = data.content_type
-                idCell.innerText = data.id;
+                contentTypeCell.innerText = data.content_type;
+                contentNameCell.innerText = data.content_name;
                 urlCell.innerText = data.url;
                 statusCell.innerText = data.status;
                 statusCell.className = 'statusColumn status-' + data.status.toLowerCase();

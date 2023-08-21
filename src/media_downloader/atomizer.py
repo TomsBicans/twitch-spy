@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, List
+from typing import Callable, List, Optional
 import threading
 import queue
 import traceback
@@ -17,7 +17,11 @@ from abc import ABC, abstractmethod
 
 class Atom:
     def __init__(
-        self, url: str, content_type: const.CONTENT_MODE, download_dir: str
+        self,
+        url: str,
+        content_type: const.CONTENT_MODE,
+        download_dir: str,
+        content_name: Optional[str] = None,
     ) -> None:
         self.id = uuid.uuid4()
         self.url = url
@@ -25,6 +29,7 @@ class Atom:
         self.platform = self._determine_platform(url)
         self.single_item = self._is_single_item(url)
         self.content_type = content_type
+        self.content_name = content_name
         self.download_dir = download_dir
         self.status = const.PROCESS_STATUS.QUEUED
 
@@ -92,13 +97,26 @@ class YouTubeHandler(PlatformHandler):
             new_download_dir = (
                 path.join(atom.download_dir, subdir) if subdir else atom.download_dir
             )
-            new_atom = Atom(atom.url, atom.content_type, new_download_dir)
+            new_atom = Atom(
+                atom.url,
+                atom.content_type,
+                new_download_dir,
+                content_name=youtube.get_video_title(atom.url),
+            )
             return [new_atom]
-        video_urls = youtube.get_playlist_video_urls(atom.url)
+        video_metadatas = youtube.get_playlist_video_urls(atom.url)
         playlist_directory = youtube.get_playlist_download_directory(
             atom.download_dir, atom.url
         )
-        return [Atom(url, atom.content_type, playlist_directory) for url in video_urls]
+        return [
+            Atom(
+                vid.url,
+                atom.content_type,
+                playlist_directory,
+                content_name=vid.title,
+            )
+            for vid in video_metadatas
+        ]
 
 
 class TwitchHandler(PlatformHandler):

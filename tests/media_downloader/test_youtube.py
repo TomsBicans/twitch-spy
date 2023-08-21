@@ -12,7 +12,7 @@ PLAYLIST_URLS = [
 def test_youtube_playlist_videos(playlist):
     videos = youtube.get_playlist_video_urls(playlist)
     # Assuming function should at least return a list (even if it's empty)
-    assert isinstance(videos, list)
+    assert isinstance(videos, youtube.VideoMetadata)
     # Optionally, if you know there should be videos:
     assert len(videos) > 0
 
