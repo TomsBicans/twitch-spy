@@ -4,6 +4,7 @@ import threading
 import queue
 import traceback
 import time
+import uuid
 import os.path as path
 from urllib.parse import urlparse
 import src.media_downloader.youtube as youtube
@@ -18,12 +19,17 @@ class Atom:
     def __init__(
         self, url: str, content_type: const.CONTENT_MODE, download_dir: str
     ) -> None:
+        self.id = uuid.uuid4()
         self.url = url
         self.url_valid = self._is_url_valid(url)
         self.platform = self._determine_platform(url)
         self.single_item = self._is_single_item(url)
         self.content_type = content_type
         self.download_dir = download_dir
+        self.status = const.PROCESS_STATUS.QUEUED
+
+    def update_status(self, status: const.PROCESS_STATUS):
+        self.status = status
 
     @staticmethod
     def _determine_platform(url: str) -> const.PLATFORM:
@@ -56,12 +62,14 @@ class Atom:
 
     def __str__(self) -> str:
         return (
-            f"Atom(url={self.url}, "
+            f"Atom(id={self.id} "
+            f"url={self.url}, "
             f"valid_url={self.url_valid}, "
             f"platform={self.platform.name}, "
             f"single_item={self.single_item}, "
             f"content_type={self.content_type.name}, "
-            f"download_dir={self.download_dir})"
+            f"download_dir={self.download_dir}, "
+            f"status={self.status})"
         )
 
 
@@ -119,7 +127,7 @@ class Atomizer:
     @staticmethod
     def atomize_urls(
         urls: List[str], content_mode: const.CONTENT_MODE, root_download_dir: str
-    ):
+    ) -> List[Atom]:
         valid_urls = list(filter(Atom._is_url_valid, urls))
         atoms = []
         for url in valid_urls:
