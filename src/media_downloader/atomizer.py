@@ -50,7 +50,7 @@ class Atom:
         platform = Atom._determine_platform(url)
         if platform == const.PLATFORM.YOUTUBE:
             # Playlist or single video
-            return "watch?v=" in url and "list=" not in url
+            return "watch?v=" in url and "list=" not in url and "list=LL&" not in url
         elif platform == const.PLATFORM.TWITCH:
             # I do not know if there is any thing as a multiple item in twitch streaming service
             return True
