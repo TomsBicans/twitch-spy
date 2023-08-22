@@ -4,6 +4,7 @@ import src.app as app
 import src.util as util
 import src.media_downloader.atomizer as atomizer
 import src.media_downloader.constants as const
+from src.event_dispatcher import Events
 import flask
 import os.path as path
 from src.socket_instance import socketio
@@ -33,8 +34,11 @@ def get_queue():
             [print(job) for job in jobs]
             print(len(jobs))
             for job in jobs:
-                my_app.event_dispatcher.dispatch_event("job_created", job)
                 my_app.job_manager.add_job(job)
+                my_app.event_dispatcher.dispatch_event(Events.JOB_CREATED.value, job)
+                my_app.event_dispatcher.dispatch_event(
+                    Events.STATISTICS_UPDATE.value, my_app.job_manager.stats
+                )
 
             return jsonify({"success": True})
     return render_template("home.html")
@@ -43,5 +47,8 @@ def get_queue():
 @socketio.on("request_initial_data")
 def handle_ready_for_data():
     my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app.event_dispatcher.dispatch_event(
+        Events.STATISTICS_UPDATE.value, my_app.job_manager.stats
+    )
     for job in my_app.job_manager.get_all_jobs():
-        my_app.event_dispatcher.dispatch_event("job_render", job)
+        my_app.event_dispatcher.dispatch_event(Events.JOB_RENDER.value, job)

@@ -3,7 +3,7 @@ from flask import Flask
 import src.media_downloader.atomizer as vcore
 import src.media_downloader.constants as vconst
 from src.media_downloader.content_manager import ContentManager
-from src.media_downloader.job_manager import JobManager
+from src.media_downloader.job_manager import JobManager, JobStats
 from src.media_downloader.atomizer import Atom
 from src.socket_instance import socketio
 import src.event_dispatcher as event_dispatcher
@@ -42,14 +42,34 @@ class Application:
         socketio.init_app(self.app)
 
         self.event_dispatcher = event_dispatcher.EventDispatcher()
-        self.event_dispatcher.register_listener(event_dispatcher.atom_status_listener)
+        self.event_dispatcher.register_listener(
+            event_dispatcher.Events.JOB_UPDATE.value,
+            event_dispatcher.atom_status_listener,
+        )
+        self.event_dispatcher.register_listener(
+            event_dispatcher.Events.JOB_CREATED.value,
+            event_dispatcher.atom_status_listener,
+        )
+        self.event_dispatcher.register_listener(
+            event_dispatcher.Events.JOB_RENDER.value,
+            event_dispatcher.atom_status_listener,
+        )
+        self.event_dispatcher.register_listener(
+            event_dispatcher.Events.STATISTICS_UPDATE.value,
+            event_dispatcher.statistics_listener,
+        )
         self.job_manager = JobManager(
             job_update_callback=self.job_update_callback, max_workers=5
         )
 
-    def job_update_callback(self, job: Atom):
+    def job_update_callback(self, job: Atom, stats: JobStats):
         """Callback to handle job updates."""
-        self.event_dispatcher.dispatch_event("job_update", job)
+        self.event_dispatcher.dispatch_event(
+            event_dispatcher.Events.JOB_UPDATE.value, job
+        )
+        self.event_dispatcher.dispatch_event(
+            event_dispatcher.Events.STATISTICS_UPDATE.value, stats
+        )
 
     def shutdown(self):
         self.shutdown_event.set()

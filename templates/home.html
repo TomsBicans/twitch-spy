@@ -72,6 +72,25 @@
             background-color: rgba(255, 0, 0, 0.2); /* Low opacity red */
         }
         
+        #jobStats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #777;
+        }
+
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
@@ -87,6 +106,34 @@
     </form>
     <br>
     <button onclick="location.reload()" id="refreshButton">Refresh</button>
+
+    <h2>Job Statistics</h2>
+    <div id="jobStats">
+        <div class="stat">
+            <span class="stat-value" id="queued">0</span>
+            <span class="stat-label">Queued</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="processing">0</span>
+            <span class="stat-label">Processing</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="finished">0</span>
+            <span class="stat-label">Finished</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="cancelled">0</span>
+            <span class="stat-label">Cancelled</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="failed">0</span>
+            <span class="stat-label">Failed</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="invalid">0</span>
+            <span class="stat-label">Invalid</span>
+        </div>
+    </div>
 
     <h2>Job Statuses</h2>
     <table class="jobs-table">
@@ -132,6 +179,19 @@
             // For example, if you have a table or list where you display the atoms:
             updateAtomStatus(data);
         });
+
+        socket.on('statistics_update', function(data){
+            console.log(data);
+        
+            // Update the statistics on the page
+            for (const [key, value] of Object.entries(data)) {
+                const statElement = document.getElementById(key);
+                if (statElement) {
+                    statElement.textContent = value;
+                }
+            }
+        });
+        
 
         function submitForm() {
             var formData = $("#urlForm").serialize();
