@@ -1,5 +1,6 @@
 import pytest
 import src.media_downloader.youtube as youtube
+from typing import List
 
 
 PLAYLIST_URLS = [
@@ -12,7 +13,9 @@ PLAYLIST_URLS = [
 def test_youtube_playlist_videos(playlist):
     videos = youtube.get_playlist_video_urls(playlist)
     # Assuming function should at least return a list (even if it's empty)
-    assert isinstance(videos, youtube.VideoMetadata)
+    test = [isinstance(it, youtube.VideoMetadata) for it in videos]
+    assert all(test)
+
     # Optionally, if you know there should be videos:
     assert len(videos) > 0
 
