@@ -1,16 +1,21 @@
-# twitch-spy
+# yt-dlp-music
 
 # Description
-main.py is the primary entry point for the Twitch Spy program. This script initiates the video download process from different platforms. The main feature currently is audio downloading from youtube, metadata asignment and downloaded library content management.
+This is a project that aims to create an easy to use music downloading and library management software that can be run locally on a computer. It has ambitions to work with various audio and video content webstites, but currently it supports music download feature from youtube.com.
+The core feature is audio downloading from youtube, metadata and thumbnail asignment and downloaded library content management. The system comes with an easy to overlook UI with realtime updates.
+
+This project makes it easy and straightforward to download and manage an audio library on a computer.
 
 # Features
-Multithreading: Utilizes multiple worker threads for concurrent downloading. The number of threads can be configured using the --num-worker-threads option.
+**yt-dlp as backend technology**: The main component to communicate with external services is the yt-dlp open source library (https://github.com/yt-dlp/yt-dlp)
 
-File Queue: Handles a queue of URLs from which to download videos. The script can be configured to continuously listen to this file queue using the --file-queue-mode option.
+**Atomization**: The user can provide any input (single video, playlist or channel) and the program will try to figure it out how to create a list of smallest entities possible from this input (in this case, a list of videos). Each of the entity is being treated as a separate job (atom) and can be processed in parallel with other jobs.
 
-User Input: Manages user input, allowing the addition of new video URLs while the program is running.
+**Multithreading**: Utilizes python's threadpoolexecutor to process multiple jobs at once, thus maximizing the speed of job processing, since each job is network I/O bound.
 
-Performance: Tracks the time taken by the program to complete its tasks and prints it to the console at the end.
+**Realtime UI updates**: UI is developed using event-driven programming paradigm for sending status updates using a local socket connection. This creates a very responsive website that accurately represents the internal state of the system.
+
+
 
 # View the progress of development here:
 https://trello.com/b/0DEbMAds/development-board
@@ -18,32 +23,39 @@ https://trello.com/b/0DEbMAds/development-board
 
 
 # Installation:
-1. Install python3
-2. Clone this repository.
+1. Install python3 (https://www.python.org/downloads/)
+2. Clone this project's repository. (https://github.com/TomsBicans/twitch-spy)
 
 On windows:
 ```
-python3 -m venv venv
-venv/Scripts/Activate.ps1
-python3 -m pip install -r requirements.txt
-python3 .\main.py -h
+install-dev-windows.bat
 ```
-or 
-```
-py -m venv venv
-venv/Scripts/Activate.ps1
-py -m pip install -r requirements.txt
-py .\main.py -h
-```
-Paste the url you want to process in the terminal or launch program with the url's as arguments.
 On linux:
 ```
-python3 -m venv venv
-source venv/bin/activate
-python3 -m pip install -r requirements.txt
-python3 main.py -h
+install-dev-linux.sh
 ```
+
+# Run the program:
+This will launch a local python flask server. 
+```
+py ./main.py
+```
+or
+```
+python3 ./main.py
+```
+It is dependant on the system name used to launch python3.
+
+
+
+In the terminal you can see the IP to which you have to connect to access the frontend interface. It will most likely be this IP:
+```
+http://127.0.0.1:5000/
+```
+
 # Usage
-1. Paste the URL you want to process in the terminal. The program listens for input in the standard user input stream.
-2. Alternatively, you can launch the program with the URLs as arguments.
-3. Alternatively, if you use file queue mode. There will be a text file generated on the OS. The program continously scans and feeds the data found in the input file to the runtime program. The program also keeps track of the active jobs it is working on, so it is possible to terminate the program, start it again and it will continue where it left off.
+1. Launch the local server (py ./main.py)
+2. Connect to the local server instance IP address. (http://127.0.0.1:5000/)
+3. Paste in the links you want for the system to process and download.
+4. See realtime updates on the jobs being processed.
+5. Enjoy your music!
