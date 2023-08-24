@@ -25,7 +25,7 @@ https://trello.com/b/0DEbMAds/development-board
 # Installation:
 1. Install python3 (https://www.python.org/downloads/)
 2. Clone this project's repository. (https://github.com/TomsBicans/twitch-spy)
-
+3. Install project dependencies.
 On windows:
 ```
 install-dev-windows.bat
@@ -34,6 +34,7 @@ On linux:
 ```
 install-dev-linux.sh
 ```
+4. Run the program.
 
 # Run the program:
 This will launch a local python flask server. 
