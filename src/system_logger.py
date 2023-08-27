@@ -31,4 +31,4 @@ if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
 log_file_path = os.path.join(LOG_DIR, "application.log")
-logger = setup_logger("ApplicationLogger", log_file_path)
+logger = setup_logger("ApplicationLogger", log_file_path, level=logging.DEBUG)
