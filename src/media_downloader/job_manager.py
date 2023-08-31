@@ -41,11 +41,7 @@ class JobProcessor:
         if platform_handler is None:
             job.update_status(const.PROCESS_STATUS.FAILED)
             return job
-
         job = platform_handler.process(job)
-
-        job_time = int(random.random() * 10)
-        time.sleep(job_time)
         return job
 
 
