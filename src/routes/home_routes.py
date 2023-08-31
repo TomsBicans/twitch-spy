@@ -4,11 +4,13 @@ import src.app as app
 import src.util as util
 import src.media_downloader.platform_handlers as ph
 import src.media_downloader.constants as const
+import src.media_downloader.storage_manager as sm
 from src.event_dispatcher import Events
 import flask
 import os.path as path
 from src.socket_instance import socketio
 from src.system_logger import logger
+from src.media_downloader.constants import lock
 
 home_routes = Blueprint("home_routes", __name__)
 
@@ -30,6 +32,10 @@ def get_queue():
         if urls:
             urls_list = [url.strip() for url in urls.split("\n")]
             logger.debug(f"URLs list: {urls_list}")
+            user_input = sm.StorageManager(config.STREAM_DOWNLOADS)
+            with lock:
+                for url in urls_list:
+                    user_input.mark_successful_download(url)
             jobs = ph.Atomizer.atomize_urls(
                 urls_list,
                 const.CONTENT_MODE.AUDIO,
