@@ -40,7 +40,7 @@ class Application:
             event_dispatcher.statistics_listener,
         )
         self.job_manager = JobManager(
-            job_update_callback=self.job_update_callback, max_workers=2
+            job_update_callback=self.job_update_callback, max_workers=3
         )
 
     def job_update_callback(self, job: Atom, stats: JobStats):
