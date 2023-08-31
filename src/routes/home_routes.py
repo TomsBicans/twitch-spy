@@ -39,7 +39,7 @@ def get_queue():
             jobs = ph.Atomizer.atomize_urls(
                 urls_list,
                 const.CONTENT_MODE.AUDIO,
-                path.join(config.STREAM_DOWNLOADS, "audio_library"),
+                config.AUDIO_LIBRARY,
             )
             logger.debug(f"Jobs created: {jobs}")
             logger.debug(f"Number of jobs: {len(jobs)}")

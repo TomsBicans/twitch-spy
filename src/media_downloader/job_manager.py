@@ -55,10 +55,13 @@ class JobManager:
         self.executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
 
     def add_job(self, job: Atom) -> None:
-        self.jobs[job.id] = job
-        self.send_update(job)
+        self.add_job_to_archive(job)
         future: Future = self.executor.submit(self.process_job, job)
         future.add_done_callback(self.job_done)
+
+    def add_job_to_archive(self, job: Atom) -> None:
+        self.jobs[job.id] = job
+        self.send_update(job)
 
     def get_job(self, job_id: UUID) -> Optional[Atom]:
         return self.jobs.get(job_id)

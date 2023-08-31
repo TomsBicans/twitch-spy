@@ -1,8 +1,10 @@
 from flask import Flask
 from src.media_downloader.job_manager import JobManager, JobStats
+from src.media_downloader.storage_manager import LibraryManager
 from src.media_downloader.atomizer import Atom
 from src.socket_instance import socketio
 import src.event_dispatcher as event_dispatcher
+import config
 import src.util as util
 import src.cli as cli
 import time
@@ -42,6 +44,11 @@ class Application:
         self.job_manager = JobManager(
             job_update_callback=self.job_update_callback, max_workers=3
         )
+        # Initialize already processed jobs.
+        self.audio_library = LibraryManager(config.AUDIO_LIBRARY)
+        archive = self.audio_library.count_atoms()
+        for atom in archive:
+            self.job_manager.add_job_to_archive(atom)
 
     def job_update_callback(self, job: Atom, stats: JobStats):
         """Callback to handle job updates."""
