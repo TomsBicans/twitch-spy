@@ -34,7 +34,7 @@ def atom_status_listener(event_name: str, atom: Atom):
         {
             "event": event_name,
             "id": str(atom.id),
-            "content_name": str(atom.content_name),
+            "content_name": str(atom.content_title),
             "content_type": atom.content_type.value,
             "url": atom.url,
             "status": atom.status.value,

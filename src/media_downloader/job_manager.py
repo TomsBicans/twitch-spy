@@ -3,7 +3,9 @@ from collections import OrderedDict, defaultdict
 
 from concurrent.futures import Future
 
+from src.system_logger import logger
 from src.media_downloader.atomizer import Atom
+from src.media_downloader.platform_handlers import Atomizer
 import src.media_downloader.constants as const
 from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
@@ -30,6 +32,23 @@ class JobStats:
         return {status: len(job_ids) for status, job_ids in self.jobs_by_status.items()}
 
 
+class JobProcessor:
+    """Handles the logic to process each job."""
+
+    @staticmethod
+    def process(job: Atom) -> Atom:
+        platform_handler = Atomizer.get_platform_handler(job)
+        if platform_handler is None:
+            job.update_status(const.PROCESS_STATUS.FAILED)
+            return job
+
+        job = platform_handler.process(job)
+
+        job_time = int(random.random() * 10)
+        time.sleep(job_time)
+        return job
+
+
 class JobManager:
     def __init__(
         self, job_update_callback: Callable, max_workers: Optional[int] = None
@@ -41,7 +60,7 @@ class JobManager:
 
     def add_job(self, job: Atom) -> None:
         self.jobs[job.id] = job
-        self.update_stats(job)
+        self.send_update(job)
         future: Future = self.executor.submit(self.process_job, job)
         future.add_done_callback(self.job_done)
 
@@ -51,29 +70,29 @@ class JobManager:
     def get_all_jobs(self) -> List[Atom]:
         return list(self.jobs.values())
 
-    def update_stats(self, job: Atom):
+    def send_update(self, job: Atom):
         self.stats.update(job)
         self.job_update_callback(job, self.stats)
 
     def process_job(self, job: Atom) -> Atom:
-        # Implement the logic to process each job
-        # For example, downloading a video or audio
-        # ...
-        # Once done, you can update the status or any other attributes of the job
         job.update_status(const.PROCESS_STATUS.PROCESSING)
-        self.update_stats(job)
-
-        job_time = int(random.random() * 10)
-        time.sleep(job_time)
-        job.update_status(const.PROCESS_STATUS.FINISHED)
+        self.send_update(job)
+        job = JobProcessor.process(job)  # Do the actual job processing here.
         return job
 
     def job_done(self, future: Future) -> None:
         # This is called once a job is done. You can do any cleanup or post-processing here.
         # If the job raises an exception, you can capture it here.
         exception: Union[BaseException, None] = future.exception()
-        job = future.result()
-        self.update_stats(job)
+
+        job: Atom = future.result()
+
         if exception:
             # Handle the exception, e.g., update the job status to failed
-            pass
+            job.update_status(const.PROCESS_STATUS.FAILED)
+            self.send_update(job)
+            logger.debug(f"Processing failed for job {job}")
+            return
+        job.update_status(const.PROCESS_STATUS.FINISHED)
+        self.send_update(job)
+        logger.debug(f"Processing finished for job {job}")

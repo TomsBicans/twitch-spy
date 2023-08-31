@@ -1,15 +1,10 @@
-import logging
 from flask import Flask
-import src.media_downloader.atomizer as vcore
-import src.media_downloader.constants as vconst
-from src.media_downloader.content_manager import ContentManager
 from src.media_downloader.job_manager import JobManager, JobStats
 from src.media_downloader.atomizer import Atom
 from src.socket_instance import socketio
 import src.event_dispatcher as event_dispatcher
 import src.util as util
 import src.cli as cli
-import config
 import time
 import threading
 from src.system_logger import logger
@@ -23,20 +18,6 @@ class Application:
     def __init__(self):
         args = cli.parse_args()
         self.shutdown_event = threading.Event()
-        self.audio_manager = ContentManager(
-            self.shutdown_event,
-            vconst.CONTENT_MODE.AUDIO.value,
-            vcore.process_queue,
-            args.num_worker_threads,
-            config.STREAM_DOWNLOADS,
-        )
-        self.video_manager = ContentManager(
-            self.shutdown_event,
-            vconst.CONTENT_MODE.VIDEO.value,
-            vcore.process_queue,
-            args.num_worker_threads,
-            config.STREAM_DOWNLOADS,
-        )
         self.app = Flask(__name__, template_folder="../templates")
         self.app.register_blueprint(home_routes)
         socketio.init_app(self.app)
@@ -59,7 +40,7 @@ class Application:
             event_dispatcher.statistics_listener,
         )
         self.job_manager = JobManager(
-            job_update_callback=self.job_update_callback, max_workers=5
+            job_update_callback=self.job_update_callback, max_workers=2
         )
 
     def job_update_callback(self, job: Atom, stats: JobStats):
@@ -84,22 +65,6 @@ class Application:
         if func is None:
             raise RuntimeError("Not running with the Werkzeug Server")
         func()
-
-    def main_cli(self):
-        args = cli.parse_args()
-        for url in set(args.urls):
-            self.audio_manager.file_queue.input_file.add(url)
-            socketio.emit("new_url_added", {"url": url})
-
-        self.audio_manager.start_processing()
-        self.video_manager.start_processing()
-
-        while not self.shutdown_event.is_set():
-            time.sleep(1)
-
-        logger.info("Shutting down...")
-        self.audio_manager.stop_processing()
-        self.video_manager.stop_processing()
 
     def main_web(self):
         self.app.config[util.MagicStrings.APP] = self
