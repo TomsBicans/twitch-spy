@@ -3,6 +3,7 @@ import threading
 
 SENTINEL = "STOP_WORKER"
 stop_workers = threading.Event()
+lock = threading.Lock()
 
 
 class PROCESS_STATUS(Enum):
