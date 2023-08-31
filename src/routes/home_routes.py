@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, jsonify
 import config
 import src.app as app
 import src.util as util
-import src.media_downloader.atomizer as atomizer
+import src.media_downloader.platform_handlers as ph
 import src.media_downloader.constants as const
 from src.event_dispatcher import Events
 import flask
@@ -30,7 +30,7 @@ def get_queue():
         if urls:
             urls_list = [url.strip() for url in urls.split("\n")]
             logger.debug(f"URLs list: {urls_list}")
-            jobs = atomizer.Atomizer.atomize_urls(
+            jobs = ph.Atomizer.atomize_urls(
                 urls_list,
                 const.CONTENT_MODE.AUDIO,
                 path.join(config.STREAM_DOWNLOADS, "audio_library"),
