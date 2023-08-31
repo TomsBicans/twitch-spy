@@ -105,7 +105,6 @@
         <input type="button" value="Submit URLs for processing" onclick="submitForm()">
     </form>
     <br>
-    <button onclick="location.reload()" id="refreshButton">Refresh</button>
 
     <h2>Job Statistics</h2>
     <div id="jobStats">
@@ -148,27 +147,6 @@
         <tbody id="jobStatuses">
             <!-- Rows will be dynamically added here -->
         </tbody>
-    </table>
-    
-    <table>
-        <tr>
-            <th></th>
-            <th>In</th>
-            <th>Ongoing</th>
-            <th>Finished</th>
-        </tr>
-        <tr>
-            <th>Audio</th>
-            <td><textarea id="audioIn" readonly>{{ audio_in|join('\n') }}</textarea></td>
-            <td><textarea id="audioOngoing" readonly>{{ audio_ongoing|join('\n') }}</textarea></td>
-            <td><textarea id="audioFinished" readonly>{{ audio_finished|join('\n') }}</textarea></td>
-        </tr>
-        <tr>
-            <th>Video</th>
-            <td><textarea id="videoIn" readonly>{{ video_in|join('\n') }}</textarea></td>
-            <td><textarea id="videoOngoing" readonly>{{ video_ongoing|join('\n') }}</textarea></td>
-            <td><textarea id="videoFinished" readonly>{{ video_finished|join('\n') }}</textarea></td>
-        </tr>
     </table>
 
     <script>
@@ -231,20 +209,7 @@
             }
         }
         
-        
-        
-        
         $(document).ready(function() {
-            $('#refreshButton').click(function() {
-                $.get('/queue', function(data) {
-                    $('#audioIn').text(data.audio_in.join('\n'));
-                    $('#audioOngoing').text(data.audio_ongoing.join('\n'));
-                    $('#audioFinished').text(data.audio_finished.join('\n'));
-                    $('#videoIn').text(data.video_in.join('\n'));
-                    $('#videoOngoing').text(data.video_ongoing.join('\n'));
-                    $('#videoFinished').text(data.video_finished.join('\n'));
-                });
-            });
             socket.emit('request_initial_data');
         });
     </script>
