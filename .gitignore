@@ -6,3 +6,6 @@ downloads/*
 program.log
 venv/*
 py3.10/*
+build/
+dist/
+main.spec
