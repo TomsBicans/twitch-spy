@@ -440,11 +440,9 @@ def download_video(
         print(f"Downloading {url} ...")
         audio_file = downloader.download_video(url, download_dir)
         print(audio_file)
-        with storage_manager.lock:
-            storage_manager.mark_successful_download(url)
+        storage_manager.mark_successful_download(url)
     except Exception as e:
-        with storage_manager.lock:
-            storage_manager.troublesome_download(url)
+        storage_manager.troublesome_download(url)
         traceback.print_exc()
         return
 
@@ -462,6 +460,5 @@ def download_video(
             )
             return
     except Exception as e:
-        with storage_manager.lock:
-            storage_manager.troublesome_split(url)
+        storage_manager.troublesome_split(url)
         traceback.print_exc()

@@ -6,7 +6,6 @@ import src.media_downloader.twitch as twitch
 import src.media_downloader.constants as const
 from src.media_downloader.storage_manager import StorageManager
 from src.system_logger import logger
-from src.media_downloader.constants import lock
 from abc import ABC, abstractmethod
 
 
@@ -73,11 +72,9 @@ class YouTubeHandler(PlatformHandler):
         logger.debug(f"content handler: {content_handler} selected for job: {atom}")
         try:
             content_handler(atom)
-            with lock:
-                storage_manager.mark_successful_download(atom.url)
+            storage_manager.mark_successful_download(atom.url, title=atom.content_title)
         except:
-            with lock:
-                storage_manager.troublesome_download(atom.url)
+            storage_manager.troublesome_download(atom.url, title=atom.content_title)
             atom.update_status(const.PROCESS_STATUS.FAILED)
         return atom
 
