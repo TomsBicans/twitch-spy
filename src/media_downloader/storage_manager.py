@@ -7,23 +7,6 @@ import src.media_downloader.constants as const
 from typing import List
 
 
-def read_file(location: str):
-    with open(location, "r") as f:
-        return f.read()
-
-
-def create_file(location: str):
-    with open(location, "w") as f:
-        pass
-    return location
-
-
-def append_to_file(location: str, data: str):
-    with open(location, "a") as f:
-        f.write(data + "\n")
-    return location
-
-
 class StorageManager:
     def __init__(self, download_dir: str) -> None:
         self.lock = threading.Lock()
@@ -33,33 +16,58 @@ class StorageManager:
             os.makedirs(self.storage_folder)
         self.storage_file = path.join(self.storage_folder, "local_storage.txt")
         if not path.exists(self.storage_file):
-            create_file(self.storage_file)
+            self.create_file(self.storage_file)
         self.failed_downloads = path.join(self.storage_folder, "failed_downloads.txt")
         if not path.exists(self.failed_downloads):
-            create_file(self.failed_downloads)
+            self.create_file(self.failed_downloads)
         self.failed_split = path.join(self.storage_folder, "failed_split.txt")
         if not path.exists(self.failed_split):
-            create_file(self.failed_split)
+            self.create_file(self.failed_split)
+
+    @staticmethod
+    def read_file(location: str):
+        with open(location, "r") as f:
+            return f.read()
+
+    @staticmethod
+    def create_file(location: str):
+        with open(location, "w") as f:
+            pass
+        return location
+
+    @staticmethod
+    def add_entry(location: str, url: str, title: str = None):
+        with open(location, "a") as f:
+            f.write(f"{url},{title if title else 'None'}\n")
+        return location
 
     def already_downloaded(self, url: str) -> bool:
         if not path.exists(self.storage_file):
             return False
-        data = read_file(self.storage_file)
-        data = data.splitlines()
-        if not url in data:
-            return False
-        return True
+        data = self.read_file(self.storage_file)
+        data = [
+            line.split(",")[0] if "," in line else line for line in data.splitlines()
+        ]
+        return url in data
 
-    def mark_successful_download(self, url: str):
-        append_to_file(self.storage_file, url)
+    def mark_successful_download(self, url: str, title: str = None):
+        self.add_entry(self.storage_file, url, title)
 
-    def troublesome_download(self, url: str):
-        if not url in read_file(self.failed_downloads):
-            append_to_file(self.failed_downloads, url)
+    def troublesome_download(self, url: str, title: str = None):
+        data = self.read_file(self.failed_downloads)
+        data = [
+            line.split(",")[0] if "," in line else line for line in data.splitlines()
+        ]
+        if url not in data:
+            self.add_entry(self.failed_downloads, url, title)
 
-    def troublesome_split(self, url: str):
-        if not url in read_file(self.failed_split):
-            append_to_file(self.failed_split, url)
+    def troublesome_split(self, url: str, title: str = None):
+        data = self.read_file(self.failed_split)
+        data = [
+            line.split(",")[0] if "," in line else line for line in data.splitlines()
+        ]
+        if url not in data:
+            self.add_entry(self.failed_split, url, title)
 
 
 class LibraryManager:
