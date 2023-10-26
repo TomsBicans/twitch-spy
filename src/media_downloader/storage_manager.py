@@ -35,20 +35,22 @@ class StorageManager:
             pass
         return location
 
-    @staticmethod
-    def add_entry(location: str, url: str, title: str = None):
-        with open(location, "a") as f:
-            f.write(f"{url},{title if title else 'None'}\n")
-        return location
+    def add_entry(self, location: str, url: str, title: str = None):
+        with self.lock:
+            with open(location, "a") as f:
+                f.write(f"{url},{title if title else 'None'}\n")
+            return location
 
     def already_downloaded(self, url: str) -> bool:
-        if not path.exists(self.storage_file):
-            return False
-        data = self.read_file(self.storage_file)
-        data = [
-            line.split(",")[0] if "," in line else line for line in data.splitlines()
-        ]
-        return url in data
+        with self.lock:
+            if not path.exists(self.storage_file):
+                return False
+            data = self.read_file(self.storage_file)
+            data = [
+                line.split(",")[0] if "," in line else line
+                for line in data.splitlines()
+            ]
+            return url in data
 
     def mark_successful_download(self, url: str, title: str = None):
         self.add_entry(self.storage_file, url, title)
