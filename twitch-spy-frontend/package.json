@@ -9,12 +9,14 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.97",
+    "@types/prettier": "^3.0.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@types/react-redux": "^7.1.33",
     "@types/react-router-dom": "^5.3.3",
     "@types/redux-thunk": "^2.1.0",
     "@types/socket.io-client": "^3.0.0",
+    "prettier": "^3.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.1.2",
@@ -31,7 +33,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}' --fix",
+    "lint-check": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
+    "format": "prettier --write 'src/**/*.{js,jsx,ts,tsx,css,md}' 'public/**/*.html'",
+    "format-check": "prettier --check 'src/**/*.{js,jsx,ts,tsx,css,md}' 'public/**/*.html'"
   },
   "eslintConfig": {
     "extends": [
