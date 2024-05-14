@@ -17,5 +17,8 @@ else
     source venv/bin/activate
 fi
 
+# Install python requriments with 'python3'
+python3 -m pip install -r requirements.txt
+
 # Launch main aplication
 python3 ./main.py
