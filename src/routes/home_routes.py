@@ -1,7 +1,9 @@
+from typing import List
 from uuid import UUID
 from flask import Blueprint, render_template, jsonify
 import config
 import src.app as app
+from src.media_downloader.atomizer import Atom
 import src.util as util
 import src.media_downloader.platform_handlers as ph
 import src.media_downloader.constants as const
@@ -67,7 +69,7 @@ def handle_ready_for_data():
 def get_all_jobs():
     logger.debug("Fetching all jobs.")
     my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
-    all_jobs = my_app.job_manager.get_all_jobs()
+    all_jobs: List[Atom] = my_app.job_manager.get_all_jobs()
     jobs_list = [job.to_dict() for job in all_jobs]
     return jsonify(jobs_list)
 

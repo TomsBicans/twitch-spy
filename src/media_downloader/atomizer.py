@@ -66,3 +66,15 @@ class Atom:
             f"download_dir={self.download_dir}, "
             f"status={self.status})"
         )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "url": self.url,
+            "url_valid": self.url_valid,
+            "platform": self.platform.name,
+            "single_item": self.single_item,
+            "content_type": self.content_type.name,
+            "download_dir": self.download_dir,
+            "status": self.status.name,
+        }
