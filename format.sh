@@ -29,7 +29,7 @@ cd twitch-spy-frontend || exit 1
 # Accepts --check or --fix as the first argument
 MODE=$1
 
-if [[ "$MODE" == "--fix" ]]; then
+if [[ "$MODE" == "--fix" || "$MODE" == "" ]]; then
     echo "Applying code formatting..."
     npm run format
 fi
