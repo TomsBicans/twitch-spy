@@ -1,12 +1,43 @@
 import React, { useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 
+enum PLATFORM {
+  TWITCH = "TWITCH",
+  YOUTUBE = "YOUTUBE",
+  UNDEFINED = "UNDEFINED",
+}
+
+enum CONTENT_MODE {
+  VIDEO = "VIDEO",
+  AUDIO = "AUDIO",
+  BOTH = "BOTH",
+}
+
+enum PROCESS_STATUS {
+  QUEUED = "QUEUED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
+interface Atom {
+  id: string; // UUID
+  url: string;
+  url_valid: boolean;
+  platform: PLATFORM;
+  single_item: boolean;
+  content_type: CONTENT_MODE;
+  content_name?: string; // Optional
+  download_dir: string;
+  status: PROCESS_STATUS;
+}
+
 interface JobStatusesProps {
   socket: Socket;
 }
 
 export const JobStatuses = ({ socket }: JobStatusesProps) => {
-  const [jobs, setJobs] = useState<Array<any>>([]);
+  const [jobs, setJobs] = useState<Array<Atom>>([]);
 
   const updateAtomStatus = (data: any) => {
     setJobs((prevJobs) => {
