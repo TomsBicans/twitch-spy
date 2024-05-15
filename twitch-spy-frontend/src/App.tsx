@@ -10,7 +10,7 @@ const socket = io("localhost:5000"); // Socket to backend
 const App: React.FC = () => {
   return (
     <div className="App">
-      <h1>yt-dlp-music panel</h1>
+      <h1>twitch-spy-music panel</h1>
       <URLInput />
       <JobOverview socket={socket} />
       <JobList socket={socket} />
