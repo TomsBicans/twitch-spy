@@ -20,7 +20,7 @@ export const URLInput = () => {
         .then((response) => response.json())
         .then((data) => {
           console.log("Server response:", data);
-        });
+        }).then(() => setTextValue(""));
     }
   };
 
