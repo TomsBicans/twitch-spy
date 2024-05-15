@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 import "./App.css";
+import URLInput from "./components/URLInput";
 
 const socket = io(window.location.origin);
 
@@ -33,20 +34,6 @@ const App: React.FC = () => {
     socket.emit("request_initial_data");
   }, []);
 
-  const submitForm = () => {
-    const formData = new FormData(
-      document.getElementById("urlForm") as HTMLFormElement,
-    );
-    fetch("/", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Server response:", data);
-      });
-  };
-
   const updateAtomStatus = (data: any) => {
     setJobs((prevJobs) => {
       const existingJob = prevJobs.find((job) => job.id === data.id);
@@ -63,23 +50,7 @@ const App: React.FC = () => {
     <div className="App">
       <h1>yt-dlp-music panel</h1>
 
-      <h2>Enter URLs to download</h2>
-      <form id="urlForm">
-        <textarea
-          name="urls"
-          rows={2}
-          cols={20}
-          placeholder="Enter URLs comma-separated..."
-        ></textarea>
-        <br />
-        <input
-          type="button"
-          value="Submit URLs for processing"
-          onClick={submitForm}
-        />
-      </form>
-      <br />
-
+      <URLInput />
       <h2>Job Statistics</h2>
       <div id="jobStats">
         {Object.entries(jobStats).map(([key, value]) => (
