@@ -1,3 +1,4 @@
+from uuid import UUID
 from flask import Blueprint, render_template, jsonify
 import config
 import src.app as app
@@ -60,3 +61,23 @@ def handle_ready_for_data():
     )
     for job in my_app.job_manager.get_all_jobs():
         my_app.event_dispatcher.dispatch_event(Events.JOB_RENDER.value, job)
+
+
+@home_routes.route("/jobs", methods=["GET"])
+def get_all_jobs():
+    logger.debug("Fetching all jobs.")
+    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    all_jobs = my_app.job_manager.get_all_jobs()
+    jobs_list = [job.to_dict() for job in all_jobs]
+    return jsonify(jobs_list)
+
+
+@home_routes.route("/jobs/<job_id>", methods=["GET"])
+def get_job_by_id(job_id):
+    logger.debug(f"Fetching job: {job_id}")
+    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    job = my_app.job_manager.get_job(UUID(job_id))
+    if job:
+        return jsonify(job.to_dict())
+    else:
+        return jsonify({"error": "Job not found"}), 404
