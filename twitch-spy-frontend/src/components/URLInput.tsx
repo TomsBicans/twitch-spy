@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { TextInputStats } from "./util/TextInputStats";
 
 export const URLInput = () => {
   const [userInput, setUserInput] = useState("");
@@ -35,6 +36,7 @@ export const URLInput = () => {
           cols={20}
           placeholder="Enter URLs comma-separated..."
         ></textarea>
+        <TextInputStats value={userInput} />
         <br />
         <button type="submit">Submit URLs for processing</button>
       </form>
