@@ -15,16 +15,13 @@
     "extends": [
       "eslint:recommended",
       "plugin:react/recommended",
-      "plugin:@typescript-eslint/recommended",
-      "standard-with-typescript"
+      "plugin:@typescript-eslint/recommended"
     ],
     "plugins": [
       "react",
       "@typescript-eslint"
     ],
     "rules": {
-      "semi": ["error", "always"],
-      "quotes": ["error", "single"]
     }
   }
   
