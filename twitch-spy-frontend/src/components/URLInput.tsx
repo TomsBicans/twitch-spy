@@ -1,12 +1,12 @@
 import React, { useRef, useState } from "react";
 
 export const URLInput = () => {
-  const [textValue, setTextValue] = useState("");
+  const [userInput, setUserInput] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const submitForm = (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Text value:", textValue);
+    console.log("Text value:", userInput);
     if (formRef.current) {
       fetch("/", {
         method: "POST",
@@ -14,14 +14,14 @@ export const URLInput = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          urls: textValue,
+          urls: userInput,
         }),
       })
         .then((response) => response.json())
         .then((data) => {
           console.log("Server response:", data);
         })
-        .then(() => setTextValue(""));
+        .then(() => setUserInput(""));
     }
   };
 
@@ -29,8 +29,8 @@ export const URLInput = () => {
     <div>
       <form ref={formRef} onSubmit={submitForm}>
         <textarea
-          value={textValue}
-          onChange={(e) => setTextValue(e.target.value)}
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
           rows={2}
           cols={20}
           placeholder="Enter URLs comma-separated..."
