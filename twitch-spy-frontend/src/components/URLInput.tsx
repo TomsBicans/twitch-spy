@@ -32,8 +32,8 @@ export const URLInput = () => {
         <textarea
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          rows={2}
-          cols={20}
+          rows={6}
+          cols={60}
           placeholder="Enter URLs comma-separated..."
         ></textarea>
         <TextInputStats value={userInput} />
