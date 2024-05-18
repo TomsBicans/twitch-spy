@@ -1,27 +1,21 @@
-import React, { useMemo } from "react";
+import React from "react";
+import "./TextInputStats.css";
 
 interface TextInputStatsProps {
-  value: string;
+  urlCount: number;
+  inputValidity: boolean;
 }
 
-const isValidUrl = (url: string): boolean => {
-  const validURLRegex =
-    /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
-  return validURLRegex.test(url);
-};
-
-const isInputValid = (input: string): boolean => {
-  const urlList = input.split(",");
-  return urlList.every(isValidUrl);
-};
-
-export const TextInputStats: React.FC<TextInputStatsProps> = ({ value }) => {
-  const urlCount = useMemo(() => value.split(",").length, [value]);
-  const inputValidity = useMemo(() => isInputValid(value), [value]);
-
+export const TextInputStats: React.FC<TextInputStatsProps> = ({
+  urlCount,
+  inputValidity,
+}) => {
   return (
     <div>
-      <h3>{urlCount}</h3>
+      <h3>
+        {urlCount} valid URL{urlCount === 1 ? "" : "s"}
+      </h3>
+      {}
       <h3 className={inputValidity ? "valid" : "invalid"}>
         Input is {inputValidity ? "valid" : "invalid"}
       </h3>
