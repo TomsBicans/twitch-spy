@@ -28,8 +28,10 @@ export const URLInput = () => {
 
   const cleanInput = (input: string): string => {
     return input
+      .replace(/\s+/g, ",")
       .split(",")
       .map((url) => url.trim())
+      .filter((url) => url !== "")
       .join(",");
   };
 
@@ -40,7 +42,11 @@ export const URLInput = () => {
   };
 
   const isInputValid = (input: string): boolean => {
-    const urlList = input.split(",");
+    const urlList = input.replace(/\s+/g, ",").split(",");
+    // No empty URLs allowed
+    if (urlList.some((url) => url.trim() === "")) {
+      return false;
+    }
     return urlList.every(isValidUrl);
   };
 
@@ -61,10 +67,22 @@ export const URLInput = () => {
         ></textarea>
         <TextInputStats
           urlCount={calcValidUrlCount(cleanInput(userInput))}
-          inputValidity={isInputValid(cleanInput(userInput))}
+          inputValidity={isInputValid(userInput)}
         />
         <br />
-        <button type="submit">Submit URLs for processing</button>
+        {!isInputValid(userInput) && isInputValid(cleanInput(userInput)) && (
+          <>
+            <button onClick={() => setUserInput(cleanInput(userInput))}>
+              Fix input
+            </button>
+            <br />
+          </>
+        )}
+        {/* Normalize input value if it is valid but does not conform to uniform value separator */}
+        {isInputValid(userInput)}
+        <button type="submit" disabled={!isInputValid(userInput)}>
+          Submit URLs for processing
+        </button>
       </form>
     </div>
   );
