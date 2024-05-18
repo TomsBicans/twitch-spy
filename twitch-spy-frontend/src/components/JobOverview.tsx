@@ -5,6 +5,7 @@ import JobStat, {
   JobStatistics,
   ProcessingStates,
 } from "./util/JobStats";
+import "./JobOverview.css";
 
 interface JobOverviewProps {
   socket: Socket;
@@ -15,8 +16,8 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
     [ProcessingStates.QUEUED]: 0,
     [ProcessingStates.PROCESSING]: 0,
     [ProcessingStates.FINISHED]: 0,
-    [ProcessingStates.CANCELLED]: 0,
     [ProcessingStates.FAILED]: 0,
+    [ProcessingStates.CANCELLED]: 0,
     [ProcessingStates.INVALID]: 0,
   });
 
