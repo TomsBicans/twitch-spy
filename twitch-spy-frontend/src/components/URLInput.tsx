@@ -32,6 +32,7 @@ export const URLInput = () => {
       .split(",")
       .map((url) => url.trim())
       .filter((url) => url !== "")
+      .filter((url) => isValidUrl(url))
       .join(",");
   };
 
@@ -69,6 +70,12 @@ export const URLInput = () => {
           urlCount={calcValidUrlCount(cleanInput(userInput))}
           inputValidity={isInputValid(userInput)}
         />
+        <>
+          <button onClick={() => setUserInput(cleanInput(userInput))}>
+            Fix input
+          </button>
+          <br />
+        </>
         <br />
         {!isInputValid(userInput) && isInputValid(cleanInput(userInput)) && (
           <>
