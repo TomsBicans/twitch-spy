@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import io from "socket.io-client";
 import "./App.css";
 import URLInput from "./components/URLInput";
