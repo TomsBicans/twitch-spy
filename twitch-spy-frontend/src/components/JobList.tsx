@@ -71,7 +71,7 @@ export const JobList = ({ socket }: JobStatusesProps) => {
             >
               <td>{job.content_name}</td>
               <td>{job.content_type}</td>
-              <td>{job.url}</td>
+              <td><a href={job.url}>{job.url}</a></td>
               <td className={`statusColumn status-${job.status.toLowerCase()}`}>
                 {job.status}
               </td>
