@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Socket } from "socket.io-client";
+import { ProcessingStates } from "./util/JobStats";
 
 enum PLATFORM {
   TWITCH = "TWITCH",
@@ -13,13 +14,6 @@ enum CONTENT_MODE {
   BOTH = "BOTH",
 }
 
-enum PROCESS_STATUS {
-  QUEUED = "QUEUED",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-}
-
 interface Atom {
   id: string; // UUID
   url: string;
@@ -29,22 +23,22 @@ interface Atom {
   content_type: CONTENT_MODE;
   content_name?: string; // Optional
   download_dir: string;
-  status: PROCESS_STATUS;
+  status: ProcessingStates;
 }
 
 interface JobStatusesProps {
   socket: Socket;
 }
 
-export const JobStatuses = ({ socket }: JobStatusesProps) => {
+export const JobList = ({ socket }: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
 
-  const updateAtomStatus = (data: any) => {
+  const updateAtomStatus = (data: Atom) => {
     setJobs((prevJobs) => {
       const existingJob = prevJobs.find((job) => job.id === data.id);
       if (existingJob) {
         return prevJobs.map((job) =>
-          job.id === data.id ? { ...job, ...data } : job,
+          job.id === data.id ? { ...job, ...data } : job
         );
       }
       return [{ ...data }, ...prevJobs];
@@ -77,7 +71,7 @@ export const JobStatuses = ({ socket }: JobStatusesProps) => {
             >
               <td>{job.content_name}</td>
               <td>{job.content_type}</td>
-              <td>{job.url}</td>
+              <td><a href={job.url}>{job.url}</a></td>
               <td className={`statusColumn status-${job.status.toLowerCase()}`}>
                 {job.status}
               </td>
@@ -89,4 +83,4 @@ export const JobStatuses = ({ socket }: JobStatusesProps) => {
   );
 };
 
-export default JobStatuses;
+export default JobList;

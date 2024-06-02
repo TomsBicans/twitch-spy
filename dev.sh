@@ -11,4 +11,5 @@ fi
 
 # Start the React development server
 echo "Starting the React development server..."
+chmod +x node_modules/.bin/react-scripts
 npm start

@@ -1,0 +1,57 @@
+#jobStats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ccc;
+  padding: 2px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.stat-label {
+  margin-top: 5px;
+  font-size: 16px;
+  color: #777;
+}
+
+.queued-class {
+  background-color: #c8e6ff;
+}
+
+.processing-class {
+  background-color: #fff7b3;
+}
+
+.finished-class {
+  background-color: #caffca;
+}
+
+.cancelled-class {
+  background-color: #f5f5f5;
+}
+
+.failed-class {
+  background-color: #ffc0cb;
+}
+
+.invalid-class {
+  background-color: #f5f5f5;
+}
