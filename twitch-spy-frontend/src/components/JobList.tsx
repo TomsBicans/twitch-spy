@@ -30,7 +30,7 @@ interface JobStatusesProps {
   socket: Socket;
 }
 
-export const JobStatuses = ({ socket }: JobStatusesProps) => {
+export const JobList = ({ socket }: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
 
   const updateAtomStatus = (data: Atom) => {
@@ -83,4 +83,4 @@ export const JobStatuses = ({ socket }: JobStatusesProps) => {
   );
 };
 
-export default JobStatuses;
+export default JobList;
