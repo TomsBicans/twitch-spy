@@ -1,24 +1,5 @@
 import React from "react";
-
-export enum ProcessingStates {
-  QUEUED = "queued",
-  PROCESSING = "processing",
-  FINISHED = "finished",
-  CANCELLED = "cancelled",
-  FAILED = "failed",
-  INVALID = "invalid",
-}
-
-export interface JobStatistics {
-  [ProcessingStates.QUEUED]: number;
-  [ProcessingStates.PROCESSING]: number;
-  [ProcessingStates.FINISHED]: number;
-  [ProcessingStates.CANCELLED]: number;
-  [ProcessingStates.FAILED]: number;
-  [ProcessingStates.INVALID]: number;
-}
-
-export type JobStatKey = keyof JobStatistics;
+import { ProcessingStates } from "../../backend/models";
 
 interface JobStatProps {
   processingState: ProcessingStates;

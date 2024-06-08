@@ -1,30 +1,6 @@
 import React, { useState } from "react";
 import { Socket } from "socket.io-client";
-import { ProcessingStates } from "./util/JobStats";
-
-enum PLATFORM {
-  TWITCH = "TWITCH",
-  YOUTUBE = "YOUTUBE",
-  UNDEFINED = "UNDEFINED",
-}
-
-enum CONTENT_MODE {
-  VIDEO = "VIDEO",
-  AUDIO = "AUDIO",
-  BOTH = "BOTH",
-}
-
-interface Atom {
-  id: string; // UUID
-  url: string;
-  url_valid: boolean;
-  platform: PLATFORM;
-  single_item: boolean;
-  content_type: CONTENT_MODE;
-  content_name?: string; // Optional
-  download_dir: string;
-  status: ProcessingStates;
-}
+import { Atom } from "../backend/models";
 
 interface JobStatusesProps {
   socket: Socket;
@@ -71,7 +47,9 @@ export const JobList = ({ socket }: JobStatusesProps) => {
             >
               <td>{job.content_name}</td>
               <td>{job.content_type}</td>
-              <td><a href={job.url}>{job.url}</a></td>
+              <td>
+                <a href={job.url}>{job.url}</a>
+              </td>
               <td className={`statusColumn status-${job.status.toLowerCase()}`}>
                 {job.status}
               </td>

@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
-import JobStat, {
-  JobStatKey,
-  JobStatistics,
-  ProcessingStates,
-} from "./util/JobStats";
+import JobStat from "./util/JobStats";
+import { JobStatKey, JobStatistics, ProcessingStates } from "../backend/models";
 import "./JobOverview.css";
 
 interface JobOverviewProps {
