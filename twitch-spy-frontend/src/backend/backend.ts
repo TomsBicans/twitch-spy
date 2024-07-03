@@ -1,78 +1,77 @@
-export {};
-export const BACKEND_URL = "localhost:5000";
+export const BACKEND_URL = "http://localhost:5000";
 
-// export type APIRequest = {
-//   endpoint: string;
-//   method: "GET" | "POST" | "DELETE";
-//   input: object; // Expected input type from frontend
-//   output: object; // Expected output type from backend
-// };
+type HTTPMethod = "GET" | "POST" | "DELETE";
 
-interface APIRequest<M extends "GET" | "POST" | "DELETE", I, O> {
+interface APIRequest<M extends HTTPMethod, I, O> {
   method: M;
   input: I;
   output: O;
 }
 
-export type BackendOpNames =
-  | "job_data"
-  | "all_jobs"
-  | "input_form_metadata"
-  | "input_form_submit";
-// export type BackendOp = { name: BackendOpNames } & APIRequest;
+export interface Endpoints {
+  job_data: {
+    GET: APIRequest<"GET", JobDataInput, JobDataOutput>;
+    POST: APIRequest<"POST", {}, {}>;
+  };
+  all_jobs: {
+    GET: APIRequest<"GET", {}, {}>;
+  };
+  input_form_metadata: {
+    POST: APIRequest<"POST", {}, {}>;
+  };
+  input_form_submit: {
+    POST: APIRequest<"POST", {}, {}>;
+  };
+}
 
-// export type APIMap = Record<string, APIRequest>;
+export type BackendOpNames = keyof Endpoints;
+export type BackendMethods<N extends BackendOpNames> = keyof Endpoints[N];
 
-export interface APIRequestMap {}
+type EndpointInput<N extends BackendOpNames, M extends BackendMethods<N>> =
+  Endpoints[N][M] extends APIRequest<infer _, infer I, infer _> ? I : never;
 
-// const BackendOps: BackendOp[] = [
-//   {
-//     name: "job_data",
-//     endpoint: "/job_data",
-//     method: "GET",
-//     input: {
-//       job_id: "string",
-//     },
-//     output: {},
-//   },
-//   {
-//     name: "all_jobs",
-//     endpoint: "/all_jobs",
-//     method: "GET",
-//     input: {},
-//     output: {
-//       jobs: "array",
-//     },
-//   },
-//   {
-//     name: "input_form_metadata",
-//     endpoint: "/input_metadata",
-//     method: "POST",
-//     input: {
-//       userInput: "string",
-//     },
-//     output: {},
-//   },
-//   {
-//     name: "input_form_submit",
-//     endpoint: "/input_form",
-//     method: "POST",
-//     input: {
-//       userInput: "string",
-//     },
-//     output: {},
-//   },
-// ];
+type EndpointOutput<N extends BackendOpNames, M extends BackendMethods<N>> =
+  Endpoints[N][M] extends APIRequest<infer _, infer _, infer O> ? O : never;
+
+export type BackendOp<M extends "GET" | "POST" | "DELETE", I, O> = {
+  name: BackendOpNames;
+} & APIRequest<M, I, O>;
+
+const BackendOpExample: BackendOp<"GET", {}, {}> = {
+  name: "job_data",
+  method: "GET",
+  input: {
+    job_id: "string",
+  },
+  output: {},
+};
+
+export interface JobDataInput {
+  job_id: string;
+}
+
+export interface JobDataOutput {
+  url: string;
+  url_valid: boolean;
+  platform: string;
+  single_item: boolean;
+  content_type: string;
+  content_name?: string;
+  download_dir: string;
+  status: string;
+}
+
 // Generic request sending function using axios:
-
-export const sendRequest = async <T, O extends BackendOpNames>(
-  apiEndpoint: string,
-  method: "GET" | "POST" | "DELETE" = "GET",
-  input: T,
-  output: T,
-  body?: {}
-): Promise<T> => {
-  const response = await fetch(apiEndpoint, {
+export const sendRequest = async <
+  N extends BackendOpNames,
+  M extends BackendMethods<N> & HTTPMethod,
+>(
+  endpointName: N,
+  method: M,
+  body: EndpointInput<N, M>
+): Promise<EndpointOutput<N, M>> => {
+  const url = `${BACKEND_URL}/${String(endpointName)}`;
+  const response = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -82,4 +81,7 @@ export const sendRequest = async <T, O extends BackendOpNames>(
   return response.json();
 };
 
-// Examples
+const exampleUsage = async () => {
+  const resposne = await sendRequest("job_data", "GET", {});
+  console.log(resposne);
+};
