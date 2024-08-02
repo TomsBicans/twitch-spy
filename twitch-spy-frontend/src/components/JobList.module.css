@@ -61,6 +61,19 @@
   text-overflow: ellipsis;
 }
 
+.filterSelect {
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  color: #666;
+}
+
+.filterContainer {
+  margin-bottom: 20px;
+}
+
 .statusBar {
   padding: 5px 10px;
   font-size: 12px;

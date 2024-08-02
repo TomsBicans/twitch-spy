@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { Socket } from "socket.io-client";
-import { Atom } from "../backend/models";
+import { Atom, ProcessingStates } from "../backend/models";
 import styles from "./JobList.module.css";
 
 interface JobStatusesProps {
   socket: Socket;
 }
 
+type SelectedProcessingState = ProcessingStates | "all";
+
 export const JobList = ({ socket }: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
+  const [selectedJobProcessingState, setSelectedJobProcessingState] =
+    useState<SelectedProcessingState>(ProcessingStates.FINISHED);
 
   const updateAtomStatus = (data: Atom) => {
     setJobs((prevJobs) => {
@@ -40,11 +44,45 @@ export const JobList = ({ socket }: JobStatusesProps) => {
     }
   };
 
+  const filterJobs = (
+    jobs: Array<Atom>,
+    processingState: SelectedProcessingState
+  ) => {
+    if (processingState === "all") {
+      return jobs;
+    }
+    return jobs.filter((job) => job.status === processingState);
+  };
+
+  const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedJobProcessingState(
+      event.target.value as SelectedProcessingState
+    );
+  };
+
+  const filteredJobs = filterJobs(jobs, selectedJobProcessingState);
+
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Song List</h2>
+      <div className={styles.filterContainer}>
+        <label htmlFor="statusFilter">Filter by status: </label>
+        <select
+          id="statusFilter"
+          value={selectedJobProcessingState}
+          onChange={handleFilterChange}
+          className={styles.filterSelect}
+        >
+          <option value="all">All</option>
+          {Object.values(ProcessingStates).map((state) => (
+            <option key={state} value={state}>
+              {state}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className={styles.gridContainer}>
-        {jobs.map((job) => (
+        {filteredJobs.map((job) => (
           <div key={job.id} className={styles.card}>
             <div className={styles.cardHeader}>
               <span className={styles.contentType}>
