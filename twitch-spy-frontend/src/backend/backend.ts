@@ -17,6 +17,15 @@ const JobDataOutputSchema = z.object({
   status: z.string(),
 });
 
+const FormSubmitInputSchema = z.object({
+  urls: z.string(),
+});
+
+const FormSubmitOutputSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
+
 // Flattened API structure
 const api = {
   "job_data.GET": {
@@ -31,6 +40,10 @@ const api = {
     input: z.object({}).strict(),
     output: z.array(JobDataOutputSchema),
   },
+  "form_submit.POST": {
+    input: FormSubmitInputSchema,
+    output: FormSubmitOutputSchema,
+  },
 } as const;
 
 type API = typeof api;
@@ -43,7 +56,7 @@ type OutputType<EM extends EndpointMethod> = z.infer<API[EM]["output"]>;
 type StrictEmpty<T> =
   T extends Record<string, never> ? T & Record<string, never> : T;
 
-export async function apiRequest<EM extends EndpointMethod>(
+async function apiRequest<EM extends EndpointMethod>(
   endpointMethod: EM,
   data: StrictEmpty<InputType<EM>>
 ): Promise<OutputType<EM>> {
@@ -76,3 +89,5 @@ export async function exampleUsage() {
   const allJobs = await apiRequest("all_jobs.GET", {});
   console.log(allJobs.length);
 }
+
+export { api, apiRequest };

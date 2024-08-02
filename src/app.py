@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from src.media_downloader.job_manager import JobManager, JobStats
 from src.media_downloader.storage_manager import LibraryManager
 from src.media_downloader.atomizer import Atom
@@ -21,6 +22,7 @@ class Application:
         args = cli.parse_args()
         self.shutdown_event = threading.Event()
         self.app = Flask(__name__, template_folder="../templates")
+        CORS(self.app, resources={r"/*": {"origins": "http://localhost:3000"}})
         self.app.register_blueprint(home_routes)
         socketio.init_app(self.app)
 
