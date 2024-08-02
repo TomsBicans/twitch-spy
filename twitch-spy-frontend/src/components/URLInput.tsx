@@ -1,28 +1,28 @@
 import React, { useRef, useState } from "react";
 import { TextInputStats } from "./util/TextInputStats";
+import { apiRequest } from "../backend/backend";
 
 export const URLInput = () => {
   const [userInput, setUserInput] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
-  const submitForm = (event: React.FormEvent) => {
+  const submitForm = async (event: React.FormEvent) => {
     event.preventDefault();
     console.log("Text value:", userInput);
     if (formRef.current) {
-      fetch("/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      try {
+        const response = await apiRequest("form_submit.POST", {
           urls: userInput,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Server response:", data);
-        })
-        .then(() => setUserInput(""));
+        });
+        console.log("Server response:", response);
+        if (response.success) {
+          setUserInput("");
+        } else {
+          console.error("Form submission failed:", response.message);
+        }
+      } catch (error) {
+        console.error("An error occurred:", error);
+      }
     }
   };
 
@@ -85,8 +85,6 @@ export const URLInput = () => {
             <br />
           </>
         )}
-        {/* Normalize input value if it is valid but does not conform to uniform value separator */}
-        {isInputValid(userInput)}
         <button type="submit" disabled={!isInputValid(userInput)}>
           Submit URLs for processing
         </button>
