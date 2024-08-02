@@ -1,4 +1,23 @@
+import { z } from "zod";
 export const BACKEND_URL = "http://localhost:5000";
+
+const JobDataInputSchema = z.object({
+  job_id: z.string(),
+});
+
+const JobDataOutputSchema = z.object({
+  url: z.string(),
+  url_valid: z.boolean(),
+  platform: z.string(),
+  single_item: z.boolean(),
+  content_type: z.string(),
+  content_name: z.string().optional(),
+  download_dir: z.string(),
+  status: z.string(),
+});
+
+export type JobDataInput = z.infer<typeof JobDataInputSchema>;
+export type JobDataOutput = z.infer<typeof JobDataOutputSchema>;
 
 type HTTPMethod = "GET" | "POST" | "DELETE";
 
@@ -24,17 +43,16 @@ export interface Endpoints {
   };
 }
 
-export type BackendOpNames = keyof Endpoints;
-export type BackendMethods<N extends BackendOpNames> = keyof Endpoints[N];
+export type BackendMethods<N extends keyof Endpoints> = keyof Endpoints[N];
 
-type EndpointInput<N extends BackendOpNames, M extends BackendMethods<N>> =
+type EndpointInput<N extends keyof Endpoints, M extends BackendMethods<N>> =
   Endpoints[N][M] extends APIRequest<infer _, infer I, infer _> ? I : never;
 
-type EndpointOutput<N extends BackendOpNames, M extends BackendMethods<N>> =
+type EndpointOutput<N extends keyof Endpoints, M extends BackendMethods<N>> =
   Endpoints[N][M] extends APIRequest<infer _, infer _, infer O> ? O : never;
 
-export type BackendOp<M extends "GET" | "POST" | "DELETE", I, O> = {
-  name: BackendOpNames;
+export type BackendOp<M extends HTTPMethod, I, O> = {
+  name: keyof Endpoints;
 } & APIRequest<M, I, O>;
 
 const BackendOpExample: BackendOp<"GET", {}, {}> = {
@@ -46,24 +64,9 @@ const BackendOpExample: BackendOp<"GET", {}, {}> = {
   output: {},
 };
 
-export interface JobDataInput {
-  job_id: string;
-}
-
-export interface JobDataOutput {
-  url: string;
-  url_valid: boolean;
-  platform: string;
-  single_item: boolean;
-  content_type: string;
-  content_name?: string;
-  download_dir: string;
-  status: string;
-}
-
 // Generic request sending function using axios:
 export const sendRequest = async <
-  N extends BackendOpNames,
+  N extends keyof Endpoints,
   M extends BackendMethods<N> & HTTPMethod,
 >(
   endpointName: N,
@@ -71,6 +74,7 @@ export const sendRequest = async <
   body: EndpointInput<N, M>
 ): Promise<EndpointOutput<N, M>> => {
   const url = `${BACKEND_URL}/${String(endpointName)}`;
+
   const response = await fetch(url, {
     method,
     headers: {
@@ -82,6 +86,6 @@ export const sendRequest = async <
 };
 
 const exampleUsage = async () => {
-  const resposne = await sendRequest("job_data", "GET", {});
+  const resposne = await sendRequest("job_data", "GET");
   console.log(resposne);
 };
