@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import JobStat from "./util/JobStats";
-import { JobStatKey, JobStatistics, ProcessingStates } from "../backend/models";
+import { JobStatistics, ProcessingStates } from "../backend/models";
 import "./JobOverview.css";
 
 interface JobOverviewProps {
@@ -18,6 +18,15 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
     [ProcessingStates.INVALID]: 0,
   });
 
+  const panelConfig = [
+    { state: ProcessingStates.QUEUED, visible: true },
+    { state: ProcessingStates.PROCESSING, visible: true },
+    { state: ProcessingStates.FAILED, visible: true },
+    { state: ProcessingStates.FINISHED, visible: true },
+    { state: ProcessingStates.CANCELLED, visible: false },
+    { state: ProcessingStates.INVALID, visible: false },
+  ];
+
   useEffect(() => {
     socket.on("statistics_update", (data) => {
       console.log(data);
@@ -31,15 +40,17 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
   }, []);
   return (
     <div>
-      <h2>Job Statistics</h2>
+      <h2>Local library Statistics</h2>
       <div id="jobStats">
-        {Object.entries(jobStats).map(([key, value]) => (
-          <JobStat
-            key={key}
-            processingState={key as JobStatKey}
-            value={value}
-          />
-        ))}
+        {panelConfig
+          .filter((config) => config.visible)
+          .map((config) => (
+            <JobStat
+              key={config.state}
+              processingState={config.state}
+              value={jobStats[config.state]}
+            />
+          ))}
       </div>
     </div>
   );
