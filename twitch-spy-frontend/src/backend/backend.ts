@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 export const BACKEND_URL = "http://localhost:5000";
 
 const JobDataInputSchema = z.object({
@@ -16,76 +17,62 @@ const JobDataOutputSchema = z.object({
   status: z.string(),
 });
 
-export type JobDataInput = z.infer<typeof JobDataInputSchema>;
-export type JobDataOutput = z.infer<typeof JobDataOutputSchema>;
-
-type HTTPMethod = "GET" | "POST" | "DELETE";
-
-interface APIRequest<M extends HTTPMethod, I, O> {
-  method: M;
-  input: I;
-  output: O;
-}
-
-export interface Endpoints {
-  job_data: {
-    GET: APIRequest<"GET", JobDataInput, JobDataOutput>;
-    POST: APIRequest<"POST", {}, {}>;
-  };
-  all_jobs: {
-    GET: APIRequest<"GET", {}, {}>;
-  };
-  input_form_metadata: {
-    POST: APIRequest<"POST", {}, {}>;
-  };
-  input_form_submit: {
-    POST: APIRequest<"POST", {}, {}>;
-  };
-}
-
-export type BackendMethods<N extends keyof Endpoints> = keyof Endpoints[N];
-
-type EndpointInput<N extends keyof Endpoints, M extends BackendMethods<N>> =
-  Endpoints[N][M] extends APIRequest<infer _, infer I, infer _> ? I : never;
-
-type EndpointOutput<N extends keyof Endpoints, M extends BackendMethods<N>> =
-  Endpoints[N][M] extends APIRequest<infer _, infer _, infer O> ? O : never;
-
-export type BackendOp<M extends HTTPMethod, I, O> = {
-  name: keyof Endpoints;
-} & APIRequest<M, I, O>;
-
-const BackendOpExample: BackendOp<"GET", {}, {}> = {
-  name: "job_data",
-  method: "GET",
-  input: {
-    job_id: "string",
+// Flattened API structure
+const api = {
+  "job_data.GET": {
+    input: JobDataInputSchema,
+    output: JobDataOutputSchema,
   },
-  output: {},
-};
+  "job_data.POST": {
+    input: z.object({}).strict(),
+    output: z.object({}).strict(),
+  },
+  "all_jobs.GET": {
+    input: z.object({}).strict(),
+    output: z.array(JobDataOutputSchema),
+  },
+} as const;
 
-// Generic request sending function using axios:
-export const sendRequest = async <
-  N extends keyof Endpoints,
-  M extends BackendMethods<N> & HTTPMethod,
->(
-  endpointName: N,
-  method: M,
-  body: EndpointInput<N, M>
-): Promise<EndpointOutput<N, M>> => {
-  const url = `${BACKEND_URL}/${String(endpointName)}`;
+type API = typeof api;
+type EndpointMethod = keyof API;
 
-  const response = await fetch(url, {
+type InputType<EM extends EndpointMethod> = z.infer<API[EM]["input"]>;
+type OutputType<EM extends EndpointMethod> = z.infer<API[EM]["output"]>;
+
+// Helper type to enforce empty object
+type StrictEmpty<T> =
+  T extends Record<string, never> ? T & Record<string, never> : T;
+
+export async function apiRequest<EM extends EndpointMethod>(
+  endpointMethod: EM,
+  data: StrictEmpty<InputType<EM>>
+): Promise<OutputType<EM>> {
+  const [endpoint, method] = endpointMethod.split(".") as [string, string];
+  let url = `${BACKEND_URL}/${endpoint}`;
+
+  const options: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
     },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return response.json();
-};
+  };
 
-const exampleUsage = async () => {
-  const resposne = await sendRequest("job_data", "GET");
-  console.log(resposne);
-};
+  if (method !== "GET" && data) {
+    options.body = JSON.stringify(data);
+  } else if (method === "GET" && Object.keys(data).length > 0) {
+    const params = new URLSearchParams(data as Record<string, string>);
+    url += `?${params}`;
+  }
+
+  const response = await fetch(url, options);
+  return response.json();
+}
+
+// Example usage
+export async function exampleUsage() {
+  const jobData = await apiRequest("job_data.GET", { job_id: "123" });
+  console.log(jobData.url);
+
+  const allJobs = await apiRequest("all_jobs.GET", {});
+  console.log(allJobs.length);
+}
