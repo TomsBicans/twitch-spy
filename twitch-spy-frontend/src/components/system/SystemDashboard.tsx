@@ -92,23 +92,49 @@ interface HistoricalDataPoint extends SystemStats {
 
 interface SystemStatsChartProps {
   data: HistoricalDataPoint[];
+  isAnimationActive?: boolean;
 }
 
-const SystemStatsChart: React.FC<SystemStatsChartProps> = ({ data }) => (
+const SystemStatsChart: React.FC<SystemStatsChartProps> = ({
+  data,
+  isAnimationActive = true,
+}) => (
   <ResponsiveContainer width="100%" height={300}>
     <LineChart data={data}>
       <XAxis dataKey="name" />
       <YAxis />
       <Tooltip />
-      <Line type="monotone" dataKey="cpu" stroke="#8884d8" />
-      <Line type="monotone" dataKey="memory" stroke="#82ca9d" />
-      <Line type="monotone" dataKey="disk" stroke="#ffc658" />
-      <Line type="monotone" dataKey="network" stroke="#ff7300" />
+      <Line
+        type="monotone"
+        dataKey="cpu"
+        stroke="#8884d8"
+        isAnimationActive={isAnimationActive}
+      />
+      <Line
+        type="monotone"
+        dataKey="memory"
+        stroke="#82ca9d"
+        isAnimationActive={isAnimationActive}
+      />
+      <Line
+        type="monotone"
+        dataKey="disk"
+        stroke="#ffc658"
+        isAnimationActive={isAnimationActive}
+      />
+      <Line
+        type="monotone"
+        dataKey="network"
+        stroke="#ff7300"
+        isAnimationActive={isAnimationActive}
+      />
     </LineChart>
   </ResponsiveContainer>
 );
 
 const SystemDashboard: React.FC = () => {
+  const REFRESH_DELAY = 1000;
+
   const [currentStats, setCurrentStats] =
     useState<SystemStats>(generateMockData());
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
@@ -123,7 +149,7 @@ const SystemDashboard: React.FC = () => {
         ...prevData.slice(-19),
         { name: new Date().toLocaleTimeString(), ...newStats },
       ]);
-    }, 1000);
+    }, REFRESH_DELAY);
 
     return () => clearInterval(interval);
   }, []);
@@ -154,7 +180,7 @@ const SystemDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold">Historical Usage</h3>
         </CardHeader>
         <CardContent>
-          <SystemStatsChart data={historicalData} />
+          <SystemStatsChart data={historicalData} isAnimationActive={false} />
         </CardContent>
       </Card>
     </div>
