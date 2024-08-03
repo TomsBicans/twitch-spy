@@ -111,7 +111,16 @@ const getNetworkStats = async (mock = true): Promise<NetworkStats> => {
 };
 
 const getSystemStatsBulk = async (mock = true) => {
-  return await apiRequest("system_stats_ALL.GET", {});
+  if (!mock) {
+    return await apiRequest("system_stats_ALL.GET", {});
+  } else {
+    return {
+      cpu: await getCPUStats(mock),
+      memory: await getMemoryStats(mock),
+      disk: await getDiskStats(mock),
+      network: await getNetworkStats(mock),
+    };
+  }
 };
 
 const getAllSystemStats = async (
