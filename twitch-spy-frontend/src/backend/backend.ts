@@ -2,6 +2,10 @@ import { z } from "zod";
 
 export const BACKEND_URL = "http://localhost:5000";
 
+const percentageSchema = z.number().min(0).max(100);
+const bytesSchema = z.number().nonnegative();
+const hertzSchema = z.number().positive();
+
 const JobDataInputSchema = z.object({
   job_id: z.string(),
 });
@@ -25,6 +29,70 @@ const FormSubmitOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
+// System stat schemas
+
+const cpuSchema = z.object({
+  usage: z.object({
+    total: percentageSchema,
+    perCore: z.array(percentageSchema),
+  }),
+  frequency: z.object({
+    current: hertzSchema,
+    min: hertzSchema,
+    max: hertzSchema,
+  }),
+  temperature: z.object({
+    current: z.number(),
+    critical: z.number().optional(),
+  }),
+  loadAverage: z.object({
+    "1min": z.number(),
+    "5min": z.number(),
+    "15min": z.number(),
+  }),
+});
+
+const memorySchema = z.object({
+  total: bytesSchema,
+  used: bytesSchema,
+  free: bytesSchema,
+  shared: bytesSchema,
+  buffer: bytesSchema,
+  available: bytesSchema,
+  usagePercentage: percentageSchema,
+});
+
+const diskSchema = z.object({
+  totalSpace: bytesSchema,
+  usedSpace: bytesSchema,
+  freeSpace: bytesSchema,
+  usagePercentage: percentageSchema,
+  readSpeed: bytesSchema,
+  writeSpeed: bytesSchema,
+  iops: z.number().nonnegative(),
+});
+
+const networkSchema = z.object({
+  interfaces: z.array(
+    z.object({
+      name: z.string(),
+      macAddress: z.string(),
+      ipv4: z.string().optional(),
+      ipv6: z.string().optional(),
+      status: z.enum(["up", "down"]),
+    })
+  ),
+  traffic: z.object({
+    received: bytesSchema,
+    transmitted: bytesSchema,
+  }),
+  bandwidth: z.object({
+    download: bytesSchema,
+    upload: bytesSchema,
+  }),
+  latency: z.number().nonnegative(),
+  packetLoss: percentageSchema,
+});
 
 // Flattened API structure
 const api = {
@@ -43,6 +111,22 @@ const api = {
   "form_submit.POST": {
     input: FormSubmitInputSchema,
     output: FormSubmitOutputSchema,
+  },
+  "system_stats_CPU.GET": {
+    input: z.object({}).strict(),
+    output: cpuSchema,
+  },
+  "system_stats_memory.GET": {
+    input: z.object({}).strict(),
+    output: memorySchema,
+  },
+  "system_stats_disk.GET": {
+    input: z.object({}).strict(),
+    output: diskSchema,
+  },
+  "system_stats_network.GET": {
+    input: z.object({}).strict(),
+    output: networkSchema,
   },
 } as const;
 

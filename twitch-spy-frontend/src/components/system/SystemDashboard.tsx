@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Laptop, Cpu, HardDrive, Wifi, LucideIcon } from "lucide-react";
+import { getAllSystemStats } from "./model";
 
 interface CardProps {
   children: ReactNode;
@@ -54,12 +55,25 @@ interface SystemStats {
   network: number;
 }
 
-const generateMockData = (): SystemStats => ({
-  cpu: Math.floor(Math.random() * 100),
-  memory: Math.floor(Math.random() * 100),
-  disk: Math.floor(Math.random() * 100),
-  network: Math.floor(Math.random() * 100),
-});
+const generateMockData = async ({ mock = true }): Promise<SystemStats> => {
+  if (mock) {
+    return {
+      cpu: Math.floor(Math.random() * 100),
+      memory: Math.floor(Math.random() * 100),
+      disk: Math.floor(Math.random() * 100),
+      network: Math.floor(Math.random() * 100),
+    };
+  } else {
+  }
+  const systemStats = await getAllSystemStats();
+
+  return {
+    cpu: systemStats.cpu.usage.total,
+    memory: systemStats.memory.usagePercentage,
+    disk: systemStats.disk.usagePercentage,
+    network: systemStats.network.bandwidth.download,
+  };
+};
 
 interface SystemStatCardProps {
   title: string;
@@ -134,25 +148,56 @@ const SystemStatsChart: React.FC<SystemStatsChartProps> = ({
 
 const SystemDashboard: React.FC = () => {
   const REFRESH_DELAY = 1000;
+  const MAX_HISTORY_LENGTH = 20;
 
-  const [currentStats, setCurrentStats] =
-    useState<SystemStats>(generateMockData());
+  const [currentStats, setCurrentStats] = useState<SystemStats>({
+    cpu: 0,
+    memory: 0,
+    disk: 0,
+    network: 0,
+  });
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
     []
   );
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newStats = generateMockData();
-      setCurrentStats(newStats);
-      setHistoricalData((prevData) => [
-        ...prevData.slice(-19),
-        { name: new Date().toLocaleTimeString(), ...newStats },
-      ]);
-    }, REFRESH_DELAY);
+  const [isLoading, setIsLoading] = useState(true);
 
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    const fetchAndUpdateStats = async () => {
+      try {
+        const stats = await generateMockData({ mock: false });
+        const timestamp = new Date().toLocaleTimeString();
+
+        setCurrentStats(stats);
+        setHistoricalData((prevData) => [
+          ...prevData.slice(-MAX_HISTORY_LENGTH + 1),
+          { name: timestamp, ...stats },
+        ]);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching system stats:", error);
+        // Optionally set an error state here
+      }
+    };
+
+    // Initial fetch
+    fetchAndUpdateStats();
+
+    // Set up interval for subsequent fetches
+    intervalId = setInterval(fetchAndUpdateStats, REFRESH_DELAY);
+
+    // Cleanup function
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  if (isLoading) {
+    return <div>Loading system stats...</div>;
+  }
 
   return (
     <div className="space-y-4">
