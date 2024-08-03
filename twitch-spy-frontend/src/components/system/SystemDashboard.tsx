@@ -64,15 +64,14 @@ const generateMockData = async ({ mock = true }): Promise<SystemStats> => {
       network: Math.floor(Math.random() * 100),
     };
   } else {
+    const systemStats = await getAllSystemStats(true);
+    return {
+      cpu: systemStats.cpu.usage.total,
+      memory: systemStats.memory.usagePercentage,
+      disk: systemStats.disk.usagePercentage,
+      network: systemStats.network.bandwidth.download,
+    };
   }
-  const systemStats = await getAllSystemStats();
-
-  return {
-    cpu: systemStats.cpu.usage.total,
-    memory: systemStats.memory.usagePercentage,
-    disk: systemStats.disk.usagePercentage,
-    network: systemStats.network.bandwidth.download,
-  };
 };
 
 interface SystemStatCardProps {
