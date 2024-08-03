@@ -79,12 +79,16 @@ interface SystemStatCardProps {
   title: string;
   value: number;
   icon: LucideIcon;
+  absoluteValue?: boolean;
+  unitOfMeasure?: string;
 }
 
 const SystemStatCard: React.FC<SystemStatCardProps> = ({
   title,
   value,
   icon: Icon,
+  absoluteValue = false,
+  unitOfMeasure = "",
 }) => (
   <Card className="w-full">
     <CardHeader>
@@ -94,7 +98,10 @@ const SystemStatCard: React.FC<SystemStatCardProps> = ({
       </div>
     </CardHeader>
     <CardContent>
-      <div className="text-2xl font-bold mb-2">{value}%</div>
+      <div className="text-2xl font-bold mb-2">
+        {value}
+        {absoluteValue ? (unitOfMeasure ? ` ${unitOfMeasure}` : "") : "%"}
+      </div>
       <Progress value={value} />
     </CardContent>
   </Card>
@@ -201,21 +208,30 @@ const SystemDashboard: React.FC = () => {
     <div className="space-y-4">
       <h2 className="text-3xl font-bold">System Stats</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SystemStatCard title="CPU Usage" value={currentStats.cpu} icon={Cpu} />
+        <SystemStatCard
+          title="CPU Usage"
+          value={currentStats.cpu}
+          icon={Cpu}
+          absoluteValue={false}
+        />
         <SystemStatCard
           title="Memory Usage"
           value={currentStats.memory}
           icon={Laptop}
+          absoluteValue={false}
         />
         <SystemStatCard
           title="Disk Usage"
           value={currentStats.disk}
           icon={HardDrive}
+          absoluteValue={false}
         />
         <SystemStatCard
           title="Network Usage"
-          value={currentStats.network}
+          value={Number((currentStats.network / 1024 / 1024).toFixed(2))}
           icon={Wifi}
+          absoluteValue={true}
+          unitOfMeasure="MB/s"
         />
       </div>
       <Card>
