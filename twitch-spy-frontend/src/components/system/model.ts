@@ -6,6 +6,13 @@ type MemoryStats = z.infer<(typeof api)["system_stats_memory.GET"]["output"]>;
 type DiskStats = z.infer<(typeof api)["system_stats_disk.GET"]["output"]>;
 type NetworkStats = z.infer<(typeof api)["system_stats_network.GET"]["output"]>;
 
+export type SystemStats = {
+  cpu: CPUStats;
+  memory: MemoryStats;
+  disk: DiskStats;
+  network: NetworkStats;
+};
+
 const getCPUStats = async (mock = true): Promise<CPUStats> => {
   // Here you would make the actual API call to get CPU stats
   // For now, we'll return mock data
@@ -103,7 +110,19 @@ const getNetworkStats = async (mock = true): Promise<NetworkStats> => {
   }
 };
 
-const getAllSystemStats = async (useMockData: boolean) => {
+const getSystemStatsBulk = async (mock = true) => {
+  return await apiRequest("system_stats_ALL.GET", {});
+};
+
+const getAllSystemStats = async (
+  useMockData: boolean,
+  bulk: boolean
+): Promise<SystemStats> => {
+  if (bulk) {
+    const { cpu, memory, disk, network } =
+      await getSystemStatsBulk(useMockData);
+    return { cpu, memory, disk, network };
+  }
   const [cpu, memory, disk, network] = await Promise.all([
     getCPUStats(useMockData),
     getMemoryStats(useMockData),

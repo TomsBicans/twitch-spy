@@ -128,6 +128,17 @@ const api = {
     input: z.object({}).strict(),
     output: networkSchema,
   },
+  "system_stats_ALL.GET": {
+    input: z.object({}).strict(),
+    output: z
+      .object({
+        cpu: cpuSchema,
+        memory: memorySchema,
+        disk: diskSchema,
+        network: networkSchema,
+      })
+      .strict(),
+  },
 } as const;
 
 type API = typeof api;

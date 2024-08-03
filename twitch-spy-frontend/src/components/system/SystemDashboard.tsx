@@ -64,7 +64,8 @@ const generateMockData = async ({ mock = true }): Promise<SystemStats> => {
       network: Math.floor(Math.random() * 100),
     };
   } else {
-    const systemStats = await getAllSystemStats(mock);
+    const bulk = true;
+    const systemStats = await getAllSystemStats(mock, bulk);
     return {
       cpu: systemStats.cpu.usage.total,
       memory: systemStats.memory.usagePercentage,
