@@ -179,7 +179,7 @@ def get_disk_stats() -> DiskStats:
     old_read = disk_io.read_bytes
     old_write = disk_io.write_bytes
     old_time = time.time()
-    time.sleep(1)
+    time.sleep(0.3)
     disk_io = psutil.disk_io_counters()
     new_read = disk_io.read_bytes
     new_write = disk_io.write_bytes
@@ -220,7 +220,7 @@ def get_network_stats() -> NetworkStats:
     old_sent = net_io.bytes_sent
     old_recv = net_io.bytes_recv
     old_time = time.time()
-    time.sleep(1)
+    time.sleep(0.3)
     net_io = psutil.net_io_counters()
     new_sent = net_io.bytes_sent
     new_recv = net_io.bytes_recv
