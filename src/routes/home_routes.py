@@ -1,5 +1,6 @@
 from typing import List
 from uuid import UUID
+import psutil
 from flask import Blueprint, render_template, jsonify
 import config
 import src.app as app
@@ -79,3 +80,45 @@ def get_job_by_id(job_id):
         return jsonify(job.to_dict())
     else:
         return jsonify({"error": "Job not found"}), 404
+
+
+def get_cpu_stats():
+    # Get CPU usage
+    cpu_usage = psutil.cpu_percent(interval=1, percpu=True)
+
+    # Get CPU frequency
+    cpu_freq = psutil.cpu_freq()
+
+    # Get CPU temperature (Note: This might not work on all systems)
+    try:
+        temp = psutil.sensors_temperatures()
+        if "coretemp" in temp:
+            current_temp = temp["coretemp"][0].current
+            critical_temp = temp["coretemp"][0].critical
+        else:
+            current_temp = None
+            critical_temp = None
+    except AttributeError:
+        current_temp = None
+        critical_temp = None
+
+    # Get load average
+    load_avg = psutil.getloadavg()
+
+    return {
+        "usage": {"total": sum(cpu_usage) / len(cpu_usage), "perCore": cpu_usage},
+        "frequency": {
+            "current": cpu_freq.current * 1e6,  # Convert MHz to Hz
+            "min": cpu_freq.min * 1e6,
+            "max": cpu_freq.max * 1e6,
+        },
+        "temperature": {"current": current_temp, "critical": critical_temp},
+        "loadAverage": {"1min": load_avg[0], "5min": load_avg[1], "15min": load_avg[2]},
+    }
+
+
+@home_routes.route("/system_stats_CPU", methods=["GET"])
+def get_system_stats_CPU():
+    logger.debug("Fetching CPU stats.")
+    cpu_stats = get_cpu_stats()
+    return jsonify(cpu_stats)
