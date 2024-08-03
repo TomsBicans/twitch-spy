@@ -1,5 +1,11 @@
+.form {
+  width: 100%;
+  padding: 0.5rem;
+}
+
 .urlInput {
   width: 95%;
+  border-radius: 0.5rem;
   height: 20rem;
   resize: none;
 }

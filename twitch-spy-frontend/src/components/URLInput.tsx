@@ -58,40 +58,38 @@ export const URLInput = () => {
   };
 
   return (
-    <div>
-      <form ref={formRef} onSubmit={submitForm}>
-        <textarea
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          rows={6}
-          cols={60}
-          placeholder="Enter URLs comma-separated..."
-          className={styles.urlInput}
-        />
-        <TextInputStats
-          urlCount={calcValidUrlCount(cleanInput(userInput))}
-          inputValidity={isInputValid(userInput)}
-        />
-        <>
-          <button
-            onClick={() => setUserInput(cleanInput(userInput))}
-            disabled={!isInputValid(cleanInput(userInput))}
-            className={styles.button}
-          >
-            Fix input
-          </button>
-          <br />
-        </>
-        <br />
+    <form ref={formRef} onSubmit={submitForm} className={styles.form}>
+      <textarea
+        value={userInput}
+        onChange={(e) => setUserInput(e.target.value)}
+        rows={6}
+        cols={60}
+        placeholder="Enter URLs comma-separated..."
+        className={styles.urlInput}
+      />
+      <TextInputStats
+        urlCount={calcValidUrlCount(cleanInput(userInput))}
+        inputValidity={isInputValid(userInput)}
+      />
+      <>
         <button
-          type="submit"
-          disabled={!isInputValid(userInput)}
+          onClick={() => setUserInput(cleanInput(userInput))}
+          disabled={!isInputValid(cleanInput(userInput))}
           className={styles.button}
         >
-          Submit URLs for processing
+          Fix input
         </button>
-      </form>
-    </div>
+        <br />
+      </>
+      <br />
+      <button
+        type="submit"
+        disabled={!isInputValid(userInput)}
+        className={styles.button}
+      >
+        Submit URLs for processing
+      </button>
+    </form>
   );
 };
 
