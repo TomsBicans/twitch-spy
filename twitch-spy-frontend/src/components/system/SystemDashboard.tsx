@@ -146,7 +146,7 @@ const SystemStatsChart: React.FC<SystemStatsChartProps> = ({
 );
 
 const SystemDashboard: React.FC = () => {
-  const REFRESH_DELAY = 1000;
+  const REFRESH_DELAY = 5000;
   const MAX_HISTORY_LENGTH = 20;
 
   const [currentStats, setCurrentStats] = useState<SystemStats>({
@@ -162,8 +162,6 @@ const SystemDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
     const fetchAndUpdateStats = async () => {
       try {
         const stats = await generateMockData({ mock: false });
@@ -186,7 +184,7 @@ const SystemDashboard: React.FC = () => {
     fetchAndUpdateStats();
 
     // Set up interval for subsequent fetches
-    intervalId = setInterval(fetchAndUpdateStats, REFRESH_DELAY);
+    const intervalId = setInterval(fetchAndUpdateStats, REFRESH_DELAY);
 
     // Cleanup function
     return () => {
