@@ -1,0 +1,57 @@
+.urlInput {
+  width: 95%;
+  height: 20rem;
+  resize: none;
+}
+
+.button {
+  border: none;
+  color: var(--color-text);
+  background-color: var(--color-neutral);
+  border-radius: 10px;
+  padding: var(--padding);
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: var(--font-size);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-time),
+    transform var(--transition-time);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:hover,
+.button:focus {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button-good {
+  background-color: var(--color-good);
+}
+
+.button-bad {
+  background-color: var(--color-bad);
+}
+
+/* Improve accessibility for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:hover,
+  .button:focus,
+  .button:active {
+    transform: none;
+  }
+}
