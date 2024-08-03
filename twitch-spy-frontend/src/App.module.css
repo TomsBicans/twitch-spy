@@ -1,0 +1,16 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.innerPanel {
+  background-color: lightgray;
+  display: flex;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+}

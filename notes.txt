@@ -1,0 +1,68 @@
+Twitch spy repository
+
+pytest -n auto
+
+
+Add system stats component:
+	User should be able to view these system stats:
+System Stats Component:
+	*CPU usage
+	*Memory usage
+	*Network usage
+	*Disk usage
+	*System uptime
+	*Current number of active processes
+
+Additional Features:
+	a. Real-time Updates:
+	
+	Implement WebSocket connections to update stats in real-time without page refreshes.
+	
+	b. Historical Data:
+	
+	Add graphs showing usage trends over time (last hour, day, week).
+	
+	c. Temperature Monitoring:
+	
+	Display CPU and GPU temperatures if available.
+	
+	d. Battery Status (for laptops):
+	
+	Show remaining battery life and charging status.
+	
+	e. Storage Information:
+	
+	Display available space for music files.
+	Show storage usage specifically for the music library.
+	
+	f. Audio Device Information:
+	
+	List connected audio devices.
+	Show current output device and allow switching.
+	
+	g. Process List:
+	
+	Display top processes consuming system resources.
+	
+	h. Alerts and Notifications:
+	
+	Set up customizable alerts for when resource usage exceeds certain thresholds.
+	
+	i. Performance Optimization Suggestions:
+	
+	Provide tips based on current system performance.
+	
+	j. Network Stats:
+	
+	Show download/upload speeds.
+	Display ping to music streaming servers.
+	
+	k. Geolocation:
+	
+	Show server location and ping times to different regions.
+	
+	l. API Usage:
+	
+	If the app uses external APIs, display quota usage and limits.
+	
+	

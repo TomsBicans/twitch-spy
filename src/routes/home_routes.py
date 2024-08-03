@@ -1,5 +1,6 @@
 from typing import List
 from uuid import UUID
+import psutil
 from flask import Blueprint, render_template, jsonify
 import config
 import src.app as app
@@ -13,6 +14,8 @@ import flask
 import os.path as path
 from src.socket_instance import socketio
 from src.system_logger import logger
+from typing import TypedDict, List, Optional
+import time
 
 home_routes = Blueprint("home_routes", __name__)
 
@@ -79,3 +82,186 @@ def get_job_by_id(job_id):
         return jsonify(job.to_dict())
     else:
         return jsonify({"error": "Job not found"}), 404
+
+
+class CPUStats(TypedDict):
+    usage: dict[str, float | List[float]]
+    frequency: dict[str, float]
+    temperature: dict[str, Optional[float]]
+    loadAverage: dict[str, float]
+
+
+class DiskStats(TypedDict):
+    totalSpace: int
+    usedSpace: int
+    freeSpace: int
+    usagePercentage: float
+    readSpeed: int
+    writeSpeed: int
+    iops: int
+
+
+class MemoryStats(TypedDict):
+    total: int
+    used: int
+    free: int
+    shared: int
+    buffer: int
+    available: int
+    usagePercentage: float
+
+
+class NetworkStats(TypedDict):
+    interfaces: List[dict[str, str]]
+    traffic: dict[str, int]
+    bandwidth: dict[str, int]
+    latency: float
+    packetLoss: float
+
+
+def get_cpu_stats() -> CPUStats:
+    # Get CPU usage
+    cpu_usage = psutil.cpu_percent(interval=1, percpu=True)
+
+    # Get CPU frequency
+    cpu_freq = psutil.cpu_freq()
+
+    # Get CPU temperature (Note: This might not work on all systems)
+    try:
+        temp = psutil.sensors_temperatures()
+        if "coretemp" in temp:
+            current_temp = temp["coretemp"][0].current
+            critical_temp = temp["coretemp"][0].critical
+        else:
+            current_temp = None
+            critical_temp = None
+    except AttributeError:
+        current_temp = None
+        critical_temp = None
+
+    # Get load average
+    load_avg = psutil.getloadavg()
+
+    return {
+        "usage": {"total": sum(cpu_usage) / len(cpu_usage), "perCore": cpu_usage},
+        "frequency": {
+            "current": cpu_freq.current * 1e6,  # Convert MHz to Hz
+            "min": cpu_freq.min * 1e6,
+            "max": cpu_freq.max * 1e6,
+        },
+        "temperature": {"current": current_temp, "critical": critical_temp},
+        "loadAverage": {"1min": load_avg[0], "5min": load_avg[1], "15min": load_avg[2]},
+    }
+
+
+def get_memory_stats() -> MemoryStats:
+    # Get memory usage
+    mem = psutil.virtual_memory()
+    return {
+        "total": mem.total,
+        "used": mem.used,
+        "free": mem.free,
+        "shared": mem.shared,
+        "buffer": mem.buffers,
+        "available": mem.available,
+        "usagePercentage": mem.percent,
+    }
+
+
+def get_disk_stats() -> DiskStats:
+    # Get disk usage
+    disk = psutil.disk_usage("/")
+
+    # Get disk I/O statistics
+    disk_io = psutil.disk_io_counters()
+
+    # Calculate read and write speeds (over 1 second interval)
+    old_read = disk_io.read_bytes
+    old_write = disk_io.write_bytes
+    old_time = time.time()
+    time.sleep(0.3)
+    disk_io = psutil.disk_io_counters()
+    new_read = disk_io.read_bytes
+    new_write = disk_io.write_bytes
+    new_time = time.time()
+
+    read_speed = (new_read - old_read) / (new_time - old_time)
+    write_speed = (new_write - old_write) / (new_time - old_time)
+
+    # Calculate IOPS (I/O operations per second)
+    old_iops = disk_io.read_count + disk_io.write_count
+    new_iops = disk_io.read_count + disk_io.write_count
+    iops = (new_iops - old_iops) / (new_time - old_time)
+
+    return {
+        "totalSpace": disk.total,
+        "usedSpace": disk.used,
+        "freeSpace": disk.free,
+        "usagePercentage": disk.percent,
+        "readSpeed": int(read_speed),
+        "writeSpeed": int(write_speed),
+        "iops": int(iops),
+    }
+
+
+def get_network_stats() -> NetworkStats:
+    # Get network interfaces
+    interfaces = []
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == 2:  # IPv4
+                interfaces.append({"name": interface, "ip": addr.address})
+                break
+
+    # Get network I/O statistics
+    net_io = psutil.net_io_counters()
+
+    # Calculate network traffic (over 1 second interval)
+    old_sent = net_io.bytes_sent
+    old_recv = net_io.bytes_recv
+    old_time = time.time()
+    time.sleep(0.3)
+    net_io = psutil.net_io_counters()
+    new_sent = net_io.bytes_sent
+    new_recv = net_io.bytes_recv
+    new_time = time.time()
+
+    send_speed = (new_sent - old_sent) / (new_time - old_time)
+    recv_speed = (new_recv - old_recv) / (new_time - old_time)
+
+    # Note: Getting accurate latency and packet loss requires more complex measurements
+    # These are placeholder values and should be replaced with actual measurements
+    latency = 0.0
+    packet_loss = 0.0
+
+    return {
+        "interfaces": interfaces,
+        "traffic": {"sent": int(new_sent), "received": int(new_recv)},
+        "bandwidth": {"upload": int(send_speed), "download": int(recv_speed)},
+        "latency": latency,
+        "packetLoss": packet_loss,
+    }
+
+
+@home_routes.route("/system_stats_CPU", methods=["GET"])
+def get_system_stats_CPU():
+    logger.debug("Fetching CPU stats.")
+    cpu_stats = get_cpu_stats()
+    return jsonify(cpu_stats)
+
+
+@home_routes.route("/system_stats_ALL", methods=["GET"])
+def get_system_stats_ALL():
+    logger.debug("Fetching system stats.")
+    cpu_stats = get_cpu_stats()
+    mem_stats = get_memory_stats()
+    disk_stats = get_disk_stats()
+    network_stats = get_network_stats()
+    return jsonify(
+        {
+            "cpu": cpu_stats,
+            "memory": mem_stats,
+            "disk": disk_stats,
+            "network": network_stats,
+        }
+    )

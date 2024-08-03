@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { TextInputStats } from "./util/TextInputStats";
 import { apiRequest } from "../backend/backend";
+import styles from "./URLInput.module.css";
 
 export const URLInput = () => {
   const [userInput, setUserInput] = useState("");
@@ -57,39 +58,38 @@ export const URLInput = () => {
   };
 
   return (
-    <div>
-      <form ref={formRef} onSubmit={submitForm}>
-        <textarea
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          rows={6}
-          cols={60}
-          placeholder="Enter URLs comma-separated..."
-        ></textarea>
-        <TextInputStats
-          urlCount={calcValidUrlCount(cleanInput(userInput))}
-          inputValidity={isInputValid(userInput)}
-        />
-        <>
-          <button onClick={() => setUserInput(cleanInput(userInput))}>
-            Fix input
-          </button>
-          <br />
-        </>
-        <br />
-        {!isInputValid(userInput) && isInputValid(cleanInput(userInput)) && (
-          <>
-            <button onClick={() => setUserInput(cleanInput(userInput))}>
-              Fix input
-            </button>
-            <br />
-          </>
-        )}
-        <button type="submit" disabled={!isInputValid(userInput)}>
-          Submit URLs for processing
+    <form ref={formRef} onSubmit={submitForm} className={styles.form}>
+      <textarea
+        value={userInput}
+        onChange={(e) => setUserInput(e.target.value)}
+        rows={6}
+        cols={60}
+        placeholder="Enter URLs comma-separated..."
+        className={styles.urlInput}
+      />
+      <TextInputStats
+        urlCount={calcValidUrlCount(cleanInput(userInput))}
+        inputValidity={isInputValid(userInput)}
+      />
+      <>
+        <button
+          onClick={() => setUserInput(cleanInput(userInput))}
+          disabled={!isInputValid(cleanInput(userInput))}
+          className={styles.button}
+        >
+          Fix input
         </button>
-      </form>
-    </div>
+        <br />
+      </>
+      <br />
+      <button
+        type="submit"
+        disabled={!isInputValid(userInput)}
+        className={styles.button}
+      >
+        Submit URLs for processing
+      </button>
+    </form>
   );
 };
 

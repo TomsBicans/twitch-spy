@@ -13,6 +13,7 @@ export const JobList = ({ socket }: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
   const [selectedJobProcessingState, setSelectedJobProcessingState] =
     useState<SelectedProcessingState>(ProcessingStates.FINISHED);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const updateAtomStatus = (data: Atom) => {
     setJobs((prevJobs) => {
@@ -46,12 +47,26 @@ export const JobList = ({ socket }: JobStatusesProps) => {
 
   const filterJobs = (
     jobs: Array<Atom>,
-    processingState: SelectedProcessingState
+    processingState: SelectedProcessingState,
+    query: string
   ) => {
-    if (processingState === "all") {
-      return jobs;
-    }
-    return jobs.filter((job) => job.status === processingState);
+    const tokenizedQuery = query.split(" ").filter((q) => q.length > 0);
+    return jobs.filter((job) => {
+      const matchesState =
+        processingState === "all" || job.status === processingState;
+      const matchesQuery =
+        tokenizedQuery.length === 0 ||
+        tokenizedQuery.every(
+          (token) =>
+            (job.content_name?.toLowerCase() || "").includes(token) ||
+            job.url.toLowerCase().includes(token)
+        );
+      return matchesState && matchesQuery;
+    });
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
   };
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -60,7 +75,11 @@ export const JobList = ({ socket }: JobStatusesProps) => {
     );
   };
 
-  const filteredJobs = filterJobs(jobs, selectedJobProcessingState);
+  const filteredJobs = filterJobs(
+    jobs,
+    selectedJobProcessingState,
+    searchQuery
+  );
 
   return (
     <div className={styles.container}>
@@ -80,6 +99,13 @@ export const JobList = ({ socket }: JobStatusesProps) => {
             </option>
           ))}
         </select>
+        <input
+          type="text"
+          placeholder="Search songs..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className={styles.searchInput}
+        />
       </div>
       <div className={styles.gridContainer}>
         {filteredJobs.map((job) => (
