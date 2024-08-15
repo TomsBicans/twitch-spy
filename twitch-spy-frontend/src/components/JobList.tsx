@@ -9,6 +9,40 @@ interface JobStatusesProps {
 
 type SelectedProcessingState = ProcessingStates | "all";
 
+const SongCard = ({ job }: { job: Atom }) => {
+  const getStatusEmoji = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "finished":
+        return "✅";
+      case "processing":
+        return "🔄";
+      case "failed":
+        return "❌";
+      default:
+        return "❓";
+    }
+  };
+
+  console.log("here", job);
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <span className={styles.contentType}>
+          {job.content_type === "AUDIO" ? "🎵" : "🎵"}
+        </span>
+        <span className={styles.status}>{getStatusEmoji(job.status)}</span>
+      </div>
+      <h3 className={styles.jobName}>{job.content_name || "Unnamed"}</h3>
+      <p className={styles.jobUrl}>{job.url}</p>
+      <div
+        className={`${styles.statusBar} ${styles[job.status.toLowerCase()]}`}
+      >
+        {job.status}
+      </div>
+    </div>
+  );
+};
+
 export const JobList = ({ socket }: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
   const [selectedJobProcessingState, setSelectedJobProcessingState] =
@@ -31,19 +65,6 @@ export const JobList = ({ socket }: JobStatusesProps) => {
     console.log(data);
     updateAtomStatus(data);
   });
-
-  const getStatusEmoji = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "finished":
-        return "✅";
-      case "processing":
-        return "🔄";
-      case "failed":
-        return "❌";
-      default:
-        return "❓";
-    }
-  };
 
   const filterJobs = (
     jobs: Array<Atom>,
@@ -109,23 +130,7 @@ export const JobList = ({ socket }: JobStatusesProps) => {
       </div>
       <div className={styles.gridContainer}>
         {filteredJobs.map((job) => (
-          <div key={job.id} className={styles.card}>
-            <div className={styles.cardHeader}>
-              <span className={styles.contentType}>
-                {job.content_type === "AUDIO" ? "🎵" : "🎵"}
-              </span>
-              <span className={styles.status}>
-                {getStatusEmoji(job.status)}
-              </span>
-            </div>
-            <h3 className={styles.jobName}>{job.content_name || "Unnamed"}</h3>
-            <p className={styles.jobUrl}>{job.url}</p>
-            <div
-              className={`${styles.statusBar} ${styles[job.status.toLowerCase()]}`}
-            >
-              {job.status}
-            </div>
-          </div>
+          <SongCard key={job.id} job={job} />
         ))}
       </div>
     </div>
