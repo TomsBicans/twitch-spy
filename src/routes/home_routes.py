@@ -74,7 +74,7 @@ def get_all_jobs():
 
 
 @home_routes.route("/jobs/<job_id>", methods=["GET"])
-def get_job_by_id(job_id):
+def get_job_by_id(job_id: str):
     logger.debug(f"Fetching job: {job_id}")
     my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
     job = my_app.job_manager.get_job(UUID(job_id))
