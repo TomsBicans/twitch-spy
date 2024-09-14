@@ -200,7 +200,7 @@ class YoutubeDownloader:
     @staticmethod
     def add_preview_picture_to_audio_file(
         thumbnail_name: str, thumbnail_url: str, audio_path: str
-    ) -> None:
+    ) -> Optional[str]:
         if thumbnail_url:
             print(f"Thumbnail found: {thumbnail_url}")
             download_dir = path.dirname(audio_path)
@@ -222,8 +222,10 @@ class YoutubeDownloader:
                     data=thumbnail_file.read(),
                 )
             audio.save()
+            return thumbnail_loc
         else:
             print(f"Thumbnail not found: {thumbnail_url}")
+            return None
 
     @staticmethod
     def add_metadata_to_audio_file(info_dict: dict, filepath: str) -> None:
@@ -277,7 +279,8 @@ class YoutubeDownloader:
                 ydl.download([atom.url])  # Download the file here
             else:
                 print(f"File already exists. {filename}")
-                return filename
+
+            atom.media_file_os_path = filename  # Store media file path
 
             try:
                 YoutubeDownloader.add_metadata_to_audio_file(info_dict, filename)
@@ -285,9 +288,10 @@ class YoutubeDownloader:
                 raise e
             try:
                 thumbnail_url = YoutubeDownloader.get_thumbnail_url(atom.url)
-                YoutubeDownloader.add_preview_picture_to_audio_file(
+                thumbnail_path = YoutubeDownloader.add_preview_picture_to_audio_file(
                     info_dict.get("title", None), thumbnail_url, filename
                 )
+                atom.thumbnail_os_path = thumbnail_path  # Store thumbnail path
             except Exception as e:
                 raise e
             return filename
