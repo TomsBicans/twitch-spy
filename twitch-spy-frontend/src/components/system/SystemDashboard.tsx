@@ -154,7 +154,7 @@ const SystemStatsChart: React.FC<SystemStatsChartProps> = ({
 );
 
 const SystemDashboard: React.FC = () => {
-  const REFRESH_DELAY = 5000;
+  const REFRESH_DELAY = 100000;
   const MAX_HISTORY_LENGTH = 20;
 
   const [currentStats, setCurrentStats] = useState<SystemStats>({
