@@ -51,6 +51,8 @@
   display: flex;
   justify-content: space-between;
   padding: 10px;
+  z-index: 2;
+  position: relative;
 }
 
 .contentType,
@@ -65,15 +67,26 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  z-index: 2;
+  position: relative;
+  color: white;
+  background: rgba(0, 0, 0, 0.7); /* Dark background for readability */
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .jobUrl {
   font-size: 14px;
-  color: #666;
+  color: white;
   margin: 0 10px 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  z-index: 2;
+  position: relative;
+  background: rgba(0, 0, 0, 0.7); /* Dark background for readability */
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .filterSelect {
@@ -102,6 +115,8 @@
   font-size: 12px;
   font-weight: 600;
   text-align: center;
+  z-index: 2;
+  position: relative;
 }
 
 .finished {
