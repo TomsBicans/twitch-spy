@@ -24,17 +24,8 @@ class Atom:
         self.content_title = content_title
         self.download_dir = download_dir
         self.status = const.PROCESS_STATUS.QUEUED
-        self.media_file_os_path = media_file_os_path or self._generate_media_file_path()
-        self.thumbnail_os_path = thumbnail_os_path or self._generate_thumbnail_path()
-        # New methods to generate the paths
-
-    def _generate_media_file_path(self) -> str:
-        # Logic to determine the media file path
-        return path.join(self.download_dir, f"{self.id}.media")
-
-    def _generate_thumbnail_path(self) -> str:
-        # Logic to determine the thumbnail path
-        return path.join(self.download_dir, f"{self.id}.thumbnail")
+        self.media_file_os_path = media_file_os_path or None
+        self.thumbnail_os_path = thumbnail_os_path or None
 
     def update_status(self, status: const.PROCESS_STATUS):
         self.status = status
