@@ -42,7 +42,7 @@ def atom_status_listener(event_name: str, atom: Atom):
             "content_name": str(atom.content_title),
             "download_dir": atom.download_dir,
             "media_file_os_path": atom.media_file_os_path,
-            "thumbnail_os_path": atom.thumbnail_os_path,
+            "thumbnail_image_in_base64": atom.thumbnail_image_in_base64,
             "status": atom.status.value,
         },
     )

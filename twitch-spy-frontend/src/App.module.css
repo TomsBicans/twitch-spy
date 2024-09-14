@@ -13,4 +13,6 @@
   flex-direction: column;
   align-items: center;
   width: 50%;
+  background-size: cover; /* Ensure the background image covers the entire panel */
+  background-position: center; /* Center the background image */
 }

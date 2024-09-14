@@ -24,8 +24,14 @@ const SongCard = ({ job }: { job: Atom }) => {
   };
 
   console.log("here", job);
+  const thumbnail = job.thumbnail_image_in_base64
+    ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
+    : "";
   return (
-    <div className={styles.card}>
+    <div
+      className={styles.card}
+      style={{ backgroundImage: `url(${thumbnail})` }}
+    >
       <div className={styles.cardHeader}>
         <span className={styles.contentType}>
           {job.content_type === "AUDIO" ? "🎵" : "🎵"}

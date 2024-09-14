@@ -7,7 +7,7 @@ export interface Atom {
   content_type: CONTENT_MODE;
   content_name?: string; // Optional
   download_dir: string;
-  thumbnail_os_path?: string;
+  thumbnail_image_in_base64?: string;
   media_file_os_path?: string;
   status: ProcessingStates;
 }

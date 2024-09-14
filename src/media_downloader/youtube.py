@@ -291,7 +291,7 @@ class YoutubeDownloader:
                 thumbnail_path = YoutubeDownloader.add_preview_picture_to_audio_file(
                     info_dict.get("title", None), thumbnail_url, filename
                 )
-                atom.thumbnail_os_path = thumbnail_path  # Store thumbnail path
+                atom.thumbnail_image_in_base64 = thumbnail_path  # Store thumbnail path
             except Exception as e:
                 raise e
             return filename

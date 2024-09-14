@@ -3,6 +3,7 @@ import os
 import sys
 import threading
 import re
+import base64
 from src.media_downloader.atomizer import Atom
 import src.media_downloader.constants as const
 import src.media_downloader.youtube as youtube
@@ -188,13 +189,14 @@ class StorageManager:
                 for url, (title, media_path, thumbnail_path) in updated_entries.items():
                     media_path = self._find_file_path(self.download_dir, title)
                     thumbnail_path = self._find_file_path(self.thumbnails_folder, title)
+                    thumbnail_base64 = self.read_img_base64(thumbnail_path) if thumbnail_path else None
                     a = Atom(
                         url,
                         content_type=const.CONTENT_MODE.AUDIO,
                         download_dir=self.download_dir,
                         content_title=title if title else url.split("/")[-1],
                         media_file_os_path=media_path,
-                        thumbnail_os_path=thumbnail_path,
+                        thumbnail_image_in_base64=thumbnail_base64,
                     )
                     a.update_status(status)
                     atoms.append(a)
@@ -218,6 +220,13 @@ class StorageManager:
             if normalized_file_name == normalized_title:
                 return path.join(dir, file)
         return None
+
+    def read_img_base64(self, filepath: str) -> str:
+        if os.path.exists(filepath):
+            with open(filepath, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+        else:
+            return ''
 
 
 class LibraryManager:
