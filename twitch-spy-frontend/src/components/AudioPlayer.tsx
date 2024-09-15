@@ -16,25 +16,70 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({ entry }) => {
   useEffect(() => {
     if (entry) {
       setCurrentTrack(`${BACKEND_URL}/audio/${entry.content_name}`);
-      // You would need to implement a function to get the dominant color of the track
-      // For now, we'll use a placeholder function
-      setTrackColor(getRandomColor());
+      if (entry.thumbnail_image_in_base64) {
+        getAverageColor(entry.thumbnail_image_in_base64).then(setTrackColor);
+      } else {
+        setTrackColor(getRandomColor());
+      }
     }
   }, [entry]);
+
+  const getAverageColor = (base64Image: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = `data:image/jpeg;base64,${base64Image}`;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(getRandomColor());
+          return;
+        }
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        let r = 0,
+          g = 0,
+          b = 0;
+        let count = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          // Skip transparent pixels
+          if (data[i + 3] < 255) continue;
+
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+
+        if (count > 0) {
+          r = Math.round(r / count);
+          g = Math.round(g / count);
+          b = Math.round(b / count);
+          resolve(`rgb(${r},${g},${b})`);
+        } else {
+          resolve(getRandomColor());
+        }
+      };
+      img.onerror = () => {
+        resolve(getRandomColor());
+      };
+    });
+  };
 
   const handleNextTrack = () => {
     console.log("Next track functionality can be implemented here.");
     // Implement logic to fetch or select the next track title and update the state
   };
 
-  // Updated function to generate a valid random color
   const getRandomColor = () => {
-    return (
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0")
-    );
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `rgb(${r},${g},${b})`;
   };
 
   return (

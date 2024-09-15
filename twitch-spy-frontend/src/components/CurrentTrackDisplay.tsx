@@ -14,8 +14,11 @@ const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
 
   const validateColor = (color: string): string => {
     const hexRegex = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+    const rgbRegex = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/;
     if (hexRegex.test(color)) {
       return color.startsWith("#") ? color : `#${color}`;
+    } else if (rgbRegex.test(color)) {
+      return color;
     }
     return "#000000"; // Default to black if invalid
   };
