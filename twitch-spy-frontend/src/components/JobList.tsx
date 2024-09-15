@@ -5,14 +5,8 @@ import styles from "./JobList.module.css";
 
 interface JobStatusesProps {
   socket: Socket;
-  onMusicSelected: (selection: MusicEntity) => void;
+  onMusicSelected: (selection: Atom) => void;
   currentTrack: string | undefined;
-}
-
-export interface MusicEntity {
-  url: string;
-  title: string;
-  thumbnail_image_in_base64?: string;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
@@ -123,7 +117,7 @@ export const JobList = ({
   };
 
   const handleCardClick = (job: Atom) => {
-    onMusicSelected({ url: job.url, title: job.content_name || "Unnamed" });
+    onMusicSelected(job);
   };
 
   const filteredJobs = filterJobs(

@@ -2,22 +2,21 @@ import React, { useState } from "react";
 import io from "socket.io-client";
 import "./App.css";
 import URLInput from "./components/URLInput";
-import JobList, { MusicEntity } from "./components/JobList";
+import JobList from "./components/JobList";
 import JobOverview from "./components/JobOverview";
 import SystemDashboard from "./components/system/SystemDashboard";
 import MusicPlayer from "./components/AudioPlayer";
 import styles from "./App.module.css";
 import { BACKEND_URL } from "./backend/backend";
+import { Atom } from "./backend/models";
 
 const socket = io(BACKEND_URL);
 
 const App: React.FC = () => {
-  const [currentTrack, setCurrentTrack] = useState<string | undefined>(
-    undefined
-  );
+  const [currentTrack, setCurrentTrack] = useState<Atom | undefined>(undefined);
 
-  const onMusicSelected = (selection: MusicEntity) => {
-    setCurrentTrack(selection.title);
+  const onMusicSelected = (selection: Atom) => {
+    setCurrentTrack(selection);
   };
 
   return (
@@ -31,12 +30,12 @@ const App: React.FC = () => {
           <SystemDashboard />
         </div>
       </div>
-      <MusicPlayer title={currentTrack} />
+      <MusicPlayer entry={currentTrack} />
       <JobOverview socket={socket} />
       <JobList
         socket={socket}
         onMusicSelected={onMusicSelected}
-        currentTrack={currentTrack}
+        currentTrack={currentTrack?.content_name}
       />
     </div>
   );
