@@ -82,7 +82,7 @@ export const JobList = ({
   };
 
   socket.on("atom_update_status", (data) => {
-    console.log(data);
+    // console.log(data);
     updateAtomStatus(data);
   });
 

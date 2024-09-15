@@ -29,7 +29,7 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
 
   useEffect(() => {
     socket.on("statistics_update", (data) => {
-      console.log(data);
+      // console.log(data);
       setJobStats((prevStats) => ({
         ...prevStats,
         ...data,
