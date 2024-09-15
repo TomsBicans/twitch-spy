@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
 import JobStat from "./util/JobStats";
 import { JobStatistics, ProcessingStates } from "../backend/models";
-import "./JobOverview.css";
+import styles from "./JobOverview.module.css";
 
 interface JobOverviewProps {
   socket: Socket;
@@ -38,10 +38,11 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
 
     socket.emit("request_initial_data");
   }, []);
+
   return (
-    <div>
-      <h2>Local library Statistics</h2>
-      <div id="jobStats">
+    <div className={styles.container}>
+      <h2 className={styles.title}>Local Library Statistics</h2>
+      <div className={styles.jobStats}>
         {panelConfig
           .filter((config) => config.visible)
           .map((config) => (

@@ -1,5 +1,6 @@
 import React from "react";
 import { ProcessingStates } from "../../backend/models";
+import styles from "./JobStats.module.css";
 
 interface JobStatProps {
   processingState: ProcessingStates;
@@ -8,41 +9,45 @@ interface JobStatProps {
 
 const JobStat = ({ processingState, value }: JobStatProps) => {
   let label: string;
-  let className: string;
+  let icon: string;
 
   switch (processingState) {
     case ProcessingStates.QUEUED:
       label = "Queued";
-      className = "queued-class";
+      icon = "🕒";
       break;
     case ProcessingStates.PROCESSING:
       label = "Processing";
-      className = "processing-class";
+      icon = "⚙️";
       break;
     case ProcessingStates.FINISHED:
       label = "Finished";
-      className = "finished-class";
+      icon = "✅";
       break;
     case ProcessingStates.CANCELLED:
       label = "Cancelled";
-      className = "cancelled-class";
+      icon = "🚫";
       break;
     case ProcessingStates.FAILED:
       label = "Failed";
-      className = "failed-class";
+      icon = "❌";
       break;
     case ProcessingStates.INVALID:
       label = "Invalid";
-      className = "invalid-class";
+      icon = "⚠️";
       break;
   }
 
   return (
-    <div className={`stat ${className}`} key={processingState}>
-      <span className="stat-value" id={processingState}>
+    <div
+      className={`${styles.stat} ${styles[processingState]}`}
+      key={processingState}
+    >
+      <span className={styles.icon}>{icon}</span>
+      <span className={styles.statValue} id={processingState}>
         {value}
       </span>
-      <span className="stat-label">{label}</span>
+      <span className={styles.statLabel}>{label}</span>
     </div>
   );
 };
