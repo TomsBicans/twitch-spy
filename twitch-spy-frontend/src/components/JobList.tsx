@@ -12,6 +12,7 @@ interface JobStatusesProps {
 export interface MusicEntity {
   url: string;
   title: string;
+  thumbnail_image_in_base64?: string;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";

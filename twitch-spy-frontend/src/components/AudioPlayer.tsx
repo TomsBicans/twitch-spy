@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import { BACKEND_URL } from "../backend/backend";
+import CurrentTrackDisplay from "./CurrentTrackDisplay";
 
 interface AudioPlayerProps {
   title: string | undefined;
@@ -22,16 +23,19 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({ title }) => {
   };
 
   return (
-    <AudioPlayer
-      autoPlay
-      src={currentTrack}
-      showJumpControls={true}
-      onEnded={handleNextTrack}
-      style={{
-        backgroundColor: title ? "#f5f5f5" : "#e5e5e5",
-        color: title ? "#000" : "#808080",
-      }}
-    />
+    <>
+      <CurrentTrackDisplay title={title} />
+      <AudioPlayer
+        autoPlay
+        src={currentTrack}
+        showJumpControls={true}
+        onEnded={handleNextTrack}
+        style={{
+          backgroundColor: title ? "#f5f5f5" : "#e5e5e5",
+          color: title ? "#000" : "#808080",
+        }}
+      />
+    </>
   );
 };
 
