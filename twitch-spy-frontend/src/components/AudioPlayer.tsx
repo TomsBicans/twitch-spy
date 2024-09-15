@@ -11,10 +11,14 @@ interface AudioPlayerProps {
 
 const MusicPlayer: React.FC<AudioPlayerProps> = ({ entry }) => {
   const [currentTrack, setCurrentTrack] = useState<string | undefined>();
+  const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
 
   useEffect(() => {
     if (entry) {
       setCurrentTrack(`${BACKEND_URL}/audio/${entry.content_name}`);
+      // You would need to implement a function to get the dominant color of the track
+      // For now, we'll use a placeholder function
+      setTrackColor(getRandomColor());
     }
   }, [entry]);
 
@@ -23,9 +27,19 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({ entry }) => {
     // Implement logic to fetch or select the next track title and update the state
   };
 
+  // Updated function to generate a valid random color
+  const getRandomColor = () => {
+    return (
+      "#" +
+      Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, "0")
+    );
+  };
+
   return (
     <>
-      <CurrentTrackDisplay title={entry?.content_name} />
+      <CurrentTrackDisplay title={entry?.content_name} color={trackColor} />
       <AudioPlayer
         autoPlay
         src={currentTrack}
