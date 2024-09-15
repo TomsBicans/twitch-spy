@@ -5,11 +5,26 @@ import styles from "./JobList.module.css";
 
 interface JobStatusesProps {
   socket: Socket;
+  onMusicSelected: (selection: MusicEntity) => void;
+  currentTrack: string | undefined;
+}
+
+export interface MusicEntity {
+  url: string;
+  title: string;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-const SongCard = ({ job }: { job: Atom }) => {
+const SongCard = ({
+  job,
+  onClick,
+  isPlaying,
+}: {
+  job: Atom;
+  onClick: () => void;
+  isPlaying: boolean;
+}) => {
   const getStatusEmoji = (status: string) => {
     switch (status.toLowerCase()) {
       case "finished":
@@ -23,14 +38,14 @@ const SongCard = ({ job }: { job: Atom }) => {
     }
   };
 
-  console.log("here", job);
   const thumbnail = job.thumbnail_image_in_base64
     ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
     : "";
   return (
     <div
-      className={styles.card}
+      className={`${styles.card} ${isPlaying ? styles.playing : ""}`}
       style={{ backgroundImage: `url(${thumbnail})` }}
+      onClick={onClick}
     >
       <div className={styles.cardHeader}>
         <span className={styles.contentType}>
@@ -49,7 +64,11 @@ const SongCard = ({ job }: { job: Atom }) => {
   );
 };
 
-export const JobList = ({ socket }: JobStatusesProps) => {
+export const JobList = ({
+  socket,
+  onMusicSelected,
+  currentTrack,
+}: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
   const [selectedJobProcessingState, setSelectedJobProcessingState] =
     useState<SelectedProcessingState>(ProcessingStates.FINISHED);
@@ -102,6 +121,10 @@ export const JobList = ({ socket }: JobStatusesProps) => {
     );
   };
 
+  const handleCardClick = (job: Atom) => {
+    onMusicSelected({ url: job.url, title: job.content_name || "Unnamed" });
+  };
+
   const filteredJobs = filterJobs(
     jobs,
     selectedJobProcessingState,
@@ -136,7 +159,12 @@ export const JobList = ({ socket }: JobStatusesProps) => {
       </div>
       <div className={styles.gridContainer}>
         {filteredJobs.map((job) => (
-          <SongCard key={job.id} job={job} />
+          <SongCard
+            key={job.id}
+            job={job}
+            onClick={() => handleCardClick(job)}
+            isPlaying={currentTrack === job.content_name}
+          />
         ))}
       </div>
     </div>

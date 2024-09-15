@@ -30,6 +30,8 @@
   background-size: cover;
   background-position: center;
   background-blend-mode: darken;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
 }
 
 .card::before {
@@ -45,6 +47,7 @@
 
 .card:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
 }
 
 .cardHeader {
@@ -132,6 +135,11 @@
 .failed {
   background-color: #fce8e6;
   color: #c5221f;
+}
+
+.playing {
+  border: 2px solid #4caf50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 }
 
 @media (max-width: 1200px) {

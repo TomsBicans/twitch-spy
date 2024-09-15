@@ -4,6 +4,7 @@ import sys
 import threading
 import re
 import base64
+from config import AUDIO_LIBRARY
 from src.media_downloader.atomizer import Atom
 import src.media_downloader.constants as const
 import src.media_downloader.youtube as youtube
@@ -283,10 +284,13 @@ def normalize_string(s: str) -> str:
     return s.lower()
 
 
-def find_file_path(dir: str, title: str) -> Optional[str]:
+def find_mp3file_with_title(title: str) -> Optional[str]:
+    dir = AUDIO_LIBRARY
     normalized_title = normalize_string(title).lower()
-    for file in os.listdir(dir):
-        normalized_file_name = normalize_string(path.splitext(file)[0])
-        if normalized_file_name == normalized_title:
-            return path.join(dir, file)
+    for root, _, files in os.walk(dir):
+        for file in files:
+            if file.endswith(".mp3"):
+                normalized_file_name = normalize_string(path.splitext(file)[0]).lower()
+                if normalized_file_name == normalized_title:
+                    return path.join(root, file)
     return None
