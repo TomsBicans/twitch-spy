@@ -12,6 +12,8 @@ class Atom:
         content_type: const.CONTENT_MODE,
         download_dir: str,
         content_title: Optional[str] = None,
+        media_file_os_path: Optional[str] = None,
+        thumbnail_image_in_base64: Optional[str] = None,
     ) -> None:
         self.id = uuid.uuid4()
         self.url = url
@@ -22,6 +24,8 @@ class Atom:
         self.content_title = content_title
         self.download_dir = download_dir
         self.status = const.PROCESS_STATUS.QUEUED
+        self.media_file_os_path = media_file_os_path or None
+        self.thumbnail_image_in_base64 = thumbnail_image_in_base64 or None
 
     def update_status(self, status: const.PROCESS_STATUS):
         self.status = status

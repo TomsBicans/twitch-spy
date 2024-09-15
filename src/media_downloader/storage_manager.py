@@ -2,6 +2,9 @@ import os.path as path
 import os
 import sys
 import threading
+import re
+import base64
+from config import AUDIO_LIBRARY
 from src.media_downloader.atomizer import Atom
 import src.media_downloader.constants as const
 import src.media_downloader.youtube as youtube
@@ -14,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class StorageFiles(Enum):
     STORAGE_FOLDER = "storage"
+    THUMBNAILS_FOLDER = "thumbnails"
     LOCAL_STORAGE = "local_storage.txt"
     FAILED_DOWNLOADS = "failed_downloads.txt"
     FAILED_SPLIT = "failed_split.txt"
@@ -25,6 +29,9 @@ class StorageManager:
         self.download_dir = download_dir
         self.storage_folder = self.ensure_folder_exists(
             path.join(self.download_dir, StorageFiles.STORAGE_FOLDER.value)
+        )
+        self.thumbnails_folder = self.ensure_folder_exists(
+            path.join(self.download_dir, StorageFiles.THUMBNAILS_FOLDER.value)
         )
         self.storage_file = self.ensure_file_exists(
             path.join(self.storage_folder, StorageFiles.LOCAL_STORAGE.value)
@@ -59,10 +66,19 @@ class StorageManager:
             pass
         return location
 
-    def add_entry(self, location: str, url: str, title: str = None):
+    def add_entry(
+        self,
+        location: str,
+        url: str,
+        title: str = None,
+        media_path: str = None,
+        thumbnail_path: str = None,
+    ):
         with self.lock:
             with open(location, "a", encoding="utf-8", errors="replace") as f:
-                f.write(f"{url},{title if title else 'None'}\n")
+                f.write(
+                    f"{url},{title if title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
+                )
             return location
 
     def already_downloaded(self, url: str) -> bool:
@@ -95,22 +111,24 @@ class StorageManager:
         if url not in data:
             self.add_entry(self.failed_split, url, title)
 
-    def read_entries(self, location: str) -> List[Tuple[str, Optional[str]]]:
+    def read_entries(
+        self, location: str
+    ) -> List[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
         entries = []
         if not path.exists(location):
             return entries
         data = self.read_file(location)
         for line in data.splitlines():
-            if "," in line:
-                url, title = line.split(",", 1)
-                if (
-                    title == "None"
-                ):  # Convert the string 'None' to the Python None object
-                    title = None
-            else:
-                url = line
-                title = None
-            entries.append((url.strip(), title))
+            parts = line.split(",")
+            url = parts[0].strip()
+            title = parts[1].strip() if len(parts) > 1 and parts[1] != "None" else None
+            media_path = (
+                parts[2].strip() if len(parts) > 2 and parts[2] != "None" else None
+            )
+            thumbnail_path = (
+                parts[3].strip() if len(parts) > 3 and parts[3] != "None" else None
+            )
+            entries.append((url, title, media_path, thumbnail_path))
         return entries
 
     def update_entry_title(self, location: str, url: str, new_title: str):
@@ -120,16 +138,27 @@ class StorageManager:
 
             # Update the title for the matching URL
             updated_entries = []
-            for entry_url, entry_title in entries:
+            for entry_url, entry_title, media_path, thumbnail_path in entries:
                 if entry_url == url:
-                    updated_entries.append((entry_url, new_title))
+                    updated_entries.append(
+                        (entry_url, new_title, media_path, thumbnail_path)
+                    )
                 else:
-                    updated_entries.append((entry_url, entry_title))
+                    updated_entries.append(
+                        (entry_url, entry_title, media_path, thumbnail_path)
+                    )
 
             # Write updated entries back to the file
             with open(location, "w", encoding="utf-8", errors="replace") as f:
-                for entry_url, entry_title in updated_entries:
-                    f.write(f"{entry_url},{entry_title if entry_title else 'None'}\n")
+                for (
+                    entry_url,
+                    entry_title,
+                    media_path,
+                    thumbnail_path,
+                ) in updated_entries:
+                    f.write(
+                        f"{entry_url},{entry_title if entry_title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
+                    )
 
     def generate_atoms(self, refresh_titles: bool = False) -> List[Atom]:
         atoms = []
@@ -150,10 +179,15 @@ class StorageManager:
             file_path = path.join(self.storage_folder, file_name)
             if path.exists(file_path):
                 entries = self.read_entries(file_path)
-                updated_entries = {url: title for url, title in entries}
+                updated_entries = {
+                    url: (title, media_path, thumbnail_path)
+                    for url, title, media_path, thumbnail_path in entries
+                }
 
                 if refresh_titles:
-                    urls_to_refresh = [url for url, title in entries if not title]
+                    urls_to_refresh = [
+                        url for url, (title, _, _) in entries if not title
+                    ]
 
                     with ThreadPoolExecutor(max_workers=15) as executor:
                         with tqdm(
@@ -168,9 +202,10 @@ class StorageManager:
                             )
 
                     for url, new_title in zip(urls_to_refresh, new_titles):
-                        updated_entries[url] = new_title
+                        title, media_path, thumbnail_path = updated_entries[url]
+                        updated_entries[url] = (new_title, media_path, thumbnail_path)
 
-                    for url, title in tqdm(
+                    for url, (title, media_path, thumbnail_path) in tqdm(
                         updated_entries.items(),
                         desc=f"Processing entries for {file_path}",
                     ):
@@ -183,16 +218,38 @@ class StorageManager:
                             url,
                             title,
                         )
-                for url, title in updated_entries.items():
+                for url, (title, media_path, thumbnail_path) in updated_entries.items():
+                    media_path = self._find_file_path(self.download_dir, title)
+                    thumbnail_path = self._find_file_path(self.thumbnails_folder, title)
+                    thumbnail_base64 = (
+                        self.read_img_base64(thumbnail_path) if thumbnail_path else None
+                    )
                     a = Atom(
                         url,
                         content_type=const.CONTENT_MODE.AUDIO,
                         download_dir=self.download_dir,
                         content_title=title if title else url.split("/")[-1],
+                        media_file_os_path=media_path,
+                        thumbnail_image_in_base64=thumbnail_base64,
                     )
                     a.update_status(status)
                     atoms.append(a)
         return atoms
+
+    def _find_file_path(self, dir: str, title: str) -> Optional[str]:
+        normalized_title = normalize_string(title).lower()
+        for file in os.listdir(dir):
+            normalized_file_name = normalize_string(path.splitext(file)[0])
+            if normalized_file_name == normalized_title:
+                return path.join(dir, file)
+        return None
+
+    def read_img_base64(self, filepath: str) -> str:
+        if os.path.exists(filepath):
+            with open(filepath, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode("utf-8")
+        else:
+            return ""
 
 
 class LibraryManager:
@@ -213,3 +270,27 @@ class LibraryManager:
 
         # Return the list of Atom objects
         return atoms
+
+
+def normalize_string(s: str) -> str:
+    # Replace spaces with hyphens
+    s = s.replace(" ", "-")
+    # Replace all other non-alphanumeric characters with hyphens
+    s = re.sub(r"[^a-zA-Z0-9-]", "-", s)
+    # Replace multiple consecutive hyphens with a single hyphen
+    s = re.sub(r"-+", "-", s)
+    # Remove leading and trailing hyphens
+    s = s.strip("-")
+    return s.lower()
+
+
+def find_mp3file_with_title(title: str) -> Optional[str]:
+    dir = AUDIO_LIBRARY
+    normalized_title = normalize_string(title).lower()
+    for root, _, files in os.walk(dir):
+        for file in files:
+            if file.endswith(".mp3"):
+                normalized_file_name = normalize_string(path.splitext(file)[0]).lower()
+                if normalized_file_name == normalized_title:
+                    return path.join(root, file)
+    return None

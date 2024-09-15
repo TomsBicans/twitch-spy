@@ -5,11 +5,65 @@ import styles from "./JobList.module.css";
 
 interface JobStatusesProps {
   socket: Socket;
+  onMusicSelected: (selection: Atom) => void;
+  currentTrack: string | undefined;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-export const JobList = ({ socket }: JobStatusesProps) => {
+const SongCard = ({
+  job,
+  onClick,
+  isPlaying,
+}: {
+  job: Atom;
+  onClick: () => void;
+  isPlaying: boolean;
+}) => {
+  const getStatusEmoji = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "finished":
+        return "✅";
+      case "processing":
+        return "🔄";
+      case "failed":
+        return "❌";
+      default:
+        return "❓";
+    }
+  };
+
+  const thumbnail = job.thumbnail_image_in_base64
+    ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
+    : "";
+  return (
+    <div
+      className={`${styles.card} ${isPlaying ? styles.playing : ""}`}
+      style={{ backgroundImage: `url(${thumbnail})` }}
+      onClick={onClick}
+    >
+      <div className={styles.cardHeader}>
+        <span className={styles.contentType}>
+          {job.content_type === "AUDIO" ? "🎵" : "🎵"}
+        </span>
+        <span className={styles.status}>{getStatusEmoji(job.status)}</span>
+      </div>
+      <h3 className={styles.jobName}>{job.content_name || "Unnamed"}</h3>
+      <p className={styles.jobUrl}>{job.url}</p>
+      <div
+        className={`${styles.statusBar} ${styles[job.status.toLowerCase()]}`}
+      >
+        {job.status}
+      </div>
+    </div>
+  );
+};
+
+export const JobList = ({
+  socket,
+  onMusicSelected,
+  currentTrack,
+}: JobStatusesProps) => {
   const [jobs, setJobs] = useState<Array<Atom>>([]);
   const [selectedJobProcessingState, setSelectedJobProcessingState] =
     useState<SelectedProcessingState>(ProcessingStates.FINISHED);
@@ -28,22 +82,9 @@ export const JobList = ({ socket }: JobStatusesProps) => {
   };
 
   socket.on("atom_update_status", (data) => {
-    console.log(data);
+    // console.log(data);
     updateAtomStatus(data);
   });
-
-  const getStatusEmoji = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "finished":
-        return "✅";
-      case "processing":
-        return "🔄";
-      case "failed":
-        return "❌";
-      default:
-        return "❓";
-    }
-  };
 
   const filterJobs = (
     jobs: Array<Atom>,
@@ -73,6 +114,10 @@ export const JobList = ({ socket }: JobStatusesProps) => {
     setSelectedJobProcessingState(
       event.target.value as SelectedProcessingState
     );
+  };
+
+  const handleCardClick = (job: Atom) => {
+    onMusicSelected(job);
   };
 
   const filteredJobs = filterJobs(
@@ -109,23 +154,12 @@ export const JobList = ({ socket }: JobStatusesProps) => {
       </div>
       <div className={styles.gridContainer}>
         {filteredJobs.map((job) => (
-          <div key={job.id} className={styles.card}>
-            <div className={styles.cardHeader}>
-              <span className={styles.contentType}>
-                {job.content_type === "AUDIO" ? "🎵" : "🎵"}
-              </span>
-              <span className={styles.status}>
-                {getStatusEmoji(job.status)}
-              </span>
-            </div>
-            <h3 className={styles.jobName}>{job.content_name || "Unnamed"}</h3>
-            <p className={styles.jobUrl}>{job.url}</p>
-            <div
-              className={`${styles.statusBar} ${styles[job.status.toLowerCase()]}`}
-            >
-              {job.status}
-            </div>
-          </div>
+          <SongCard
+            key={job.id}
+            job={job}
+            onClick={() => handleCardClick(job)}
+            isPlaying={currentTrack === job.content_name}
+          />
         ))}
       </div>
     </div>

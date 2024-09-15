@@ -5,8 +5,10 @@ export interface Atom {
   platform: PLATFORM;
   single_item: boolean;
   content_type: CONTENT_MODE;
-  content_name?: string; // Optional
+  content_name: string; // Optional
   download_dir: string;
+  thumbnail_image_in_base64?: string;
+  media_file_os_path?: string;
   status: ProcessingStates;
 }
 export enum PLATFORM {

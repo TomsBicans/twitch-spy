@@ -29,14 +29,20 @@ class EventDispatcher:
 
 
 def atom_status_listener(event_name: str, atom: Atom):
-    socketio.emit(
+    socketio.emit(  # ATOM MODEL LOCATION SOCKET
         Events.ATOM_UPDATE_STATUS.value,
         {
             "event": event_name,
             "id": str(atom.id),
-            "content_name": str(atom.content_title),
-            "content_type": atom.content_type.value,
             "url": atom.url,
+            "url_valid": atom.url_valid,
+            "platform": atom.platform.value,
+            "single_item": atom.single_item,
+            "content_type": atom.content_type.value,
+            "content_name": str(atom.content_title),
+            "download_dir": atom.download_dir,
+            "media_file_os_path": atom.media_file_os_path,
+            "thumbnail_image_in_base64": atom.thumbnail_image_in_base64,
             "status": atom.status.value,
         },
     )

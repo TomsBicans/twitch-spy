@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 import psutil
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, send_file
 import config
 import src.app as app
 from src.media_downloader.atomizer import Atom
@@ -16,6 +16,7 @@ from src.socket_instance import socketio
 from src.system_logger import logger
 from typing import TypedDict, List, Optional
 import time
+
 
 home_routes = Blueprint("home_routes", __name__)
 
@@ -74,7 +75,7 @@ def get_all_jobs():
 
 
 @home_routes.route("/jobs/<job_id>", methods=["GET"])
-def get_job_by_id(job_id):
+def get_job_by_id(job_id: str):
     logger.debug(f"Fetching job: {job_id}")
     my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
     job = my_app.job_manager.get_job(UUID(job_id))
@@ -265,3 +266,12 @@ def get_system_stats_ALL():
             "network": network_stats,
         }
     )
+
+
+@home_routes.route("/audio/<filename>")
+def stream_audio(filename: str):
+    file_path = sm.find_mp3file_with_title(filename)
+    if path.exists(file_path):
+        return send_file(file_path, mimetype="audio/mpeg")
+    else:
+        return "File not found", 404

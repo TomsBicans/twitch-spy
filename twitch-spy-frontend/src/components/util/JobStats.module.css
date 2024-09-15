@@ -1,0 +1,55 @@
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  padding: 10px;
+}
+
+.stat:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.QUEUED {
+  background-color: #e3f2fd;
+}
+.PROCESSING {
+  background-color: #fff9c4;
+}
+.FINISHED {
+  background-color: #e8f5e9;
+}
+.CANCELLED {
+  background-color: #f5f5f5;
+}
+.FAILED {
+  background-color: #ffebee;
+}
+.INVALID {
+  background-color: #fff3e0;
+}
