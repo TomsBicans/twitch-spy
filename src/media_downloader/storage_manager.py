@@ -65,10 +65,19 @@ class StorageManager:
             pass
         return location
 
-    def add_entry(self, location: str, url: str, title: str = None, media_path: str = None, thumbnail_path: str = None):
+    def add_entry(
+        self,
+        location: str,
+        url: str,
+        title: str = None,
+        media_path: str = None,
+        thumbnail_path: str = None,
+    ):
         with self.lock:
             with open(location, "a", encoding="utf-8", errors="replace") as f:
-                f.write(f"{url},{title if title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n")
+                f.write(
+                    f"{url},{title if title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
+                )
             return location
 
     def already_downloaded(self, url: str) -> bool:
@@ -101,7 +110,9 @@ class StorageManager:
         if url not in data:
             self.add_entry(self.failed_split, url, title)
 
-    def read_entries(self, location: str) -> List[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
+    def read_entries(
+        self, location: str
+    ) -> List[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
         entries = []
         if not path.exists(location):
             return entries
@@ -110,8 +121,12 @@ class StorageManager:
             parts = line.split(",")
             url = parts[0].strip()
             title = parts[1].strip() if len(parts) > 1 and parts[1] != "None" else None
-            media_path = parts[2].strip() if len(parts) > 2 and parts[2] != "None" else None
-            thumbnail_path = parts[3].strip() if len(parts) > 3 and parts[3] != "None" else None
+            media_path = (
+                parts[2].strip() if len(parts) > 2 and parts[2] != "None" else None
+            )
+            thumbnail_path = (
+                parts[3].strip() if len(parts) > 3 and parts[3] != "None" else None
+            )
             entries.append((url, title, media_path, thumbnail_path))
         return entries
 
@@ -124,14 +139,25 @@ class StorageManager:
             updated_entries = []
             for entry_url, entry_title, media_path, thumbnail_path in entries:
                 if entry_url == url:
-                    updated_entries.append((entry_url, new_title, media_path, thumbnail_path))
+                    updated_entries.append(
+                        (entry_url, new_title, media_path, thumbnail_path)
+                    )
                 else:
-                    updated_entries.append((entry_url, entry_title, media_path, thumbnail_path))
+                    updated_entries.append(
+                        (entry_url, entry_title, media_path, thumbnail_path)
+                    )
 
             # Write updated entries back to the file
             with open(location, "w", encoding="utf-8", errors="replace") as f:
-                for entry_url, entry_title, media_path, thumbnail_path in updated_entries:
-                    f.write(f"{entry_url},{entry_title if entry_title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n")
+                for (
+                    entry_url,
+                    entry_title,
+                    media_path,
+                    thumbnail_path,
+                ) in updated_entries:
+                    f.write(
+                        f"{entry_url},{entry_title if entry_title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
+                    )
 
     def generate_atoms(self, refresh_titles: bool = False) -> List[Atom]:
         atoms = []
@@ -152,10 +178,15 @@ class StorageManager:
             file_path = path.join(self.storage_folder, file_name)
             if path.exists(file_path):
                 entries = self.read_entries(file_path)
-                updated_entries = {url: (title, media_path, thumbnail_path) for url, title, media_path, thumbnail_path in entries}
+                updated_entries = {
+                    url: (title, media_path, thumbnail_path)
+                    for url, title, media_path, thumbnail_path in entries
+                }
 
                 if refresh_titles:
-                    urls_to_refresh = [url for url, (title, _, _) in entries if not title]
+                    urls_to_refresh = [
+                        url for url, (title, _, _) in entries if not title
+                    ]
 
                     with ThreadPoolExecutor(max_workers=15) as executor:
                         with tqdm(
@@ -189,7 +220,9 @@ class StorageManager:
                 for url, (title, media_path, thumbnail_path) in updated_entries.items():
                     media_path = self._find_file_path(self.download_dir, title)
                     thumbnail_path = self._find_file_path(self.thumbnails_folder, title)
-                    thumbnail_base64 = self.read_img_base64(thumbnail_path) if thumbnail_path else None
+                    thumbnail_base64 = (
+                        self.read_img_base64(thumbnail_path) if thumbnail_path else None
+                    )
                     a = Atom(
                         url,
                         content_type=const.CONTENT_MODE.AUDIO,
@@ -202,21 +235,10 @@ class StorageManager:
                     atoms.append(a)
         return atoms
 
-    def _normalize_string(self, s: str) -> str:
-        # Replace spaces with hyphens
-        s = s.replace(' ', '-')
-        # Replace all other non-alphanumeric characters with hyphens
-        s = re.sub(r'[^a-zA-Z0-9-]', '-', s)
-        # Replace multiple consecutive hyphens with a single hyphen
-        s = re.sub(r'-+', '-', s)
-        # Remove leading and trailing hyphens
-        s = s.strip('-')
-        return s.lower()
-
     def _find_file_path(self, dir: str, title: str) -> Optional[str]:
-        normalized_title = self._normalize_string(title).lower()
+        normalized_title = normalize_string(title).lower()
         for file in os.listdir(dir):
-            normalized_file_name = self._normalize_string(path.splitext(file)[0])
+            normalized_file_name = normalize_string(path.splitext(file)[0])
             if normalized_file_name == normalized_title:
                 return path.join(dir, file)
         return None
@@ -224,9 +246,9 @@ class StorageManager:
     def read_img_base64(self, filepath: str) -> str:
         if os.path.exists(filepath):
             with open(filepath, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode('utf-8')
+                return base64.b64encode(image_file.read()).decode("utf-8")
         else:
-            return ''
+            return ""
 
 
 class LibraryManager:
@@ -247,3 +269,24 @@ class LibraryManager:
 
         # Return the list of Atom objects
         return atoms
+
+
+def normalize_string(s: str) -> str:
+    # Replace spaces with hyphens
+    s = s.replace(" ", "-")
+    # Replace all other non-alphanumeric characters with hyphens
+    s = re.sub(r"[^a-zA-Z0-9-]", "-", s)
+    # Replace multiple consecutive hyphens with a single hyphen
+    s = re.sub(r"-+", "-", s)
+    # Remove leading and trailing hyphens
+    s = s.strip("-")
+    return s.lower()
+
+
+def find_file_path(dir: str, title: str) -> Optional[str]:
+    normalized_title = normalize_string(title).lower()
+    for file in os.listdir(dir):
+        normalized_file_name = normalize_string(path.splitext(file)[0])
+        if normalized_file_name == normalized_title:
+            return path.join(dir, file)
+    return None
