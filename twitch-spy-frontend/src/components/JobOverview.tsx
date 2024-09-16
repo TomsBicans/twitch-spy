@@ -8,7 +8,7 @@ interface JobOverviewProps {
   socket: Socket;
 }
 
-export const JobOverview = ({ socket }: JobOverviewProps) => {
+export const LocalLibraryStatistics = ({ socket }: JobOverviewProps) => {
   const [jobStats, setJobStats] = useState<JobStatistics>({
     [ProcessingStates.QUEUED]: 0,
     [ProcessingStates.PROCESSING]: 0,
@@ -57,4 +57,4 @@ export const JobOverview = ({ socket }: JobOverviewProps) => {
   );
 };
 
-export default JobOverview;
+export default LocalLibraryStatistics;

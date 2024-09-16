@@ -1,7 +1,20 @@
+.containerWrapper {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  max-height: 100px;
+}
+
+.containerWrapper.expanded {
+  max-height: 1000px;
+}
+
 .container {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  overflow: hidden;
 }
 
 .innerPanel {
@@ -13,8 +26,8 @@
   flex-direction: column;
   align-items: center;
   width: 50%;
-  background-size: cover; /* Ensure the background image covers the entire panel */
-  background-position: center; /* Center the background image */
+  background-size: cover;
+  background-position: center;
 }
 
 /* New styles for the audio player */
@@ -38,4 +51,25 @@
 
 :global(.rhap_download-progress) {
   background-color: #4f4f4f;
+}
+
+.systemDashboardPanel {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.systemDashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.gearIcon {
+  width: 20px;
+  height: 20px;
+  color: #666;
 }
