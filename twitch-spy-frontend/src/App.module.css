@@ -30,7 +30,6 @@
   background-position: center;
 }
 
-/* New styles for the audio player */
 :global(.rhap_container) {
   background-color: lightgray;
   box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.2);
