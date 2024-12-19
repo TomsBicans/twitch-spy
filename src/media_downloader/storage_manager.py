@@ -236,7 +236,9 @@ class StorageManager:
                     atoms.append(a)
         return atoms
 
-    def _find_file_path(self, dir: str, title: str) -> Optional[str]:
+    def _find_file_path(self, dir: str, title: str | None) -> Optional[str]:
+        if not title:
+            return None
         normalized_title = normalize_string(title).lower()
         for file in os.listdir(dir):
             normalized_file_name = normalize_string(path.splitext(file)[0])
