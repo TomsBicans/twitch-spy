@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import {useState} from 'react'
 import './App.css'
+import styles from "./App.module.css";
+import URLInput from "./components/URLInput.tsx";
+import SystemDashboard from "./components/system/SystemDashboard.tsx";
+import MusicPlayer from "./components/AudioPlayer.tsx";
+import type {Atom} from "./backend/models.ts";
+import JobOverview from './components/JobOverview.tsx';
+import JobList from './components/JobList.tsx';
+import {BACKEND_URL} from "./backend/backend.ts";
+import {io} from "socket.io-client";
+
+const socket = io(BACKEND_URL);
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [currentTrack, setCurrentTrack] = useState<Atom | undefined>(undefined);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const onMusicSelected = (selection: Atom) => {
+        setCurrentTrack(selection);
+    };
+
+    return (
+        <>
+            <div>
+                <h1>twitch-spy-music panel</h1>
+                <div className={styles.container}>
+                    <div className={styles.innerPanel}>
+                        <URLInput/>
+                    </div>
+                    <div className={styles.innerPanel}>
+                        <SystemDashboard/>
+                    </div>
+                </div>
+                <MusicPlayer entry={currentTrack}/>
+                <JobOverview socket={socket}/>
+                <JobList
+                    socket={socket}
+                    onMusicSelected={onMusicSelected}
+                    currentTrack={currentTrack?.content_name}
+                />
+            </div>
+        </>
+    )
 }
 
 export default App
