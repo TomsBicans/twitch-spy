@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Socket } from "socket.io-client";
-import { Atom, ProcessingStates } from "../backend/models";
+import { Atom, ProcessingStates } from "../backend/models.ts";
 import styles from "./JobList.module.css";
 
 interface JobStatusesProps {

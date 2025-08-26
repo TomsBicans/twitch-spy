@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
-import { TextInputStats } from "./util/TextInputStats";
-import { apiRequest } from "../backend/backend";
+import { TextInputStats } from "./util/TextInputStats.tsx";
+import { apiRequest } from "../backend/backend.ts";
 import styles from "./URLInput.module.css";
 
 export const URLInput = () => {

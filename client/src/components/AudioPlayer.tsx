@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
-import { BACKEND_URL } from "../backend/backend";
-import CurrentTrackDisplay from "./CurrentTrackDisplay";
-import { Atom } from "../backend/models";
+import { BACKEND_URL } from "../backend/backend.ts";
+import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
+import { Atom } from "../backend/models.ts";
 
 interface AudioPlayerProps {
   entry: Atom | undefined;

@@ -1,5 +1,5 @@
 import React from "react";
-import { ProcessingStates } from "../../backend/models";
+import { ProcessingStates } from "../../backend/models.ts";
 import styles from "./JobStats.module.css";
 
 interface JobStatProps {

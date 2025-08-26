@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Laptop, Cpu, HardDrive, Wifi, LucideIcon } from "lucide-react";
-import { getAllSystemStats } from "./model";
+import { getAllSystemStats } from "./model.ts";
 
 interface CardProps {
   children: ReactNode;
