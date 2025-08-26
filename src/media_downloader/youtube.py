@@ -5,7 +5,7 @@ import os.path as path
 import re
 import requests
 import mutagen
-from moviepy.editor import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 import yt_dlp
@@ -199,7 +199,7 @@ class YoutubeDownloader:
 
     @staticmethod
     def add_preview_picture_to_audio_file(
-        thumbnail_name: str, thumbnail_url: str, audio_path: str
+            thumbnail_name: str, thumbnail_url: str, audio_path: str
     ) -> Optional[str]:
         if thumbnail_url:
             print(f"Thumbnail found: {thumbnail_url}")
@@ -322,12 +322,12 @@ class YoutubeDownloader:
 
 def get_playlist_video_urls(playlist_url: str) -> list[VideoMetadata]:
     with yt_dlp.YoutubeDL(
-        {
-            "ignoreerrors": True,
-            "quiet": True,
-            "extract_flat": True,
-            "force_generic_extractor": True,
-        }
+            {
+                "ignoreerrors": True,
+                "quiet": True,
+                "extract_flat": True,
+                "force_generic_extractor": True,
+            }
     ) as ydl:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
@@ -399,7 +399,7 @@ def extract_playlist_id(url: str) -> str:
 
 def get_playlist_download_directory(playlists_directory: str, playlist_url: str):
     def find_existing_directory(
-        playlist_directory: str, playlist_id: str
+            playlist_directory: str, playlist_id: str
     ) -> Optional[str]:
         """Search for an existing directory by playlist ID."""
         for entry in os.listdir(playlist_directory):
@@ -435,10 +435,10 @@ def split_audio_file(audio_file: str, youtube_url: str):
 
 
 def download_video(
-    downloader: YoutubeDownloader,
-    download_dir: str,
-    storage_manager: StorageManager,
-    url: str,
+        downloader: YoutubeDownloader,
+        download_dir: str,
+        storage_manager: StorageManager,
+        url: str,
 ):
     try:
         print(f"Downloading {url} ...")
