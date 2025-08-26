@@ -162,8 +162,8 @@ def get_memory_stats() -> MemoryStats:
         "total": mem.total,
         "used": mem.used,
         "free": mem.free,
-        "shared": mem.shared,
-        "buffer": mem.buffers,
+        "shared": getattr(mem, 'shared', 0),  # Not available on Windows
+        "buffer": getattr(mem, 'buffers', 0),  # Not available on Windows
         "available": mem.available,
         "usagePercentage": mem.percent,
     }
