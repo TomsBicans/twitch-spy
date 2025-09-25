@@ -92,6 +92,12 @@ class JobManager:
             self.send_update(job)
             logger.debug(f"Processing failed for job {job}")
             return
+        # If the platform handler explicitly marked the job as FAILED, respect it
+        if job.status == const.PROCESS_STATUS.FAILED:
+            self.send_update(job)
+            logger.debug(f"Processing failed for job {job}")
+            return
+        # Otherwise, consider it finished successfully
         job.update_status(const.PROCESS_STATUS.FINISHED)
         self.send_update(job)
         logger.debug(f"Processing finished for job {job}")
