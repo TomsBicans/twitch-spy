@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Socket} from "socket.io-client";
 import {type Atom, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
@@ -11,49 +11,46 @@ interface JobStatusesProps {
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-const SongCard = ({
-                      job,
-                      onClick,
-                      isPlaying,
-                  }: {
+const SongCard = ({job, onClick, isPlaying}: {
     job: Atom;
     onClick: () => void;
     isPlaying: boolean;
 }) => {
-    const getStatusEmoji = (status: string) => {
-        switch (status.toLowerCase()) {
-            case "finished":
-                return "✅";
-            case "processing":
-                return "🔄";
-            case "failed":
-                return "❌";
-            default:
-                return "❓";
-        }
-    };
-
     const thumbnail = job.thumbnail_image_in_base64
         ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
         : "";
+
+    const status = job.status.toLowerCase();
+    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+    const statusClass = styles[status] ?? "";
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <div
-            className={`${styles.card} ${isPlaying ? styles.playing : ""}`}
-            style={{backgroundImage: `url(${thumbnail})`}}
+            role="button"
+            tabIndex={0}
+            className={`${styles.card} ${statusClass} ${
+                isPlaying ? styles.playing : ""
+            }`}
             onClick={onClick}
+            onKeyDown={handleKeyDown}
         >
-            <div className={styles.cardHeader}>
-        <span className={styles.contentType}>
-          {job.content_type === "AUDIO" ? "🎵" : "🎵"}
-        </span>
-                <span className={styles.status}>{getStatusEmoji(job.status)}</span>
-            </div>
-            <h3 className={styles.jobName}>{job.content_name || "Unnamed"}</h3>
-            <p className={styles.jobUrl}>{job.url}</p>
-            <div
-                className={`${styles.statusBar} ${styles[job.status.toLowerCase()]}`}
-            >
-                {job.status}
+            <div className={styles.thumbnail} style={{backgroundImage: `url(${thumbnail})`}} />
+            <div className={styles.cardContent}>
+                <div className={styles.cardHeader}>
+                    <span className={styles.contentType}>
+                        {job.content_type === "AUDIO" ? "Track" : job.content_type}
+                    </span>
+                    <span className={styles.statusChip}>{statusLabel}</span>
+                </div>
+                <h3 className={styles.jobName}>{job.content_name || "Untitled"}</h3>
+                <p className={styles.jobUrl}>{job.url}</p>
             </div>
         </div>
     );
@@ -81,10 +78,15 @@ export const JobList = ({
         });
     };
 
-    socket.on("atom_update_status", (data) => {
-        // console.log(data);
-        updateAtomStatus(data);
-    });
+    useEffect(() => {
+        const handler = (data: Atom) => updateAtomStatus(data);
+        socket.on("atom_update_status", handler);
+        socket.emit("request_initial_data");
+
+        return () => {
+            socket.off("atom_update_status", handler);
+        };
+    }, [socket]);
 
     const filterJobs = (
         jobs: Array<Atom>,
@@ -123,44 +125,73 @@ export const JobList = ({
     const filteredJobs = filterJobs(
         jobs,
         selectedJobProcessingState,
-        searchQuery
+        searchQuery.toLowerCase()
     );
+
+    const emptyStateMessage = searchQuery
+        ? "No matches yet. Try different keywords or clear the filters."
+        : selectedJobProcessingState === ProcessingStates.FINISHED
+            ? "Downloading is quiet. Finished tracks will land here once processed."
+            : "Queue something new and we will list it right away.";
 
     return (
         <div className={styles.container}>
-            <h2 className={styles.title}>Song List</h2>
-            <div className={styles.filterContainer}>
-                <label htmlFor="statusFilter">Filter by status: </label>
-                <select
-                    id="statusFilter"
-                    value={selectedJobProcessingState}
-                    onChange={handleFilterChange}
-                    className={styles.filterSelect}
-                >
-                    <option value="all">All</option>
-                    {Object.values(ProcessingStates).map((state) => (
-                        <option key={state} value={state}>
-                            {state}
-                        </option>
-                    ))}
-                </select>
-                <input
-                    type="text"
-                    placeholder="Search songs..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    className={styles.searchInput}
-                />
+            <div className={styles.header}>
+                <div>
+                    <h2 className={styles.title}>Library &amp; queue</h2>
+                    <p className={styles.caption}>
+                        Browse every request, filter by state, and tap to bring a track to
+                        the player.
+                    </p>
+                </div>
+                <div className={styles.filterCluster}>
+                    <label className={styles.filterLabel} htmlFor="statusFilter">
+                        Status
+                    </label>
+                    <select
+                        id="statusFilter"
+                        value={selectedJobProcessingState}
+                        onChange={handleFilterChange}
+                        className={styles.filterSelect}
+                    >
+                        <option value="all">All</option>
+                        {Object.values(ProcessingStates).map((state) => (
+                            <option key={state} value={state}>
+                                {state}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            <div className={styles.searchRow}>
+                <div className={styles.searchField}>
+                    <input
+                        type="text"
+                        placeholder="Search by title or URL"
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        className={styles.searchInput}
+                        aria-label="Search tracks"
+                    />
+                </div>
             </div>
             <div className={styles.gridContainer}>
-                {filteredJobs.map((job) => (
-                    <SongCard
-                        key={job.id}
-                        job={job}
-                        onClick={() => handleCardClick(job)}
-                        isPlaying={currentTrack === job.content_name}
-                    />
-                ))}
+                {filteredJobs.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <span className={styles.emptyGlow} aria-hidden="true" />
+                        <h3>Nothing here just yet</h3>
+                        <p>{emptyStateMessage}</p>
+                    </div>
+                ) : (
+                    filteredJobs.map((job) => (
+                        <SongCard
+                            key={job.id}
+                            job={job}
+                            onClick={() => handleCardClick(job)}
+                            isPlaying={currentTrack === job.content_name}
+                        />
+                    ))
+                )}
             </div>
         </div>
     );

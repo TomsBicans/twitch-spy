@@ -1,55 +1,91 @@
 .stat {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 120px;
-  height: 120px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  padding: 10px;
+  min-height: 120px;
+  border-radius: 16px;
+  padding: 18px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  transition: transform var(--transition-medium) ease, box-shadow var(--transition-medium) ease, border-color var(--transition-medium) ease;
+}
+
+.stat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-medium) ease;
 }
 
 .stat:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px -30px rgba(124, 92, 255, 0.55);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.stat:hover::after {
+  opacity: 1;
 }
 
 .icon {
-  font-size: 24px;
-  margin-bottom: 5px;
+  font-size: 1.45rem;
+  margin-bottom: 10px;
+  z-index: 1;
 }
 
 .statValue {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  z-index: 1;
 }
 
 .statLabel {
-  font-size: 14px;
-  color: #666;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  z-index: 1;
 }
 
 .QUEUED {
-  background-color: #e3f2fd;
+  background: linear-gradient(180deg, rgba(66, 146, 255, 0.12), rgba(33, 59, 118, 0.25));
+  color: #7fb5ff;
 }
+
 .PROCESSING {
-  background-color: #fff9c4;
+  background: linear-gradient(180deg, rgba(255, 206, 99, 0.15), rgba(107, 76, 20, 0.25));
+  color: #ffd58c;
 }
+
 .FINISHED {
-  background-color: #e8f5e9;
+  background: linear-gradient(180deg, rgba(65, 214, 177, 0.14), rgba(14, 86, 68, 0.24));
+  color: #99f5da;
 }
-.CANCELLED {
-  background-color: #f5f5f5;
-}
+
 .FAILED {
-  background-color: #ffebee;
+  background: linear-gradient(180deg, rgba(255, 135, 119, 0.18), rgba(115, 35, 36, 0.24));
+  color: #ff8777;
 }
+
 .INVALID {
-  background-color: #fff3e0;
+  background: linear-gradient(180deg, rgba(255, 184, 113, 0.16), rgba(120, 63, 15, 0.26));
+  color: #ffdc9c;
+}
+
+.CANCELLED {
+  background: linear-gradient(180deg, rgba(167, 177, 199, 0.18), rgba(61, 68, 86, 0.24));
+  color: rgba(192, 198, 216, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat,
+  .stat::after {
+    transition: none;
+  }
 }

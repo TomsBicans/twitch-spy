@@ -1,5 +1,5 @@
 import React from "react";
-import "./TextInputStats.css";
+import styles from "./TextInputStats.module.css";
 
 interface TextInputStatsProps {
   urlCount: number;
@@ -7,20 +7,26 @@ interface TextInputStatsProps {
 }
 
 export const TextInputStats: React.FC<TextInputStatsProps> = ({
-  urlCount,
-  inputValidity,
+    urlCount,
+    inputValidity,
 }) => {
-  return (
-    <div>
-      <h3>
-        {urlCount} valid URL{urlCount === 1 ? "" : "s"}
-      </h3>
-      {}
-      <h3 className={inputValidity ? "valid" : "invalid"}>
-        Input is {inputValidity ? "valid" : "invalid"}
-      </h3>
-    </div>
-  );
+    return (
+        <div className={styles.statsContainer}>
+            <div className={styles.countBlock}>
+                <span className={styles.countValue}>{urlCount}</span>
+                <span className={styles.countLabel}>
+                    valid URL{urlCount === 1 ? "" : "s"}
+                </span>
+            </div>
+            <span
+                className={`${styles.validationChip} ${
+                    inputValidity ? styles.valid : styles.invalid
+                }`}
+            >
+                {inputValidity ? "Good to submit" : "Needs valid URLs"}
+            </span>
+        </div>
+    );
 };
 
 export default TextInputStats;

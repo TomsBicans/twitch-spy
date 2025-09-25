@@ -1,0 +1,44 @@
+.playerShell {
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: clamp(14px, 3vw, 26px);
+}
+
+.leftPane {
+  flex: 0 1 40%;
+  min-width: clamp(220px, 28vw, 360px);
+}
+
+.rightPane {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+}
+
+.rightPane :global(.rhap_container) {
+  width: 100%;
+  min-height: 70px;
+}
+
+@media (max-width: 900px) {
+  .playerShell {
+    flex-direction: column;
+  }
+
+  .leftPane,
+  .rightPane {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .leftPane {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 540px) {
+  .rightPane :global(.rhap_container) {
+    min-height: 60px;
+  }
+}

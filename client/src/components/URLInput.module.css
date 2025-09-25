@@ -1,63 +1,158 @@
 .form {
-  width: 100%;
-  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.heading {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.description {
+  margin: 6px 0 0;
+  color: var(--text-tertiary);
+  max-width: 48ch;
+}
+
+.inputShell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color var(--transition-medium) ease, box-shadow var(--transition-medium) ease;
+  cursor: text;
+}
+
+.inputShell:hover {
+  border-color: rgba(124, 92, 255, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(124, 92, 255, 0.12);
+}
+
+.inputLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
 }
 
 .urlInput {
-  width: 95%;
-  border-radius: 0.5rem;
-  height: 20rem;
-  resize: none;
-}
-
-.button {
+  width: 100%;
+  min-height: 180px;
   border: none;
-  color: var(--color-text);
-  background-color: var(--color-neutral);
-  border-radius: 10px;
-  padding: var(--padding);
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: var(--font-size);
-  cursor: pointer;
-  transition:
-    background-color var(--transition-time),
-    transform var(--transition-time);
+  resize: vertical;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-family: inherit;
 }
 
-.button:disabled {
-  opacity: 0.5;
+.urlInput::placeholder {
+  color: rgba(220, 225, 245, 0.35);
+}
+
+.urlInput:focus {
+  outline: none;
+}
+
+.inputShell:focus-within {
+  border-color: rgba(124, 92, 255, 0.45);
+  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.26), 0 18px 45px -35px rgba(124, 92, 255, 0.4);
+}
+
+.inputGlow {
+  pointer-events: none;
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.2) 0%, rgba(124, 92, 255, 0) 60%);
+  opacity: 0;
+  transition: opacity var(--transition-medium) ease;
+}
+
+.inputShell:focus-within .inputGlow {
+  opacity: 1;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryButton,
+.secondaryButton {
+  font-size: 0.95rem;
+  padding: 0.65em 1.4em;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+  color: var(--text-on-accent);
+  box-shadow: 0 15px 35px -22px rgba(124, 92, 255, 0.9);
+}
+
+.primaryButton:hover {
+  box-shadow: 0 20px 40px -22px rgba(124, 92, 255, 0.95);
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.button:hover,
-.button:focus {
-  opacity: 0.9;
-  transform: translateY(-2px);
-}
-
-.button:active {
-  transform: translateY(1px);
-}
-
-.button-good {
-  background-color: var(--color-good);
-}
-
-.button-bad {
-  background-color: var(--color-bad);
-}
-
-/* Improve accessibility for users who prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .button {
-    transition: none;
+@media (max-width: 720px) {
+  .formHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .button:hover,
-  .button:focus,
-  .button:active {
-    transform: none;
+  .metaRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .buttonGroup {
+    width: 100%;
+  }
+
+  .buttonGroup button {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputShell,
+  .primaryButton,
+  .secondaryButton {
+    transition: none;
   }
 }

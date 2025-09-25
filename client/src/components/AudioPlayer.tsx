@@ -4,6 +4,7 @@ import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import type {Atom} from "../backend/models.ts";
+import styles from "./AudioPlayer.module.css";
 
 interface AudioPlayerProps {
     entry: Atom | undefined;
@@ -83,19 +84,20 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
     };
 
     return (
-        <>
-            <CurrentTrackDisplay title={entry?.content_name} color={trackColor}/>
-            <AudioPlayer
-                autoPlay
-                src={currentTrack}
-                showJumpControls={true}
-                onEnded={handleNextTrack}
-                style={{
-                    backgroundColor: entry ? "#f5f5f5" : "#e5e5e5",
-                    color: entry ? "#000" : "#808080",
-                }}
-            />
-        </>
+        <div className={styles.playerShell}>
+            <div className={styles.leftPane}>
+                <CurrentTrackDisplay title={entry?.content_name} color={trackColor}/>
+            </div>
+            <div className={styles.rightPane}>
+                <AudioPlayer
+                    autoPlay
+                    autoPlayAfterSrcChange
+                    src={currentTrack}
+                    showJumpControls={false}
+                    onEnded={handleNextTrack}
+                />
+            </div>
+        </div>
     );
 };
 

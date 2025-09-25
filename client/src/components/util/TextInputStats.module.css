@@ -1,0 +1,69 @@
+.statsContainer {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.countBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.countValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.countLabel {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.validationChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background-color var(--transition-medium) ease, color var(--transition-medium) ease, box-shadow var(--transition-medium) ease;
+}
+
+.validationChip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.valid {
+  background: rgba(60, 224, 174, 0.12);
+  color: #8cf8da;
+  box-shadow: 0 10px 25px -20px rgba(140, 248, 218, 0.5);
+}
+
+.invalid {
+  background: rgba(255, 135, 119, 0.12);
+  color: var(--warning);
+  box-shadow: 0 10px 25px -20px rgba(255, 135, 119, 0.4);
+}
+
+@media (max-width: 520px) {
+  .statsContainer {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .validationChip {
+    transition: none;
+  }
+}

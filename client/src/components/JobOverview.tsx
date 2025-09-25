@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Socket} from "socket.io-client";
 import JobStat from "./util/JobStats.tsx";
 import {type JobStatistics, ProcessingStates} from "../backend/models.ts";
@@ -28,20 +28,41 @@ export const JobOverview = ({socket}: JobOverviewProps) => {
     ];
 
     useEffect(() => {
-        socket.on("statistics_update", (data) => {
-            // console.log(data);
+        const handleStatsUpdate = (data: JobStatistics) => {
             setJobStats((prevStats) => ({
                 ...prevStats,
                 ...data,
             }));
-        });
+        };
 
+        socket.on("statistics_update", handleStatsUpdate);
         socket.emit("request_initial_data");
-    }, []);
+
+        return () => {
+            socket.off("statistics_update", handleStatsUpdate);
+        };
+    }, [socket]);
+
+    const totalJobs = useMemo(
+        () =>
+            panelConfig
+                .filter((config) => config.visible)
+                .reduce((acc, config) => acc + jobStats[config.state], 0),
+        [jobStats]
+    );
+
+    const isCalm = totalJobs === 0;
 
     return (
         <div className={styles.container}>
-            <h2 className={styles.title}>Local Library Statistics</h2>
+            <div className={styles.header}>
+                <h2 className={styles.title}>Download pulse</h2>
+                <p className={styles.caption}>
+                    {isCalm
+                        ? "The queue is relaxed. Drop some links to get the vibe going."
+                        : "Live snapshot of queued, processing, finished, and failed downloads."}
+                </p>
+            </div>
             <div className={styles.jobStats}>
                 {panelConfig
                     .filter((config) => config.visible)

@@ -1,4 +1,4 @@
-import React, {useState, useEffect, type ReactNode} from "react";
+import React, {useEffect, useState, type ReactNode} from "react";
 import {
     LineChart,
     Line,
@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import {Laptop, Cpu, HardDrive, Wifi, type LucideIcon} from "lucide-react";
 import {getAllSystemStats} from "./model.ts";
+import styles from "./SystemDashboard.module.css";
 
 interface CardProps {
     children: ReactNode;
@@ -16,7 +17,7 @@ interface CardProps {
 }
 
 const Card: React.FC<CardProps> = ({children, className = ""}) => (
-    <div className={`border rounded-lg p-4 ${className}`}>{children}</div>
+    <div className={`${styles.card} ${className}`.trim()}>{children}</div>
 );
 
 interface CardHeaderProps {
@@ -24,7 +25,7 @@ interface CardHeaderProps {
 }
 
 const CardHeader: React.FC<CardHeaderProps> = ({children}) => (
-    <div className="mb-2">{children}</div>
+    <div className={styles.cardHeader}>{children}</div>
 );
 
 interface CardContentProps {
@@ -32,7 +33,7 @@ interface CardContentProps {
 }
 
 const CardContent: React.FC<CardContentProps> = ({children}) => (
-    <div>{children}</div>
+    <div className={styles.cardBody}>{children}</div>
 );
 
 interface ProgressProps {
@@ -40,11 +41,8 @@ interface ProgressProps {
 }
 
 const Progress: React.FC<ProgressProps> = ({value}) => (
-    <div className="w-full bg-gray-200 rounded-full h-2.5">
-        <div
-            className="bg-blue-600 h-2.5 rounded-full"
-            style={{width: `${value}%`}}
-        ></div>
+    <div className={styles.progressTrack}>
+        <div className={styles.progressFill} style={{width: `${Math.min(100, value)}%`}} />
     </div>
 );
 
@@ -90,15 +88,17 @@ const SystemStatCard: React.FC<SystemStatCardProps> = ({
                                                            absoluteValue = false,
                                                            unitOfMeasure = "",
                                                        }) => (
-    <Card className="w-full">
+    <Card>
         <CardHeader>
-            <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium">{title}</h3>
-                <Icon className="h-4 w-4 text-gray-500"/>
+            <div className={styles.cardHeadingRow}>
+                <h3 className={styles.cardTitle}>{title}</h3>
+                <span className={styles.iconBadge}>
+                    <Icon size={16} />
+                </span>
             </div>
         </CardHeader>
         <CardContent>
-            <div className="text-2xl font-bold mb-2">
+            <div className={styles.cardMetric}>
                 {value}
                 {absoluteValue ? (unitOfMeasure ? ` ${unitOfMeasure}` : "") : "%"}
             </div>
@@ -122,31 +122,47 @@ const SystemStatsChart: React.FC<SystemStatsChartProps> = ({
                                                            }) => (
     <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
-            <XAxis dataKey="name"/>
-            <YAxis/>
-            <Tooltip/>
+            <XAxis
+                dataKey="name"
+                stroke="rgba(216, 223, 241, 0.4)"
+                tick={{fill: "rgba(216, 223, 241, 0.55)", fontSize: 12}}
+            />
+            <YAxis
+                stroke="rgba(216, 223, 241, 0.38)"
+                tick={{fill: "rgba(216, 223, 241, 0.55)", fontSize: 12}}
+            />
+            <Tooltip
+                contentStyle={{
+                    background: "rgba(13, 17, 26, 0.88)",
+                    border: "1px solid rgba(124, 92, 255, 0.35)",
+                    borderRadius: 12,
+                    color: "var(--text-primary)",
+                    backdropFilter: "blur(12px)",
+                }}
+                labelStyle={{color: "var(--text-secondary)", fontWeight: 600}}
+            />
             <Line
                 type="monotone"
                 dataKey="cpu"
-                stroke="#8884d8"
+                stroke="#7c5cff"
                 isAnimationActive={isAnimationActive}
             />
             <Line
                 type="monotone"
                 dataKey="memory"
-                stroke="#82ca9d"
+                stroke="#3ed6be"
                 isAnimationActive={isAnimationActive}
             />
             <Line
                 type="monotone"
                 dataKey="disk"
-                stroke="#ffc658"
+                stroke="#ffb677"
                 isAnimationActive={isAnimationActive}
             />
             <Line
                 type="monotone"
                 dataKey="network"
-                stroke="#ff7300"
+                stroke="#ff8777"
                 isAnimationActive={isAnimationActive}
             />
         </LineChart>
@@ -200,48 +216,59 @@ const SystemDashboard: React.FC = () => {
         };
     }, []); // Empty dependency array means this effect runs once on mount
 
-    if (isLoading) {
-        return <div>Loading system stats...</div>;
-    }
-
     return (
-        <div className="space-y-4">
-            <h2 className="text-3xl font-bold">System Stats</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <SystemStatCard
-                    title="CPU Usage"
-                    value={currentStats.cpu}
-                    icon={Cpu}
-                    absoluteValue={false}
-                />
-                <SystemStatCard
-                    title="Memory Usage"
-                    value={currentStats.memory}
-                    icon={Laptop}
-                    absoluteValue={false}
-                />
-                <SystemStatCard
-                    title="Disk Usage"
-                    value={currentStats.disk}
-                    icon={HardDrive}
-                    absoluteValue={false}
-                />
-                <SystemStatCard
-                    title="Network Usage"
-                    value={Number((currentStats.network / 1024 / 1024).toFixed(2))}
-                    icon={Wifi}
-                    absoluteValue={true}
-                    unitOfMeasure="MB/s"
-                />
+        <div className={styles.dashboard}>
+            <div className={styles.headlineRow}>
+                <h2 className={styles.title}>System tempo</h2>
+                <p className={styles.subtitle}>
+                    Keep an eye on the workstation while downloads run in the background.
+                </p>
             </div>
-            <Card>
-                <CardHeader>
-                    <h3 className="text-lg font-semibold">Historical Usage</h3>
-                </CardHeader>
-                <CardContent>
-                    <SystemStatsChart data={historicalData} isAnimationActive={false}/>
-                </CardContent>
-            </Card>
+
+            {isLoading ? (
+                <div className={styles.loadingState}>
+                    <span className={styles.loadingSpinner} aria-hidden="true"/>
+                    <p>Gathering system vitals…</p>
+                </div>
+            ) : (
+                <>
+                    <div className={styles.metricsGrid}>
+                        <SystemStatCard
+                            title="CPU Usage"
+                            value={currentStats.cpu}
+                            icon={Cpu}
+                            absoluteValue={false}
+                        />
+                        <SystemStatCard
+                            title="Memory Usage"
+                            value={currentStats.memory}
+                            icon={Laptop}
+                            absoluteValue={false}
+                        />
+                        <SystemStatCard
+                            title="Disk Usage"
+                            value={currentStats.disk}
+                            icon={HardDrive}
+                            absoluteValue={false}
+                        />
+                        <SystemStatCard
+                            title="Network Throughput"
+                            value={Number((currentStats.network / 1024 / 1024).toFixed(2))}
+                            icon={Wifi}
+                            absoluteValue={true}
+                            unitOfMeasure="MB/s"
+                        />
+                    </div>
+                    <Card className={styles.chartCard}>
+                        <CardHeader>
+                            <h3 className={styles.cardTitle}>Historical usage</h3>
+                        </CardHeader>
+                        <CardContent>
+                            <SystemStatsChart data={historicalData} isAnimationActive={false}/>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
         </div>
     );
 };
