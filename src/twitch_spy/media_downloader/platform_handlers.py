@@ -42,20 +42,26 @@ class YouTubeHandler(PlatformHandler):
             new_download_dir = (
                 path.join(atom.download_dir, subdir) if subdir else atom.download_dir
             )
-            # Skip the network title fetch if the URL is already downloaded.
-            # The title will not be needed since the job will be filtered out.
-            already_done = StorageManager(new_download_dir).already_downloaded(atom.url)
+            # Title is resolved later during download_audio() from info_dict,
+            # avoiding a redundant network round-trip here.
             new_atom = Atom(
                 atom.url,
                 atom.content_type,
                 new_download_dir,
-                content_title=None if already_done else youtube.get_video_title(atom.url),
+                content_title=None,
             )
             return [new_atom]
-        video_metadatas = youtube.get_playlist_video_urls(atom.url)
-        playlist_directory = youtube.get_playlist_download_directory(
-            atom.download_dir, atom.url
-        )
+        try:
+            video_metadatas = youtube.get_playlist_video_urls(atom.url)
+            playlist_directory = youtube.get_playlist_download_directory(
+                atom.download_dir, atom.url
+            )
+        except Exception as exc:
+            logger.warning("Skipping unsupported URL %s: %s", atom.url, exc)
+            return []
+        if not video_metadatas:
+            logger.warning("No videos found for URL %s, skipping", atom.url)
+            return []
         return [
             Atom(
                 vid.url,

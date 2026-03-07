@@ -1,6 +1,9 @@
 import base64
+import logging
 import re
 import traceback
+
+logger = logging.getLogger(__name__)
 import os
 import os.path as path
 import re
@@ -269,6 +272,7 @@ class YoutubeDownloader:
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(atom.url, download=False)
+            atom.content_title = info_dict.get("title") or atom.content_title
             filename = ydl.prepare_filename(info_dict)
             filename = path.abspath(filename)
             # Change the extension to mp3
@@ -333,6 +337,10 @@ def get_playlist_video_urls(playlist_url: str) -> list[VideoMetadata]:
     ) as ydl:
         playlist_dict = ydl.extract_info(playlist_url, download=False)
 
+    if not playlist_dict or "entries" not in playlist_dict:
+        logger.warning("Could not extract playlist info for %s", playlist_url)
+        return []
+
     res = []
     for video in playlist_dict["entries"]:
         if video is not None:
@@ -394,9 +402,10 @@ def safe_pathname(dir: str) -> str:
     return re.sub(r'[\\/:*?"<>| ]', "_", dir)
 
 
-def extract_playlist_id(url: str) -> str:
-    """Extract the playlist ID from the URL."""
-    return re.search(r"list=([\w-]+)", url).group(1)
+def extract_playlist_id(url: str) -> Optional[str]:
+    """Extract the playlist ID from the URL, or None if not present."""
+    m = re.search(r"list=([\w-]+)", url)
+    return m.group(1) if m else None
 
 
 def get_playlist_download_directory(playlists_directory: str, playlist_url: str):
@@ -411,6 +420,8 @@ def get_playlist_download_directory(playlists_directory: str, playlist_url: str)
         return None
 
     playlist_id = extract_playlist_id(playlist_url)
+    if not playlist_id:
+        raise ValueError(f"No playlist ID found in URL: {playlist_url}")
     existing_dir = find_existing_directory(playlists_directory, playlist_id)
     if existing_dir:
         print(f"Found existing directory by project id: {playlist_id}")
