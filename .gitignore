@@ -9,3 +9,6 @@ py3.10/*
 build/
 dist/
 main.spec
+
+
+.idea/
