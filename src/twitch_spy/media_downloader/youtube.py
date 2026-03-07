@@ -1,3 +1,4 @@
+import base64
 import re
 import traceback
 import os
@@ -290,7 +291,9 @@ class YoutubeDownloader:
                 thumbnail_path = YoutubeDownloader.add_preview_picture_to_audio_file(
                     info_dict.get("title", None), thumbnail_url, filename
                 )
-                atom.thumbnail_image_in_base64 = thumbnail_path  # Store thumbnail path
+                if thumbnail_path and path.exists(thumbnail_path):
+                    with open(thumbnail_path, "rb") as f:
+                        atom.thumbnail_image_in_base64 = base64.b64encode(f.read()).decode("utf-8")
             except Exception as e:
                 raise e
             return filename

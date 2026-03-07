@@ -42,11 +42,14 @@ class YouTubeHandler(PlatformHandler):
             new_download_dir = (
                 path.join(atom.download_dir, subdir) if subdir else atom.download_dir
             )
+            # Skip the network title fetch if the URL is already downloaded.
+            # The title will not be needed since the job will be filtered out.
+            already_done = StorageManager(new_download_dir).already_downloaded(atom.url)
             new_atom = Atom(
                 atom.url,
                 atom.content_type,
                 new_download_dir,
-                content_title=youtube.get_video_title(atom.url),
+                content_title=None if already_done else youtube.get_video_title(atom.url),
             )
             return [new_atom]
         video_metadatas = youtube.get_playlist_video_urls(atom.url)

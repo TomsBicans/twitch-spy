@@ -80,18 +80,12 @@ class JobManager:
         return job
 
     def job_done(self, future: Future) -> None:
-        # This is called once a job is done. You can do any cleanup or post-processing here.
-        # If the job raises an exception, you can capture it here.
         exception: Union[BaseException, None] = future.exception()
+        if exception:
+            logger.error(f"Unexpected error during job processing: {exception}", exc_info=exception)
+            return
 
         job: Atom = future.result()
-
-        if exception:
-            # Handle the exception, e.g., update the job status to failed
-            job.update_status(const.PROCESS_STATUS.FAILED)
-            self.send_update(job)
-            logger.debug(f"Processing failed for job {job}")
-            return
         # If the platform handler explicitly marked the job as FAILED, respect it
         if job.status == const.PROCESS_STATUS.FAILED:
             self.send_update(job)

@@ -44,8 +44,7 @@ class StorageManager:
 
     @staticmethod
     def ensure_folder_exists(folder_path: str) -> str:
-        if not path.exists(folder_path):
-            os.makedirs(folder_path)
+        os.makedirs(folder_path, exist_ok=True)
         return folder_path
 
     @staticmethod
