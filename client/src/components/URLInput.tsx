@@ -8,8 +8,23 @@ export const URLInput = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
 
+    const unwrapIfJsonArray = (input: string): string => {
+        const trimmed = input.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
+                    return parsed.join("\n");
+                }
+            } catch {
+                // fall through to normal parsing
+            }
+        }
+        return input;
+    };
+
     const cleanInput = (input: string): string =>
-        input
+        unwrapIfJsonArray(input)
             .replace(/\s+/g, ",")
             .split(",")
             .map((url) => url.trim())
@@ -24,7 +39,7 @@ export const URLInput = () => {
     };
 
     const isInputValid = (input: string): boolean => {
-        const urlList = input.replace(/\s+/g, ",").split(",");
+        const urlList = unwrapIfJsonArray(input).replace(/\s+/g, ",").split(",");
         if (urlList.some((url) => url.trim() === "")) {
             return false;
         }
