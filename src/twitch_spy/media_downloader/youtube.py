@@ -10,12 +10,12 @@ from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 import yt_dlp
 import googleapiclient.discovery
-import src.media_downloader.constants as const
+import twitch_spy.media_downloader.constants as const
 import config
 from typing import Optional
 
-from src.media_downloader.storage_manager import StorageManager
-from src.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.storage_manager import StorageManager
+from twitch_spy.media_downloader.atomizer import Atom
 
 
 class VideoMetadata:

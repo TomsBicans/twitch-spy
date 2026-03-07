@@ -1,19 +1,18 @@
-from typing import List
 from uuid import UUID
 import psutil
 from flask import Blueprint, render_template, jsonify, send_file
 import config
-import src.app as app
-from src.media_downloader.atomizer import Atom
-import src.util as util
-import src.media_downloader.platform_handlers as ph
-import src.media_downloader.constants as const
-import src.media_downloader.storage_manager as sm
-from src.event_dispatcher import Events
+import twitch_spy.app as app
+from twitch_spy.media_downloader.atomizer import Atom
+import twitch_spy.util as util
+import twitch_spy.media_downloader.platform_handlers as ph
+import twitch_spy.media_downloader.constants as const
+import twitch_spy.media_downloader.storage_manager as sm
+from twitch_spy.event_dispatcher import Events
 import flask
 import os.path as path
-from src.socket_instance import socketio
-from src.system_logger import logger
+from twitch_spy.socket_instance import socketio
+from twitch_spy.system_logger import logger
 from typing import TypedDict, List, Optional
 import time
 

@@ -1,5 +1,4 @@
 import os.path as path
-import sys
 import os
 
 ROOT_DIR = path.dirname(__file__)

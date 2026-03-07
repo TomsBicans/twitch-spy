@@ -1,9 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 import uuid
-import os.path as path
 from urllib.parse import urlparse
-import src.media_downloader.constants as const
-
+import constants as const
 
 class Atom:
     def __init__(

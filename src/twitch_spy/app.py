@@ -1,20 +1,20 @@
 from flask import Flask
 from flask_cors import CORS
-from src.media_downloader.job_manager import JobManager, JobStats
-from src.media_downloader.storage_manager import LibraryManager
-from src.media_downloader.atomizer import Atom
-from src.socket_instance import socketio
-import src.event_dispatcher as event_dispatcher
+from media_downloader.job_manager import JobManager, JobStats
+from media_downloader.storage_manager import LibraryManager
+from media_downloader.atomizer import Atom
+from socket_instance import socketio
+import event_dispatcher as event_dispatcher
 import config
-import src.util as util
-import src.cli as cli
+import util
+import cli
 import time
 import threading
-from src.system_logger import logger
+from system_logger import logger
 from flask import request
 
 # Routes
-from src.routes.home_routes import home_routes
+from routes.home_routes import home_routes
 
 
 class Application:

@@ -1,16 +1,15 @@
 import os.path as path
 import os
-import sys
 import threading
 import re
 import base64
 from config import AUDIO_LIBRARY
-from src.media_downloader.atomizer import Atom
-import src.media_downloader.constants as const
-import src.media_downloader.youtube as youtube
+from twitch_spy.media_downloader.atomizer import Atom
+import twitch_spy.media_downloader.constants as const
+import twitch_spy.media_downloader.youtube as youtube
 from enum import Enum
 from typing import List, Tuple, Optional
-from src.system_logger import logger
+from twitch_spy.system_logger import logger
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 

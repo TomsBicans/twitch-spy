@@ -1,12 +1,9 @@
 from datetime import datetime
 import config
-from util import OS
 from chat_logger import Chat_logger
 from chat_message import MessageManager
 from chat_message import Message
 import sys
-
-# set PYTHONPATH="${PYTHONPATH}:C:\Users\feagl\Documents\GIT_REPOS\twitch-spy"
 
 if __name__ == "__main__":
     file = sys.argv[1]

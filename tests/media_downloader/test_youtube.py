@@ -1,6 +1,5 @@
 import pytest
-import src.media_downloader.youtube as youtube
-from typing import List
+import twitch_spy.media_downloader.youtube as youtube
 
 
 PLAYLIST_URLS = [

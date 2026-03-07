@@ -1,6 +1,6 @@
 import logging
 import time
-import src.app as app
+import twitch_spy.app as app
 
 
 logging.basicConfig(

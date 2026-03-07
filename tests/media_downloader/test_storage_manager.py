@@ -2,10 +2,10 @@ import pytest
 import os
 import threading
 import tempfile
-from src.media_downloader.storage_manager import (
+from twitch_spy.media_downloader.storage_manager import (
     StorageManager,
-    read_file,
 )
+from twitch_spy.util import OS
 
 
 def test_init():
@@ -60,7 +60,7 @@ def test_troublesome_download():
         instance.troublesome_download("http://example.com/file1")
         assert (
             "http://example.com/file1"
-            in read_file(instance.failed_downloads).splitlines()
+            in OS.read_file(instance.failed_downloads).splitlines()
         )
 
 
@@ -69,5 +69,5 @@ def test_troublesome_split():
         instance = StorageManager(tempdir)
         instance.troublesome_split("http://example.com/file1")
         assert (
-            "http://example.com/file1" in read_file(instance.failed_split).splitlines()
+            "http://example.com/file1" in OS.read_file(instance.failed_split).splitlines()
         )

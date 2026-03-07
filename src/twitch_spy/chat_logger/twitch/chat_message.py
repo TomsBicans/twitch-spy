@@ -1,8 +1,8 @@
 import os.path as path
 from datetime import datetime
-from util import OS
-from util import bcolors
-from util import mini_print
+from twitch_spy.util import OS
+from twitch_spy.util import bcolors
+from twitch_spy.util import mini_print
 import re
 
 
