@@ -63,7 +63,7 @@ export const URLInput = () => {
         try {
             setIsSubmitting(true);
             const response = await apiRequest("form_submit.POST", {
-                urls: userInput,
+                urls: cleanedInput,
             });
             if (response.success) {
                 setUserInput("");
