@@ -1,0 +1,17 @@
+[project]
+name = "twitch-spy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Toms Bicāns", email = "tomsbicans@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+twitch-spy = "twitch_spy:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
