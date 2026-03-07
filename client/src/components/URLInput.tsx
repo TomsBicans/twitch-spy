@@ -64,15 +64,6 @@ export const URLInput = () => {
 
     return (
         <form ref={formRef} onSubmit={submitForm} className={styles.form}>
-            <div className={styles.formHeader}>
-                <div>
-                    <h2 className={styles.heading}>Drop URLs &amp; let them flow</h2>
-                    <p className={styles.description}>
-                        Paste track or playlist links. We tidy, validate, and queue them
-                        automatically.
-                    </p>
-                </div>
-            </div>
             <label className={styles.inputShell}>
                 <span className={styles.inputLabel}>Paste URLs</span>
                 <textarea

@@ -138,10 +138,9 @@ export const JobList = ({
         <div className={styles.container}>
             <div className={styles.header}>
                 <div>
-                    <h2 className={styles.title}>Library &amp; queue</h2>
+                    <h2 className={styles.title}>Library</h2>
                     <p className={styles.caption}>
-                        Browse every request, filter by state, and tap to bring a track to
-                        the player.
+                        Your downloaded tracks — click any to play.
                     </p>
                 </div>
                 <div className={styles.filterCluster}>

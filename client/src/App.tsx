@@ -2,7 +2,6 @@ import {useEffect, useState} from "react";
 import "./App.css";
 import styles from "./App.module.css";
 import URLInput from "./components/URLInput.tsx";
-import SystemDashboard from "./components/system/SystemDashboard.tsx";
 import MusicPlayer from "./components/AudioPlayer.tsx";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
@@ -19,71 +18,60 @@ function App() {
     useEffect(() => {
         const handleConnect = () => setIsConnected(true);
         const handleDisconnect = () => setIsConnected(false);
-
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
-
         return () => {
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
         };
     }, []);
 
-    const onMusicSelected = (selection: Atom) => {
-        setCurrentTrack(selection);
-    };
-
     return (
         <div className={styles.appShell}>
-            <header className={styles.header}>
-                <div className={styles.branding}>
-                    <span className={styles.badge}>yt-dlp companion</span>
-                    <h1 className={styles.title}>twitch-spy music studio</h1>
-                    <p className={styles.subtitle}>
-                        Queue fresh tracks, watch the pipeline, keep the ambience.
-                    </p>
-                </div>
-                <div className={styles.statusCluster}>
-                    <span
-                        className={`${styles.statusPill} ${
-                            isConnected ? styles.statusPillOnline : styles.statusPillOffline
-                        }`}
-                    >
-                        {isConnected ? "Live backend connection" : "Backend disconnected"}
-                    </span>
-                    {currentTrack && (
-                        <span className={styles.nowPlayingHint}>
-                            Now playing: {currentTrack.content_name}
-                        </span>
-                    )}
-                </div>
-            </header>
-
-            <main className={styles.mainGrid}>
-                <section className={styles.panel}>
-                    <URLInput />
-                </section>
-                <section className={styles.panel}>
-                    <SystemDashboard />
-                </section>
-                <section className={styles.panel}>
-                    <JobOverview socket={socket} />
-                </section>
-                <section className={`${styles.panel} ${styles.libraryPanel}`}>
-                    <JobList
-                        socket={socket}
-                        onMusicSelected={onMusicSelected}
-                        currentTrack={currentTrack?.content_name}
-                    />
-                </section>
-            </main>
-            <div className={styles.playerSpacer} aria-hidden="true" />
-            <div className={styles.nowPlayingDock}>
-                <section className={`${styles.panel} ${styles.nowPlayingPanel}`}>
-                    <div className={styles.nowPlayingContent}>
-                        <MusicPlayer entry={currentTrack} />
+            <aside className={styles.sidebar}>
+                <div className={styles.brand}>
+                    <div className={styles.brandTop}>
+                        <span className={styles.badge}>yt-dlp</span>
+                        <span
+                            className={`${styles.statusDot} ${isConnected ? styles.dotOnline : styles.dotOffline}`}
+                            title={isConnected ? "Backend connected" : "Backend disconnected"}
+                        />
                     </div>
-                </section>
+                    <h1 className={styles.appTitle}>twitch-spy</h1>
+                    <p className={styles.appSubtitle}>music library</p>
+                </div>
+
+                <div className={styles.sidebarSection}>
+                    <span className={styles.sectionLabel}>Download</span>
+                    <URLInput />
+                </div>
+
+                <div className={styles.sidebarSection}>
+                    <span className={styles.sectionLabel}>Queue</span>
+                    <JobOverview socket={socket} />
+                </div>
+
+                <div className={styles.sidebarSection}>
+                    <span className={styles.sectionLabel}>
+                        Sync to device
+                        <span className={styles.comingSoon}>soon</span>
+                    </span>
+                    <button className={styles.syncButton} disabled>
+                        Connect a device
+                    </button>
+                </div>
+            </aside>
+
+            <main className={styles.mainContent}>
+                <JobList
+                    socket={socket}
+                    onMusicSelected={(atom) => setCurrentTrack(atom)}
+                    currentTrack={currentTrack?.content_name}
+                />
+            </main>
+
+            <div className={styles.nowPlayingDock}>
+                <MusicPlayer entry={currentTrack} />
             </div>
         </div>
     );
