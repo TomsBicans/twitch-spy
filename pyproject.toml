@@ -12,6 +12,7 @@ dependencies = [
     "flask-cors>=6.0.2",
     "mutagen>=1.47.0",
     "tqdm>=4.67.3",
+    "yt-dlp>=2026.3.3",
 ]
 
 [project.scripts]
