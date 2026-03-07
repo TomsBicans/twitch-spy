@@ -7,7 +7,7 @@ import datetime
 import re
 import traceback
 import twitch_spy.media_downloader.constants as const
-import twitch_spy.media_downloader.config as config
+import twitch_spy.config as config
 
 
 class TwitchDownloader:

@@ -3,23 +3,22 @@ from flask_cors import CORS
 from twitch_spy.media_downloader.job_manager import JobManager, JobStats
 from twitch_spy.media_downloader.storage_manager import LibraryManager
 from twitch_spy.media_downloader.atomizer import Atom
-from socket_instance import socketio
-import event_dispatcher as event_dispatcher
-import config
-import util
-import cli
+from twitch_spy.socket_instance import socketio
+import twitch_spy.event_dispatcher as event_dispatcher
+import twitch_spy.config as config
+import twitch_spy.util as util
+import twitch_spy.cli as cli
 import time
 import threading
-from system_logger import logger
+from twitch_spy.system_logger import logger
 from flask import request
 
 # Routes
-from routes.home_routes import home_routes
+from twitch_spy.routes.home_routes import home_routes
 
 
 class Application:
     def __init__(self):
-        args = cli.parse_args()
         self.shutdown_event = threading.Event()
         self.app = Flask(__name__, template_folder="../templates")
         CORS(self.app, resources={r"/*": {"origins": "http://localhost:5173"}})

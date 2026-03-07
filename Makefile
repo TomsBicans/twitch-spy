@@ -5,4 +5,4 @@ run_web:
 	cd client && npm run dev
 
 run_api:
-	uv run twitch-spy
+	uv run twitch-spy --output-dir ./data

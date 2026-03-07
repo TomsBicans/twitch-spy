@@ -1,21 +1,23 @@
 import os.path as path
 import os
 
-ROOT_DIR = path.dirname(__file__)
-STREAM_DOWNLOADS = path.join(ROOT_DIR, "stream_downloads")
-LOG_DIR = path.abspath(path.join(ROOT_DIR, "logs"))
-AUDIO_LIBRARY = path.join(STREAM_DOWNLOADS, "audio_library")
+STREAM_DOWNLOADS: str = None
+LOG_DIR: str = None
+AUDIO_LIBRARY: str = None
 
 
 def create_directory_if_not_exists(directory_path: str):
-    """
-    Creates a directory if it does not exist.
-    :param directory_path: The path of the directory to create.
-    :return: None
-    """
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     return directory_path
 
 
-create_directory_if_not_exists(STREAM_DOWNLOADS)
+def init(output_dir: str):
+    global STREAM_DOWNLOADS, LOG_DIR, AUDIO_LIBRARY
+    output_dir = path.abspath(output_dir)
+    STREAM_DOWNLOADS = path.join(output_dir, "stream_downloads")
+    LOG_DIR = path.join(output_dir, "logs")
+    AUDIO_LIBRARY = path.join(STREAM_DOWNLOADS, "audio_library")
+    create_directory_if_not_exists(STREAM_DOWNLOADS)
+    create_directory_if_not_exists(LOG_DIR)
+    create_directory_if_not_exists(AUDIO_LIBRARY)
