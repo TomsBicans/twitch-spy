@@ -1,15 +1,44 @@
-import React, {useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
+import {Socket} from "socket.io-client";
 import {TextInputStats} from "./util/TextInputStats.tsx";
 import {apiRequest} from "../backend/backend.ts";
 import styles from "./URLInput.module.css";
 
-export const URLInput = () => {
+interface URLInputProps {
+    socket: Socket;
+}
+
+export const URLInput = ({socket}: URLInputProps) => {
     const [userInput, setUserInput] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [planning, setPlanning] = useState<{current: number; total: number} | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
 
+    useEffect(() => {
+        const onPlanning = (data: {current: number; total: number}) => {
+            setPlanning(data.total > 0 ? data : null);
+        };
+        socket.on("url_planning", onPlanning);
+        return () => { socket.off("url_planning", onPlanning); };
+    }, [socket]);
+
+    const unwrapIfJsonArray = (input: string): string => {
+        const trimmed = input.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
+                    return parsed.join("\n");
+                }
+            } catch {
+                // fall through to normal parsing
+            }
+        }
+        return input;
+    };
+
     const cleanInput = (input: string): string =>
-        input
+        unwrapIfJsonArray(input)
             .replace(/\s+/g, ",")
             .split(",")
             .map((url) => url.trim())
@@ -24,7 +53,7 @@ export const URLInput = () => {
     };
 
     const isInputValid = (input: string): boolean => {
-        const urlList = input.replace(/\s+/g, ",").split(",");
+        const urlList = unwrapIfJsonArray(input).replace(/\s+/g, ",").split(",");
         if (urlList.some((url) => url.trim() === "")) {
             return false;
         }
@@ -48,7 +77,7 @@ export const URLInput = () => {
         try {
             setIsSubmitting(true);
             const response = await apiRequest("form_submit.POST", {
-                urls: userInput,
+                urls: cleanedInput,
             });
             if (response.success) {
                 setUserInput("");
@@ -59,6 +88,7 @@ export const URLInput = () => {
             console.error("An error occurred:", error);
         } finally {
             setIsSubmitting(false);
+            setPlanning(null);
         }
     };
 
@@ -76,7 +106,13 @@ export const URLInput = () => {
                 <span className={styles.inputGlow} aria-hidden="true" />
             </label>
             <div className={styles.metaRow}>
-                <TextInputStats urlCount={validUrlCount} inputValidity={rawInputValid} />
+                {planning ? (
+                    <span className={styles.planningText}>
+                        Planning {planning.current} / {planning.total}…
+                    </span>
+                ) : (
+                    <TextInputStats urlCount={validUrlCount} inputValidity={rawInputValid} />
+                )}
                 <div className={styles.buttonGroup}>
                     <button
                         type="button"

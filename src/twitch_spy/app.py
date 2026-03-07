@@ -15,6 +15,7 @@ from flask import request
 
 # Routes
 from twitch_spy.routes.home_routes import home_routes
+from twitch_spy.routes.sync_routes import sync_routes
 
 
 class Application:
@@ -23,6 +24,7 @@ class Application:
         self.app = Flask(__name__, template_folder="../templates")
         CORS(self.app, resources={r"/*": {"origins": "http://localhost:5173"}})
         self.app.register_blueprint(home_routes)
+        self.app.register_blueprint(sync_routes)
         socketio.init_app(self.app)
 
         self.event_dispatcher = event_dispatcher.EventDispatcher()

@@ -42,17 +42,26 @@ class YouTubeHandler(PlatformHandler):
             new_download_dir = (
                 path.join(atom.download_dir, subdir) if subdir else atom.download_dir
             )
+            # Title is resolved later during download_audio() from info_dict,
+            # avoiding a redundant network round-trip here.
             new_atom = Atom(
                 atom.url,
                 atom.content_type,
                 new_download_dir,
-                content_title=youtube.get_video_title(atom.url),
+                content_title=None,
             )
             return [new_atom]
-        video_metadatas = youtube.get_playlist_video_urls(atom.url)
-        playlist_directory = youtube.get_playlist_download_directory(
-            atom.download_dir, atom.url
-        )
+        try:
+            video_metadatas = youtube.get_playlist_video_urls(atom.url)
+            playlist_directory = youtube.get_playlist_download_directory(
+                atom.download_dir, atom.url
+            )
+        except Exception as exc:
+            logger.warning("Skipping unsupported URL %s: %s", atom.url, exc)
+            return []
+        if not video_metadatas:
+            logger.warning("No videos found for URL %s, skipping", atom.url)
+            return []
         return [
             Atom(
                 vid.url,
@@ -128,17 +137,23 @@ class Atomizer:
 
     @staticmethod
     def atomize_urls(
-        urls: List[str], content_mode: const.CONTENT_MODE, root_download_dir: str
+        urls: List[str],
+        content_mode: const.CONTENT_MODE,
+        root_download_dir: str,
+        on_url: Optional[Callable[[int, int], None]] = None,
     ) -> List[Atom]:
         valid_urls = list(filter(Atom._is_url_valid, urls))
+        total = len(valid_urls)
         atoms = []
-        for url in valid_urls:
+        for i, url in enumerate(valid_urls, start=1):
             atom = Atom(url, content_mode, root_download_dir)
             handler: PlatformHandler = Atomizer.PLATFORM_HANDLERS.get(atom.platform)
             if handler:
                 atoms.extend(handler.atomize(atom))
             else:
                 atoms.append(atom)  # Default behavior for unsupported platforms
+            if on_url:
+                on_url(i, total)
         return atoms
 
     @staticmethod

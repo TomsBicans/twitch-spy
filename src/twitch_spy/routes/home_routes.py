@@ -1,4 +1,6 @@
 from uuid import UUID
+import re
+from urllib.parse import urlparse, urlunparse
 import psutil
 from flask import Blueprint, render_template, jsonify, send_file
 import twitch_spy.config as config
@@ -20,6 +22,13 @@ import time
 home_routes = Blueprint("home_routes", __name__)
 
 
+def normalize_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.netloc == "music.youtube.com":
+        parsed = parsed._replace(netloc="www.youtube.com")
+    return urlunparse(parsed)
+
+
 @home_routes.route("/form_submit", methods=["POST"])
 def form_submit():
     logger.debug("Handling form submit.")
@@ -30,19 +39,29 @@ def form_submit():
     urls = data.get("urls")
     logger.debug(f"URLs: {urls}")
     if urls:
-        urls_list = [url.strip() for url in urls.split("\n")]
+        urls_list = [normalize_url(url.strip()) for url in re.split(r"[\n,]+", urls) if url.strip()]
         logger.debug(f"URLs list: {urls_list}")
-        user_input = sm.StorageManager(config.STREAM_DOWNLOADS)
-        for url in urls_list:
-            user_input.mark_successful_download(url)
+
+        total = len(urls_list)
+        socketio.emit("url_planning", {"current": 0, "total": total})
+
+        def _on_url(current: int, total: int) -> None:
+            socketio.emit("url_planning", {"current": current, "total": total})
+
         jobs = ph.Atomizer.atomize_urls(
             urls_list,
             const.CONTENT_MODE.AUDIO,
             config.AUDIO_LIBRARY,
+            on_url=_on_url,
         )
-        logger.debug(f"Jobs created: {jobs}")
-        logger.debug(f"Number of jobs: {len(jobs)}")
-        for job in jobs:
+        existing_urls = {j.url for j in my_app.job_manager.get_all_jobs()}
+        new_jobs = [
+            job for job in jobs
+            if job.url not in existing_urls
+            and not sm.StorageManager(job.download_dir).already_downloaded(job.url)
+        ]
+        logger.debug(f"Jobs after dedup: {len(new_jobs)} (skipped {len(jobs) - len(new_jobs)})")
+        for job in new_jobs:
             my_app.job_manager.add_job(job)
             my_app.event_dispatcher.dispatch_event(Events.JOB_CREATED.value, job)
             my_app.event_dispatcher.dispatch_event(

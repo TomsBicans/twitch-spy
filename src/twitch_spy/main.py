@@ -15,7 +15,7 @@ def main():
     args = cli.parse_args()
 
     import twitch_spy.config as config
-    config.init(args.output_dir)
+    config.init(args.output_dir, android_dest=args.android_dest)
 
     import twitch_spy.app as app
 

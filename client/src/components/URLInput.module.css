@@ -86,6 +86,11 @@
   opacity: 1;
 }
 
+.planningText {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
 .metaRow {
   display: flex;
   flex-wrap: wrap;

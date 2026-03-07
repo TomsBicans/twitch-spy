@@ -6,6 +6,7 @@ import MusicPlayer from "./components/AudioPlayer.tsx";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
 import JobList from "./components/JobList.tsx";
+import SyncPanel from "./components/SyncPanel.tsx";
 import {BACKEND_URL} from "./backend/backend.ts";
 import {io} from "socket.io-client";
 
@@ -43,7 +44,7 @@ function App() {
 
                 <div className={styles.sidebarSection}>
                     <span className={styles.sectionLabel}>Download</span>
-                    <URLInput />
+                    <URLInput socket={socket} />
                 </div>
 
                 <div className={styles.sidebarSection}>
@@ -52,13 +53,8 @@ function App() {
                 </div>
 
                 <div className={styles.sidebarSection}>
-                    <span className={styles.sectionLabel}>
-                        Sync to device
-                        <span className={styles.comingSoon}>soon</span>
-                    </span>
-                    <button className={styles.syncButton} disabled>
-                        Connect a device
-                    </button>
+                    <span className={styles.sectionLabel}>Sync to device</span>
+                    <SyncPanel socket={socket} />
                 </div>
             </aside>
 

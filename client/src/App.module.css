@@ -97,31 +97,6 @@
   gap: 8px;
 }
 
-.comingSoon {
-  font-size: 0.62rem;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(196, 204, 226, 0.45);
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-}
-
-.syncButton {
-  width: 100%;
-  padding: 11px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.07);
-  color: rgba(196, 204, 226, 0.25);
-  font-size: 0.88rem;
-  font-family: inherit;
-  cursor: not-allowed;
-  text-align: center;
-  transition: none;
-  box-shadow: none;
-  transform: none;
-}
 
 /* ─── Main content ──────────────────────────────────────── */
 .mainContent {
@@ -142,51 +117,7 @@
   z-index: 20;
 }
 
-/* ─── RHAP audio player overrides ──────────────────────── */
-:global(.rhap_container) {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  color: var(--text-primary);
-}
-
-:global(.rhap_progress-filled) {
-  background-image: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
-  box-shadow: 0 0 10px rgba(124, 92, 255, 0.35);
-}
-
-:global(.rhap_download-progress) {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-:global(.rhap_play-pause-button),
-:global(.rhap_main-controls-button) {
-  color: var(--text-primary);
-}
-
-:global(.rhap_volume-bar),
-:global(.rhap_volume-bar-area) {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-:global(.rhap_volume-indicator) {
-  background: var(--accent);
-}
-
-:global(.rhap_time) {
-  color: var(--text-tertiary);
-}
-
-:global(.rhap_additional-controls) {
-  display: none;
-}
-
-:global(.rhap_volume-container) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ─── RHAP volume layout ────────────────────────────────── */
 
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 900px) {

@@ -41,3 +41,34 @@ export interface JobStatistics {
 }
 
 export type JobStatKey = keyof JobStatistics;
+
+// ── Android sync ──────────────────────────────────────────────────────────────
+
+export interface FileTransferOp {
+  local_path: string;
+  remote_path: string;
+  size_bytes: number;
+  filename: string;
+}
+
+export interface SyncPlan {
+  dirs_to_create: string[];
+  files_to_transfer: FileTransferOp[];
+  skipped_count: number;
+  total_transfer_bytes: number;
+}
+
+export interface SyncProgress {
+  current: number;
+  total: number;
+  filename: string;
+  remote_path: string;
+  status: "ok" | "failed";
+}
+
+export interface SyncResult {
+  uploaded: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+}
