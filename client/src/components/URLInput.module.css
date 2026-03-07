@@ -1,7 +1,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .formHeader {
@@ -50,12 +50,12 @@
 
 .urlInput {
   width: 100%;
-  min-height: 180px;
+  min-height: 90px;
   border: none;
   resize: vertical;
   background: transparent;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.4;
   font-family: inherit;
 }
@@ -102,8 +102,8 @@
 
 .primaryButton,
 .secondaryButton {
-  font-size: 0.95rem;
-  padding: 0.65em 1.4em;
+  font-size: 0.85rem;
+  padding: 0.6em 1.1em;
 }
 
 .primaryButton {
