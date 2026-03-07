@@ -1,7 +1,7 @@
 from uuid import UUID
 import psutil
 from flask import Blueprint, render_template, jsonify, send_file
-import config
+import twitch_spy.config as config
 import twitch_spy.app as app
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.util as util

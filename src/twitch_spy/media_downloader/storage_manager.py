@@ -3,7 +3,7 @@ import os
 import threading
 import re
 import base64
-from config import AUDIO_LIBRARY
+from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.media_downloader.constants as const
 import twitch_spy.media_downloader.youtube as youtube
