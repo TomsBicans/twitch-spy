@@ -42,10 +42,17 @@ def form_submit():
         urls_list = [normalize_url(url.strip()) for url in re.split(r"[\n,]+", urls) if url.strip()]
         logger.debug(f"URLs list: {urls_list}")
 
+        total = len(urls_list)
+        socketio.emit("url_planning", {"current": 0, "total": total})
+
+        def _on_url(current: int, total: int) -> None:
+            socketio.emit("url_planning", {"current": current, "total": total})
+
         jobs = ph.Atomizer.atomize_urls(
             urls_list,
             const.CONTENT_MODE.AUDIO,
             config.AUDIO_LIBRARY,
+            on_url=_on_url,
         )
         existing_urls = {j.url for j in my_app.job_manager.get_all_jobs()}
         new_jobs = [

@@ -44,7 +44,7 @@ function App() {
 
                 <div className={styles.sidebarSection}>
                     <span className={styles.sectionLabel}>Download</span>
-                    <URLInput />
+                    <URLInput socket={socket} />
                 </div>
 
                 <div className={styles.sidebarSection}>

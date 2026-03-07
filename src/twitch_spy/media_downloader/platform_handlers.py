@@ -131,17 +131,23 @@ class Atomizer:
 
     @staticmethod
     def atomize_urls(
-        urls: List[str], content_mode: const.CONTENT_MODE, root_download_dir: str
+        urls: List[str],
+        content_mode: const.CONTENT_MODE,
+        root_download_dir: str,
+        on_url: Optional[Callable[[int, int], None]] = None,
     ) -> List[Atom]:
         valid_urls = list(filter(Atom._is_url_valid, urls))
+        total = len(valid_urls)
         atoms = []
-        for url in valid_urls:
+        for i, url in enumerate(valid_urls, start=1):
             atom = Atom(url, content_mode, root_download_dir)
             handler: PlatformHandler = Atomizer.PLATFORM_HANDLERS.get(atom.platform)
             if handler:
                 atoms.extend(handler.atomize(atom))
             else:
                 atoms.append(atom)  # Default behavior for unsupported platforms
+            if on_url:
+                on_url(i, total)
         return atoms
 
     @staticmethod

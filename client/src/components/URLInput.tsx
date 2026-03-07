@@ -1,12 +1,26 @@
-import React, {useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
+import {Socket} from "socket.io-client";
 import {TextInputStats} from "./util/TextInputStats.tsx";
 import {apiRequest} from "../backend/backend.ts";
 import styles from "./URLInput.module.css";
 
-export const URLInput = () => {
+interface URLInputProps {
+    socket: Socket;
+}
+
+export const URLInput = ({socket}: URLInputProps) => {
     const [userInput, setUserInput] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [planning, setPlanning] = useState<{current: number; total: number} | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+
+    useEffect(() => {
+        const onPlanning = (data: {current: number; total: number}) => {
+            setPlanning(data.total > 0 ? data : null);
+        };
+        socket.on("url_planning", onPlanning);
+        return () => { socket.off("url_planning", onPlanning); };
+    }, [socket]);
 
     const unwrapIfJsonArray = (input: string): string => {
         const trimmed = input.trim();
@@ -74,6 +88,7 @@ export const URLInput = () => {
             console.error("An error occurred:", error);
         } finally {
             setIsSubmitting(false);
+            setPlanning(null);
         }
     };
 
@@ -91,7 +106,13 @@ export const URLInput = () => {
                 <span className={styles.inputGlow} aria-hidden="true" />
             </label>
             <div className={styles.metaRow}>
-                <TextInputStats urlCount={validUrlCount} inputValidity={rawInputValid} />
+                {planning ? (
+                    <span className={styles.planningText}>
+                        Planning {planning.current} / {planning.total}…
+                    </span>
+                ) : (
+                    <TextInputStats urlCount={validUrlCount} inputValidity={rawInputValid} />
+                )}
                 <div className={styles.buttonGroup}>
                     <button
                         type="button"
