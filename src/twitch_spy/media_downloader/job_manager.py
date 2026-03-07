@@ -3,10 +3,10 @@ from collections import OrderedDict, defaultdict
 
 from concurrent.futures import Future
 
-from src.system_logger import logger
-from src.media_downloader.atomizer import Atom
-from src.media_downloader.platform_handlers import Atomizer
-import src.media_downloader.constants as const
+from twitch_spy.system_logger import logger
+from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.platform_handlers import Atomizer
+import twitch_spy.media_downloader.constants as const
 from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
 import time

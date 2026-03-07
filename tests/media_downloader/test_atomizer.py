@@ -1,6 +1,6 @@
 import pytest
-import src.media_downloader.atomizer as atomizer
-import src.media_downloader.constants as const
+import twitch_spy.media_downloader.atomizer as atomizer
+import twitch_spy.media_downloader.constants as const
 import os.path as path
 
 

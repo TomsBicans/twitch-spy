@@ -1,7 +1,5 @@
 from datetime import datetime
 import config
-from chat_message import Message
-from util import OS, bcolors
 import socket
 import logging
 from emoji import demojize
@@ -11,6 +9,8 @@ import sys
 import argparse
 import time
 import os.path as path
+
+from twitch_spy.util import OS, bcolors
 
 
 class Chat_logger:

@@ -1,6 +1,6 @@
 import logging
 import os
-from config import LOG_DIR
+from twitch_spy.config import LOG_DIR
 
 
 def setup_logger(name, log_file, level=logging.INFO):

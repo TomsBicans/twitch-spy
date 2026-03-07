@@ -1,11 +1,11 @@
 from typing import Callable, List, Optional
 import os.path as path
-from src.media_downloader.atomizer import Atom
-import src.media_downloader.youtube as youtube
-import src.media_downloader.twitch as twitch
-import src.media_downloader.constants as const
-from src.media_downloader.storage_manager import StorageManager
-from src.system_logger import logger
+from twitch_spy.media_downloader.atomizer import Atom
+import twitch_spy.media_downloader.youtube as youtube
+import twitch_spy.media_downloader.twitch as twitch
+import twitch_spy.media_downloader.constants as const
+from twitch_spy.media_downloader.storage_manager import StorageManager
+from twitch_spy.system_logger import logger
 from abc import ABC, abstractmethod
 
 

@@ -1,6 +1,6 @@
-from src.media_downloader.atomizer import Atom
-from src.media_downloader.job_manager import JobStats
-from src.socket_instance import socketio
+from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.job_manager import JobStats
+from twitch_spy.socket_instance import socketio
 from collections import defaultdict
 from enum import Enum
 
