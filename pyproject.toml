@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.scripts]
-twitch-spy = "twitch_spy:main"
+twitch-spy = "twitch_spy.main:main"
 
 [build-system]
 requires = ["uv_build>=0.9.26,<0.10.0"]

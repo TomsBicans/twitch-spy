@@ -11,7 +11,6 @@ from mutagen.id3 import ID3, APIC
 import yt_dlp
 import googleapiclient.discovery
 import twitch_spy.media_downloader.constants as const
-import config
 from typing import Optional
 
 from twitch_spy.media_downloader.storage_manager import StorageManager

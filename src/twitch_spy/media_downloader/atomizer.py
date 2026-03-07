@@ -1,17 +1,19 @@
 from typing import Optional
 import uuid
 from urllib.parse import urlparse
-import constants as const
+
+from twitch_spy.media_downloader import constants
+
 
 class Atom:
     def __init__(
-        self,
-        url: str,
-        content_type: const.CONTENT_MODE,
-        download_dir: str,
-        content_title: Optional[str] = None,
-        media_file_os_path: Optional[str] = None,
-        thumbnail_image_in_base64: Optional[str] = None,
+            self,
+            url: str,
+            content_type: constants.CONTENT_MODE,
+            download_dir: str,
+            content_title: Optional[str] = None,
+            media_file_os_path: Optional[str] = None,
+            thumbnail_image_in_base64: Optional[str] = None,
     ) -> None:
         self.id = uuid.uuid4()
         self.url = url
@@ -21,32 +23,32 @@ class Atom:
         self.content_type = content_type
         self.content_title = content_title
         self.download_dir = download_dir
-        self.status = const.PROCESS_STATUS.QUEUED
+        self.status = constants.PROCESS_STATUS.QUEUED
         self.media_file_os_path = media_file_os_path or None
         self.thumbnail_image_in_base64 = thumbnail_image_in_base64 or None
 
-    def update_status(self, status: const.PROCESS_STATUS):
+    def update_status(self, status: constants.PROCESS_STATUS):
         self.status = status
 
     @staticmethod
-    def _determine_platform(url: str) -> const.PLATFORM:
+    def _determine_platform(url: str) -> constants.PLATFORM:
         if "twitch.tv" in url:
-            return const.PLATFORM.TWITCH
+            return constants.PLATFORM.TWITCH
         elif "youtube.com" in url or "youtu.be" in url:
-            return const.PLATFORM.YOUTUBE
+            return constants.PLATFORM.YOUTUBE
         else:
-            return const.PLATFORM.UNDEFINED
+            return constants.PLATFORM.UNDEFINED
 
     @staticmethod
     def _is_single_item(url: str) -> bool:
         platform = Atom._determine_platform(url)
-        if platform == const.PLATFORM.YOUTUBE:
+        if platform == constants.PLATFORM.YOUTUBE:
             # Playlist or single video
             return "watch?v=" in url and "list=" not in url and "list=LL&" not in url
-        elif platform == const.PLATFORM.TWITCH:
+        elif platform == constants.PLATFORM.TWITCH:
             # I do not know if there is any thing as a multiple item in twitch streaming service
             return True
-        elif platform == const.PLATFORM.UNDEFINED:
+        elif platform == constants.PLATFORM.UNDEFINED:
             return True
 
     @staticmethod

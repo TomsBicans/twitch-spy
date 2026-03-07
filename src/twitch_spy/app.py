@@ -1,8 +1,8 @@
 from flask import Flask
 from flask_cors import CORS
-from media_downloader.job_manager import JobManager, JobStats
-from media_downloader.storage_manager import LibraryManager
-from media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.job_manager import JobManager, JobStats
+from twitch_spy.media_downloader.storage_manager import LibraryManager
+from twitch_spy.media_downloader.atomizer import Atom
 from socket_instance import socketio
 import event_dispatcher as event_dispatcher
 import config
