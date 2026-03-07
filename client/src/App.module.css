@@ -97,31 +97,6 @@
   gap: 8px;
 }
 
-.comingSoon {
-  font-size: 0.62rem;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(196, 204, 226, 0.45);
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-}
-
-.syncButton {
-  width: 100%;
-  padding: 11px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.07);
-  color: rgba(196, 204, 226, 0.25);
-  font-size: 0.88rem;
-  font-family: inherit;
-  cursor: not-allowed;
-  text-align: center;
-  transition: none;
-  box-shadow: none;
-  transform: none;
-}
 
 /* ─── Main content ──────────────────────────────────────── */
 .mainContent {

@@ -4,6 +4,7 @@ import os
 STREAM_DOWNLOADS: str = None
 LOG_DIR: str = None
 AUDIO_LIBRARY: str = None
+ANDROID_DEST: str = None
 
 
 def create_directory_if_not_exists(directory_path: str):
@@ -12,12 +13,13 @@ def create_directory_if_not_exists(directory_path: str):
     return directory_path
 
 
-def init(output_dir: str):
-    global STREAM_DOWNLOADS, LOG_DIR, AUDIO_LIBRARY
+def init(output_dir: str, android_dest: str = "/sdcard/SdCardBackup/Music"):
+    global STREAM_DOWNLOADS, LOG_DIR, AUDIO_LIBRARY, ANDROID_DEST
     output_dir = path.abspath(output_dir)
     STREAM_DOWNLOADS = path.join(output_dir, "stream_downloads")
     LOG_DIR = path.join(output_dir, "logs")
     AUDIO_LIBRARY = path.join(STREAM_DOWNLOADS, "audio_library")
+    ANDROID_DEST = android_dest
     create_directory_if_not_exists(STREAM_DOWNLOADS)
     create_directory_if_not_exists(LOG_DIR)
     create_directory_if_not_exists(AUDIO_LIBRARY)

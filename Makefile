@@ -8,7 +8,7 @@ run_web:
 	cd client && npm run dev
 
 run_api:
-	uv run twitch-spy --output-dir ./data
+	uv run twitch-spy --output-dir ./data --android-dest /sdcard/SdCardBackup/Music
 
 format:
 	cd client && npm run format

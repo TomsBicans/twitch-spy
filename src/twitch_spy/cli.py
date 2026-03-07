@@ -3,11 +3,12 @@ from typing import List
 
 
 class SystemConfiguration:
-    def __init__(self, urls: List[str], num_worker_threads: int, file_queue_mode: bool, output_dir: str):
+    def __init__(self, urls: List[str], num_worker_threads: int, file_queue_mode: bool, output_dir: str, android_dest: str):
         self.urls: List[str] = urls
         self.num_worker_threads: int = num_worker_threads
         self.file_queue_mode: bool = file_queue_mode
         self.output_dir: str = output_dir
+        self.android_dest: str = android_dest
 
 
 def parse_args() -> SystemConfiguration:
@@ -33,5 +34,11 @@ def parse_args() -> SystemConfiguration:
         default="./data",
         help="Directory for logs and stream downloads (default: ./data)",
     )
+    parser.add_argument(
+        "--android-dest",
+        type=str,
+        default="/sdcard/SdCardBackup/Music",
+        help="Android destination root path for sync (default: /sdcard/SdCardBackup/Music)",
+    )
     args = parser.parse_args()
-    return SystemConfiguration(args.urls, args.num_worker_threads, args.file_queue_mode, args.output_dir)
+    return SystemConfiguration(args.urls, args.num_worker_threads, args.file_queue_mode, args.output_dir, args.android_dest)
