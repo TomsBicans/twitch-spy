@@ -117,51 +117,7 @@
   z-index: 20;
 }
 
-/* ─── RHAP audio player overrides ──────────────────────── */
-:global(.rhap_container) {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  color: var(--text-primary);
-}
-
-:global(.rhap_progress-filled) {
-  background-image: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
-  box-shadow: 0 0 10px rgba(124, 92, 255, 0.35);
-}
-
-:global(.rhap_download-progress) {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-:global(.rhap_play-pause-button),
-:global(.rhap_main-controls-button) {
-  color: var(--text-primary);
-}
-
-:global(.rhap_volume-bar),
-:global(.rhap_volume-bar-area) {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-:global(.rhap_volume-indicator) {
-  background: var(--accent);
-}
-
-:global(.rhap_time) {
-  color: var(--text-tertiary);
-}
-
-:global(.rhap_additional-controls) {
-  display: none;
-}
-
-:global(.rhap_volume-container) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ─── RHAP volume layout ────────────────────────────────── */
 
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 900px) {

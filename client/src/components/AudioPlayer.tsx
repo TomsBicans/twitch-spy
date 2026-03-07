@@ -1,10 +1,22 @@
-import React, {useEffect, useState} from "react";
-import AudioPlayer from "react-h5-audio-player";
+import React, {useEffect, useRef, useState} from "react";
+import AudioPlayer, {RHAP_UI} from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
+
+const PlayIcon = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
+        <path d="M8 5v14l11-7z"/>
+    </svg>
+);
+
+const PauseIcon = () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+    </svg>
+);
 
 interface AudioPlayerProps {
     entry: Atom | undefined;
@@ -13,6 +25,8 @@ interface AudioPlayerProps {
 const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
+    const [isPlaying, setIsPlaying] = useState(false);
+    const playerRef = useRef<any>(null);
 
     useEffect(() => {
         if (entry) {
@@ -73,7 +87,16 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
 
     const handleNextTrack = () => {
         console.log("Next track functionality can be implemented here.");
-        // Implement logic to fetch or select the next track title and update the state
+    };
+
+    const togglePlay = () => {
+        const audio = playerRef.current?.audio?.current;
+        if (!audio) return;
+        if (isPlaying) {
+            audio.pause();
+        } else {
+            audio.play();
+        }
     };
 
     const getRandomColor = () => {
@@ -88,13 +111,34 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
             <div className={styles.leftPane}>
                 <CurrentTrackDisplay title={entry?.content_name} color={trackColor}/>
             </div>
+            <div className={styles.centerPane}>
+                <button
+                    className={styles.playButton}
+                    onClick={togglePlay}
+                    aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                    {isPlaying ? <PauseIcon/> : <PlayIcon/>}
+                </button>
+            </div>
             <div className={styles.rightPane}>
                 <AudioPlayer
+                    ref={playerRef}
                     autoPlay
                     autoPlayAfterSrcChange
                     src={currentTrack}
                     showJumpControls={false}
-                    onEnded={handleNextTrack}
+                    customControlsSection={[RHAP_UI.VOLUME_CONTROLS]}
+                    customProgressBarSection={[
+                        RHAP_UI.CURRENT_TIME,
+                        RHAP_UI.PROGRESS_BAR,
+                        RHAP_UI.CURRENT_LEFT_TIME,
+                    ]}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => {
+                        setIsPlaying(false);
+                        handleNextTrack();
+                    }}
                 />
             </div>
         </div>

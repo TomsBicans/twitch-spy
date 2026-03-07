@@ -9,6 +9,35 @@
   flex: 0 0 clamp(180px, 22vw, 280px);
 }
 
+.centerPane {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(124, 92, 255, 0.18);
+  color: #e8eaf6;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.playButton:hover {
+  background: rgba(124, 92, 255, 0.35);
+}
+
+.playButton:active {
+  transform: scale(0.95);
+}
+
 .rightPane {
   flex: 1 1 auto;
   display: flex;
@@ -23,6 +52,10 @@
   .leftPane {
     flex: 0 0 clamp(140px, 30vw, 200px);
   }
+
+  .playButton {
+    width: 64px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -32,5 +65,9 @@
 
   .leftPane {
     flex: 0 0 120px;
+  }
+
+  .playButton {
+    width: 52px;
   }
 }
