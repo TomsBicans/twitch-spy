@@ -263,6 +263,9 @@ class AndroidLibrarySync:
         existing_remote = self.list_remote_files(self.android_dest)
         logger.info("device has %d existing files under %s", len(existing_remote), self.android_dest)
 
+        # Derive which directories already exist on the device from the file list.
+        existing_remote_dirs: set[str] = {p.rsplit("/", 1)[0] for p in existing_remote}
+
         dirs_to_create: list[str] = []
         files_to_transfer: list[FileTransferOp] = []
         skipped = 0
@@ -283,8 +286,13 @@ class AndroidLibrarySync:
                 logger.debug("skip (exists): %s", remote_path)
                 continue
 
-            # Track unique remote directories that need creating.
-            if remote_dir != self.android_dest and remote_dir not in seen_dirs:
+            # Track unique remote directories that need creating,
+            # but only if they don't already exist on the device.
+            if (
+                remote_dir != self.android_dest
+                and remote_dir not in seen_dirs
+                and remote_dir not in existing_remote_dirs
+            ):
                 dirs_to_create.append(remote_dir)
                 seen_dirs.add(remote_dir)
 
