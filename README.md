@@ -17,6 +17,12 @@ A self-hosted music library manager. Paste YouTube URLs — individual videos, p
 
 ---
 
+## Preview
+
+![Library UI](docs/ui_preview.jpg)
+
+---
+
 ## Stack
 
 | Layer | Technology |
