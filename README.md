@@ -1,62 +1,81 @@
-# yt-dlp-music
+# twitch-spy
 
-# Description
-This is a project that aims to create an easy to use music downloading and library management software that can be run locally on a computer. It has ambitions to work with various audio and video content webstites, but currently it supports music download feature from youtube.com.
-The core feature is audio downloading from youtube, metadata and thumbnail asignment and downloaded library content management. The system comes with an easy to overlook UI with realtime updates.
+A self-hosted music library manager. Paste YouTube URLs — individual videos, playlists, or channels — and the system downloads, tags, and organizes them into a local audio library with a real-time web UI.
 
-This project makes it easy and straightforward to download and manage an audio library on a computer.
+---
 
-# Features
-**yt-dlp as backend technology**: The main component to communicate with external services is the yt-dlp open source library (https://github.com/yt-dlp/yt-dlp)
+## Features
 
-**Atomization**: The user can provide any input (single video, playlist or channel) and the program will try to figure it out how to create a list of smallest entities possible from this input (in this case, a list of videos). Each of the entity is being treated as a separate job (atom) and can be processed in parallel with other jobs.
+- **Bulk URL ingestion** — accepts single videos, playlists, channels, and mixed input (newline or comma separated). JSON arrays are also parsed automatically.
+- **Atomization** — any input is broken down into the smallest downloadable unit (individual tracks) before processing. Playlists expand into per-track jobs automatically.
+- **Parallel downloads** — jobs run concurrently via a thread pool, maximizing throughput on network-bound workloads.
+- **Deduplication** — URLs are normalized (e.g. `music.youtube.com` → `www.youtube.com`) and checked against the local archive before queuing, so re-submitting the same tracks is safe.
+- **Metadata & thumbnails** — each track gets its title and cover art embedded via yt-dlp and ffmpeg.
+- **Real-time UI** — a React frontend receives live job status updates over Socket.IO. The library grid, queue counters, and now-playing dock all update without polling.
+- **Android sync** — one-way library sync to an Android device over ADB. The UI computes a sync plan (new files, directories to create, bytes to transfer) before executing, with per-file progress reporting.
+- **Audio player** — built-in browser player with album-art-derived ambient color, progress bar, and volume control.
 
-**Multithreading**: Utilizes python's threadpoolexecutor to process multiple jobs at once, thus maximizing the speed of job processing, since each job is network I/O bound.
+---
 
-**Realtime UI updates**: UI is developed using event-driven programming paradigm for sending status updates using a local socket connection. This creates a very responsive website that accurately represents the internal state of the system.
+## Stack
 
+| Layer | Technology |
+|---|---|
+| Backend | Python · Flask · Flask-SocketIO · yt-dlp · ffmpeg |
+| Frontend | React · TypeScript · Vite · Socket.IO client |
+| Package management | uv (Python) · npm (frontend) |
+| Android sync | adb (WSL-compatible) |
 
+---
 
-# View the progress of development here:
-https://trello.com/b/0DEbMAds/development-board
+## Prerequisites
 
+- Python 3.11+
+- Node.js 18+
+- [uv](https://github.com/astral-sh/uv)
+- ffmpeg
 
-
-# Installation:
-1. Install python3 (https://www.python.org/downloads/)
-2. Clone this project's repository. (https://github.com/TomsBicans/twitch-spy)
-3. Install project dependencies.
-On windows:
-```
-install-dev-windows.bat
-```
-On linux:
-```
-install-dev-linux.sh
-```
-4. Run the program.
-
-# Run the program:
-This will launch a local python flask server. 
-```
-py ./main.py
-```
-or
-```
-python3 ./main.py
-```
-It is dependant on the system name used to launch python3.
-
-
-
-In the terminal you can see the IP to which you have to connect to access the frontend interface. It will most likely be this IP:
-```
-http://127.0.0.1:5000/
+```bash
+# Install ffmpeg (Debian/Ubuntu/WSL)
+make install-ffmpeg
 ```
 
-# Usage
-1. Launch the local server (py ./main.py)
-2. Connect to the local server instance IP address. (http://127.0.0.1:5000/)
-3. Paste in the links you want for the system to process and download.
-4. See realtime updates on the jobs being processed.
-5. Enjoy your music!
+---
+
+## Installation
+
+```bash
+# Install Python dependencies
+make install
+
+# Install frontend dependencies
+cd client && npm install
+```
+
+---
+
+## Running
+
+Start the API server and the frontend dev server in two separate terminals:
+
+```bash
+# Terminal 1 — backend (Flask + Socket.IO)
+make run_api
+
+# Terminal 2 — frontend (Vite dev server)
+make run_web
+```
+
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
+
+The `--output-dir` flag (set in the Makefile) controls where the library and logs are written. The default is `./data`.
+
+---
+
+## Usage
+
+1. Paste one or more YouTube URLs into the input box — single videos, playlists, channels, or a mix.
+2. Click **Queue downloads**. The backend atomizes the input and enqueues individual track jobs.
+3. Watch the queue counters and library grid update in real time as tracks finish downloading.
+4. Click any card in the library to play it in the browser.
+5. Use the **Sync to device** panel to push new tracks to a connected Android device over ADB.
