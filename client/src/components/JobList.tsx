@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Socket} from "socket.io-client";
 import {type Atom, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
@@ -11,14 +11,34 @@ interface JobStatusesProps {
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-const SongCard = ({job, onClick, isPlaying}: {
+const SongCard = React.memo(({job, onClick, isPlaying}: {
     job: Atom;
     onClick: () => void;
     isPlaying: boolean;
 }) => {
-    const thumbnail = job.thumbnail_image_in_base64
-        ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
-        : "";
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [thumbnailVisible, setThumbnailVisible] = useState(false);
+
+    useEffect(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setThumbnailVisible(true);
+                    observer.disconnect();
+                }
+            },
+            {rootMargin: "300px"},
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    const thumbnail =
+        thumbnailVisible && job.thumbnail_image_in_base64
+            ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
+            : "";
 
     const status = job.status.toLowerCase();
     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
@@ -33,6 +53,7 @@ const SongCard = ({job, onClick, isPlaying}: {
 
     return (
         <div
+            ref={cardRef}
             role="button"
             tabIndex={0}
             className={`${styles.card} ${statusClass} ${
@@ -54,7 +75,7 @@ const SongCard = ({job, onClick, isPlaying}: {
             </div>
         </div>
     );
-};
+});
 
 export const JobList = ({
                             socket,
@@ -62,6 +83,7 @@ export const JobList = ({
                             currentTrack,
                         }: JobStatusesProps) => {
     const [jobs, setJobs] = useState<Array<Atom>>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedJobProcessingState, setSelectedJobProcessingState] =
         useState<SelectedProcessingState>(ProcessingStates.FINISHED);
     const [searchQuery, setSearchQuery] = useState("");
@@ -79,12 +101,16 @@ export const JobList = ({
     };
 
     useEffect(() => {
-        const handler = (data: Atom) => updateAtomStatus(data);
-        socket.on("atom_update_status", handler);
+        const handleBatch = (data: Atom[]) => { setJobs(data); setLoading(false); };
+        const handleUpdate = (data: Atom) => updateAtomStatus(data);
+
+        socket.on("initial_jobs", handleBatch);
+        socket.on("atom_update_status", handleUpdate);
         socket.emit("request_initial_data");
 
         return () => {
-            socket.off("atom_update_status", handler);
+            socket.off("initial_jobs", handleBatch);
+            socket.off("atom_update_status", handleUpdate);
         };
     }, [socket]);
 
@@ -175,7 +201,12 @@ export const JobList = ({
                 </div>
             </div>
             <div className={styles.gridContainer}>
-                {filteredJobs.length === 0 ? (
+                {loading ? (
+                    <div className={styles.loadingState}>
+                        <span className={styles.spinner} aria-hidden="true" />
+                        <p className={styles.loadingText}>Loading library…</p>
+                    </div>
+                ) : filteredJobs.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyGlow} aria-hidden="true" />
                         <h3>Nothing here just yet</h3>

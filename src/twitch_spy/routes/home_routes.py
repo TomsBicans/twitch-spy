@@ -10,7 +10,7 @@ import twitch_spy.util as util
 import twitch_spy.media_downloader.platform_handlers as ph
 import twitch_spy.media_downloader.constants as const
 import twitch_spy.media_downloader.storage_manager as sm
-from twitch_spy.event_dispatcher import Events
+from twitch_spy.event_dispatcher import Events, atom_to_dict
 import flask
 import os.path as path
 from twitch_spy.socket_instance import socketio
@@ -79,8 +79,11 @@ def handle_ready_for_data():
     my_app.event_dispatcher.dispatch_event(
         Events.STATISTICS_UPDATE.value, my_app.job_manager.stats
     )
-    for job in my_app.job_manager.get_all_jobs():
-        my_app.event_dispatcher.dispatch_event(Events.JOB_RENDER.value, job)
+    jobs = my_app.job_manager.get_all_jobs()
+    socketio.emit(
+        "initial_jobs",
+        [atom_to_dict(Events.JOB_RENDER.value, job) for job in jobs],
+    )
 
 
 @home_routes.route("/jobs", methods=["GET"])
