@@ -1,18 +1,24 @@
 # twitch-spy
 
-A self-hosted music library manager. Paste YouTube URLs — individual videos, playlists, or channels — and the system downloads, tags, and organizes them into a local audio library with a real-time web UI.
+A self-hosted music library manager. Paste YouTube URLs — individual videos, playlists, or channels — and the system
+downloads, tags, and organizes them into a local audio library with a real-time web UI.
 
 ---
 
 ## Features
 
-- **Bulk URL ingestion** — accepts single videos, playlists, channels, and mixed input (newline or comma separated). JSON arrays are also parsed automatically.
-- **Atomization** — any input is broken down into the smallest downloadable unit (individual tracks) before processing. Playlists expand into per-track jobs automatically.
+- **Bulk URL ingestion** — accepts single videos, playlists, channels, and mixed input (newline or comma separated).
+  JSON arrays are also parsed automatically.
+- **Atomization** — any input is broken down into the smallest downloadable unit (individual tracks) before processing.
+  Playlists expand into per-track jobs automatically.
 - **Parallel downloads** — jobs run concurrently via a thread pool, maximizing throughput on network-bound workloads.
-- **Deduplication** — URLs are normalized (e.g. `music.youtube.com` → `www.youtube.com`) and checked against the local archive before queuing, so re-submitting the same tracks is safe.
+- **Deduplication** — URLs are normalized (e.g. `music.youtube.com` → `www.youtube.com`) and checked against the local
+  archive before queuing, so re-submitting the same tracks is safe.
 - **Metadata & thumbnails** — each track gets its title and cover art embedded via yt-dlp and ffmpeg.
-- **Real-time UI** — a React frontend receives live job status updates over Socket.IO. The library grid, queue counters, and now-playing dock all update without polling.
-- **Android sync** — one-way library sync to an Android device over ADB. The UI computes a sync plan (new files, directories to create, bytes to transfer) before executing, with per-file progress reporting.
+- **Real-time UI** — a React frontend receives live job status updates over Socket.IO. The library grid, queue counters,
+  and now-playing dock all update without polling.
+- **Android sync** — one-way library sync to an Android device over ADB. The UI computes a sync plan (new files,
+  directories to create, bytes to transfer) before executing, with per-file progress reporting.
 - **Audio player** — built-in browser player with album-art-derived ambient color, progress bar, and volume control.
 
 ---
@@ -25,12 +31,12 @@ A self-hosted music library manager. Paste YouTube URLs — individual videos, p
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | Python · Flask · Flask-SocketIO · yt-dlp · ffmpeg |
-| Frontend | React · TypeScript · Vite · Socket.IO client |
-| Package management | uv (Python) · npm (frontend) |
-| Android sync | adb (WSL-compatible) |
+| Layer              | Technology                                        |
+|--------------------|---------------------------------------------------|
+| Backend            | Python · Flask · Flask-SocketIO · yt-dlp · ffmpeg |
+| Frontend           | React · TypeScript · Vite · Socket.IO client      |
+| Package management | uv (Python) · npm (frontend)                      |
+| Android sync       | adb (WSL-compatible)                              |
 
 ---
 
