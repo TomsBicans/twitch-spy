@@ -85,3 +85,22 @@ The `--output-dir` flag (set in the Makefile) controls where the library and log
 3. Watch the queue counters and library grid update in real time as tracks finish downloading.
 4. Click any card in the library to play it in the browser.
 5. Use the **Sync to device** panel to push new tracks to a connected Android device over ADB.
+
+## Useful scripts
+
+Extract all individual links from a music.youtube.com private (not publically accessible) playlist:
+
+1. Open the playlist in a popular browser (chrome, firefox, e.t.c)
+2. Open console (F12)
+3. Execute this script in console. It will copy all the links to your clipboard as a JSON array.
+
+```javascript
+copy(
+    [...document.querySelectorAll('ytmusic-responsive-list-item-renderer')]
+        .map(el => el.querySelector('yt-formatted-string a')?.href)
+        .filter(Boolean)
+        .map(u => u.split('&')[0])
+)
+```
+
+4. Paste the JSON array with the links in this application and bulk download all the resources.
