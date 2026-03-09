@@ -95,6 +95,20 @@ def get_all_jobs():
     return jsonify(jobs_list)
 
 
+@home_routes.route("/jobs/<job_id>/retry", methods=["POST"])
+def retry_job(job_id: str):
+    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    job = my_app.job_manager.get_job(UUID(job_id))
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    retriable = {const.PROCESS_STATUS.FAILED, const.PROCESS_STATUS.CANCELLED, const.PROCESS_STATUS.INVALID}
+    if job.status not in retriable:
+        return jsonify({"error": "Job is not in a retriable state"}), 400
+    sm.StorageManager(job.download_dir).remove_failed_entry(job.url)
+    my_app.job_manager.retry_job(job)
+    return jsonify({"success": True})
+
+
 @home_routes.route("/jobs/<job_id>", methods=["GET"])
 def get_job_by_id(job_id: str):
     logger.debug(f"Fetching job: {job_id}")

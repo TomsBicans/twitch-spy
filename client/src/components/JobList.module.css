@@ -220,6 +220,26 @@
   color: #ffd5a6;
 }
 
+.retryButton {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 157, 141, 0.4);
+  background: rgba(255, 157, 141, 0.1);
+  color: #ff9d8d;
+  cursor: pointer;
+  transition: background var(--transition-medium) ease, border-color var(--transition-medium) ease;
+}
+
+.retryButton:hover {
+  background: rgba(255, 157, 141, 0.22);
+  border-color: rgba(255, 157, 141, 0.65);
+}
+
 .loadingState {
   grid-column: 1 / -1;
   display: flex;

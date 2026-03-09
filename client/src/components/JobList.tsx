@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {Socket} from "socket.io-client";
 import {type Atom, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
+import {BACKEND_URL} from "../backend/backend.ts";
 
 interface JobStatusesProps {
     socket: Socket;
@@ -11,10 +12,13 @@ interface JobStatusesProps {
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-const SongCard = React.memo(({job, onClick, isPlaying}: {
+const RETRIABLE_STATES = new Set([ProcessingStates.FAILED, ProcessingStates.INVALID, ProcessingStates.CANCELLED]);
+
+const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
     job: Atom;
     onClick: () => void;
     isPlaying: boolean;
+    onRetry: () => void;
 }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [thumbnailVisible, setThumbnailVisible] = useState(false);
@@ -72,6 +76,15 @@ const SongCard = React.memo(({job, onClick, isPlaying}: {
                 </div>
                 <h3 className={styles.jobName}>{job.content_name || "Untitled"}</h3>
                 <p className={styles.jobUrl}>{job.url}</p>
+                {RETRIABLE_STATES.has(job.status) && (
+                    <button
+                        className={styles.retryButton}
+                        onClick={(e) => { e.stopPropagation(); onRetry(); }}
+                        aria-label="Retry download"
+                    >
+                        Retry
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -103,14 +116,20 @@ export const JobList = ({
     useEffect(() => {
         const handleBatch = (data: Atom[]) => { setJobs(data); setLoading(false); };
         const handleUpdate = (data: Atom) => updateAtomStatus(data);
+        const requestData = () => {
+            setLoading(true);
+            socket.emit("request_initial_data");
+        };
 
         socket.on("initial_jobs", handleBatch);
         socket.on("atom_update_status", handleUpdate);
+        socket.on("connect", requestData);
         socket.emit("request_initial_data");
 
         return () => {
             socket.off("initial_jobs", handleBatch);
             socket.off("atom_update_status", handleUpdate);
+            socket.off("connect", requestData);
         };
     }, [socket]);
 
@@ -146,6 +165,14 @@ export const JobList = ({
 
     const handleCardClick = (job: Atom) => {
         onMusicSelected(job);
+    };
+
+    const handleRetry = async (job: Atom) => {
+        try {
+            await fetch(`${BACKEND_URL}/jobs/${job.id}/retry`, {method: "POST"});
+        } catch (error) {
+            console.error("Retry failed:", error);
+        }
     };
 
     const filteredJobs = filterJobs(
@@ -219,6 +246,7 @@ export const JobList = ({
                             job={job}
                             onClick={() => handleCardClick(job)}
                             isPlaying={currentTrack === job.content_name}
+                            onRetry={() => handleRetry(job)}
                         />
                     ))
                 )}

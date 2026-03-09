@@ -93,6 +93,13 @@ class StorageManager:
     def mark_successful_download(self, url: str, title: str = None):
         self.add_entry(self.storage_file, url, title)
 
+    def remove_failed_entry(self, url: str):
+        with self.lock:
+            data = self.read_file(self.failed_downloads)
+            lines = [line for line in data.splitlines() if line.split(",")[0].strip() != url]
+            with open(self.failed_downloads, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + ("\n" if lines else ""))
+
     def troublesome_download(self, url: str, title: str = None):
         data = self.read_file(self.failed_downloads)
         data = [

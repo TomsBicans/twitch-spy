@@ -79,6 +79,12 @@ class JobManager:
         job = JobProcessor.process(job)  # Do the actual job processing here.
         return job
 
+    def retry_job(self, job: Atom) -> None:
+        job.update_status(const.PROCESS_STATUS.QUEUED)
+        self.send_update(job)
+        future: Future = self.executor.submit(self.process_job, job)
+        future.add_done_callback(self.job_done)
+
     def job_done(self, future: Future) -> None:
         exception: Union[BaseException, None] = future.exception()
         if exception:

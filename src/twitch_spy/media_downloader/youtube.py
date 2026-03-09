@@ -1,6 +1,7 @@
 import base64
 import logging
 import re
+import subprocess
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -173,6 +174,24 @@ class Utils:
         audio.save()
 
 
+def _is_corrupt_audio(filepath: str) -> bool:
+    """Return True if the file is missing, empty, or ffprobe reports any error in the stream."""
+    if not os.path.isfile(filepath):
+        return True
+    if os.path.getsize(filepath) == 0:
+        return True
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-i", filepath],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        return bool(result.stderr.strip())
+    except Exception:
+        return True
+
+
 class YoutubeDownloader:
     def __init__(self) -> None:
         pass
@@ -279,10 +298,21 @@ class YoutubeDownloader:
             base = os.path.splitext(filename)[0]
             filename = base + ".mp3"
 
+            if os.path.isfile(filename) and _is_corrupt_audio(filename):
+                logger.warning(f"Removing corrupt file: {filename}")
+                os.remove(filename)
+
             if not os.path.isfile(filename):
-                ydl.download([atom.url])  # Download the file here
+                # Clean up any leftover intermediate files (e.g. .webm from an interrupted download)
+                # so yt-dlp doesn't skip them and can start fresh.
+                for f in os.listdir(atom.download_dir):
+                    f_base, f_ext = os.path.splitext(f)
+                    if f_base == os.path.basename(base) and f_ext not in (".mp3", ".part"):
+                        logger.warning(f"Removing leftover intermediate file: {f}")
+                        os.remove(os.path.join(atom.download_dir, f))
+                ydl.download([atom.url])
             else:
-                print(f"File already exists. {filename}")
+                logger.debug(f"File already exists, skipping download: {filename}")
 
             atom.media_file_os_path = filename  # Store media file path
 
