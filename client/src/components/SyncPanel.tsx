@@ -232,7 +232,7 @@ const SyncPanel: React.FC<SyncPanelProps> = ({socket}) => {
                                                             </span>
                                                         </p>
                                                         <ul className={styles.detailList}>
-                                                            {files.map((op) => (
+                                                            {[...files].sort((a, b) => b.size_bytes - a.size_bytes).map((op) => (
                                                                 <li key={op.remote_path} className={styles.detailItem} title={op.remote_path}>
                                                                     <span className={styles.detailIcon}>♪</span>
                                                                     <span className={styles.detailName}>{op.filename}</span>
