@@ -1,7 +1,6 @@
-import pytest
 import twitch_spy.media_downloader.atomizer as atomizer
 import twitch_spy.media_downloader.constants as const
-import os.path as path
+from twitch_spy.media_downloader.platform_handlers import Atomizer
 
 
 def test_determine_platform():
@@ -52,7 +51,7 @@ def test_atomize_urls():
         "https://someotherwebsite.com/",
     ]
 
-    atoms = atomizer.Atomizer.atomize_urls(
+    atoms = Atomizer.atomize_urls(
         urls, const.CONTENT_MODE.AUDIO, "/path/to/download"
     )
 

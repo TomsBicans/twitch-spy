@@ -8,18 +8,18 @@ logger = logging.getLogger(__name__)
 import os
 import os.path as path
 import re
-import requests
 import mutagen
 from moviepy import VideoFileClip, AudioFileClip
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
 import yt_dlp
-import googleapiclient.discovery
 import twitch_spy.media_downloader.constants as const
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from twitch_spy.media_downloader.storage_manager import StorageManager
 from twitch_spy.media_downloader.atomizer import Atom
+
+if TYPE_CHECKING:
+    from twitch_spy.media_downloader.storage_manager import StorageManager
 
 
 class VideoMetadata:
@@ -125,7 +125,12 @@ class Utils:
         timestamp_title_pairs = Utils.baseline_timestamp_pairs(
             timestamp_title_pairs, Utils.audio_length(audio_file)
         )
-        thumbnail_url = YoutubeDownloader.get_thumbnail_url(youtube_url)
+        thumbnail_name = info_dict.get("title") or path.basename(
+            Utils.filepath_without_extension(audio_file)
+        )
+        thumbnail_path = YoutubeDownloader.download_thumbnail(
+            youtube_url, thumbnail_name, path.dirname(audio_file)
+        )
         print(timestamp_title_pairs)
 
         # Load the audio file with moviepy
@@ -140,7 +145,7 @@ class Utils:
             chunk.write_audiofile(save_location)
             Utils.add_title_to_audio_file(title, save_location)
             YoutubeDownloader.add_preview_picture_to_audio_file(
-                title, thumbnail_url, save_location
+                thumbnail_path, save_location
             )
 
     @staticmethod
@@ -197,45 +202,52 @@ class YoutubeDownloader:
         pass
 
     @staticmethod
-    def get_thumbnail_url(youtube_video_url: str) -> str:
-        ydl_opts = {}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(youtube_video_url, download=False)
+    def download_thumbnail(
+        youtube_video_url: str, thumbnail_name: str, output_directory: str
+    ) -> Optional[str]:
+        thumbnails_dir = path.join(output_directory, "thumbnails")
+        os.makedirs(thumbnails_dir, exist_ok=True)
 
-        thumbnail_url = info_dict.get("thumbnail", None)
-        if not thumbnail_url:
-            print("Using google API")
-            youtube = googleapiclient.discovery.build(
-                "youtube", "v3", developerKey="AIzaSyCtvDiw629vvfQr84XQGjY8seKfFSuInVg"
-            )
-            video_id = info_dict.get("id", None)
-            response = youtube.videos().list(part="snippet", id=video_id).execute()
-            thumbnails = response["items"][0]["snippet"]["thumbnails"]
-            if "maxres" in thumbnails:
-                thumbnail_url = thumbnails["maxres"]["url"]
-            elif "high" in thumbnails:
-                thumbnail_url = thumbnails["high"]["url"]
-            elif "medium" in thumbnails:
-                thumbnail_url = thumbnails["medium"]["url"]
-        return thumbnail_url
+        thumbnail_base = path.join(thumbnails_dir, safe_pathname(thumbnail_name))
+        thumbnail_path = thumbnail_base + ".jpg"
+        if path.isfile(thumbnail_path):
+            return thumbnail_path
+
+        ydl_opts = {
+            "skip_download": True,
+            "writethumbnail": True,
+            "quiet": True,
+            "outtmpl": {
+                "default": thumbnail_base + ".%(ext)s",
+                "thumbnail": thumbnail_base + ".%(ext)s",
+            },
+            "postprocessors": [
+                {
+                    "key": "FFmpegThumbnailsConvertor",
+                    "format": "jpg",
+                    "when": "before_dl",
+                }
+            ],
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(youtube_video_url, download=True)
+
+        for thumbnail in reversed(info_dict.get("thumbnails") or []):
+            downloaded_path = thumbnail.get("filepath")
+            if downloaded_path and path.isfile(downloaded_path):
+                return downloaded_path
+        if path.isfile(thumbnail_path):
+            return thumbnail_path
+        return None
 
     @staticmethod
     def add_preview_picture_to_audio_file(
-            thumbnail_name: str, thumbnail_url: str, audio_path: str
+        thumbnail_path: Optional[str], audio_path: str
     ) -> Optional[str]:
-        if thumbnail_url:
-            print(f"Thumbnail found: {thumbnail_url}")
-            download_dir = path.dirname(audio_path)
-            thumbnails_dir = path.join(download_dir, "thumbnails")
-            if not path.exists(thumbnails_dir):
-                os.mkdir(thumbnails_dir)
-            thumbnail_loc = path.join(
-                thumbnails_dir, safe_pathname(thumbnail_name) + ".jpg"
-            )
-            with open(thumbnail_loc, "wb") as thumbnail_file:
-                thumbnail_file.write(requests.get(thumbnail_url).content)
+        if thumbnail_path and path.isfile(thumbnail_path):
+            print(f"Thumbnail found: {thumbnail_path}")
             audio = ID3(audio_path)
-            with open(thumbnail_loc, "rb") as thumbnail_file:
+            with open(thumbnail_path, "rb") as thumbnail_file:
                 audio["APIC"] = APIC(
                     encoding=3,
                     mime="image/jpeg",
@@ -244,9 +256,9 @@ class YoutubeDownloader:
                     data=thumbnail_file.read(),
                 )
             audio.save()
-            return thumbnail_loc
+            return thumbnail_path
         else:
-            print(f"Thumbnail not found: {thumbnail_url}")
+            print(f"Thumbnail not found: {thumbnail_path}")
             return None
 
     @staticmethod
@@ -321,9 +333,13 @@ class YoutubeDownloader:
             except Exception as e:
                 raise e
             try:
-                thumbnail_url = YoutubeDownloader.get_thumbnail_url(atom.url)
+                thumbnail_path = YoutubeDownloader.download_thumbnail(
+                    atom.url,
+                    info_dict.get("title") or info_dict.get("id") or "thumbnail",
+                    atom.download_dir,
+                )
                 thumbnail_path = YoutubeDownloader.add_preview_picture_to_audio_file(
-                    info_dict.get("title", None), thumbnail_url, filename
+                    thumbnail_path, filename
                 )
                 if thumbnail_path and path.exists(thumbnail_path):
                     with open(thumbnail_path, "rb") as f:
@@ -480,7 +496,7 @@ def split_audio_file(audio_file: str, youtube_url: str):
 def download_video(
         downloader: YoutubeDownloader,
         download_dir: str,
-        storage_manager: StorageManager,
+        storage_manager: "StorageManager",
         url: str,
 ):
     try:

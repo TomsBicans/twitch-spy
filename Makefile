@@ -4,6 +4,9 @@ install:
 install-ffmpeg:
 	sudo apt update -y && sudo apt install ffmpeg -y
 
+test:
+	uv run pytest -v
+
 run_web:
 	cd client && npm run dev
 

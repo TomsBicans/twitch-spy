@@ -1,11 +1,8 @@
-import pytest
 import os
-import threading
 import tempfile
 from twitch_spy.media_downloader.storage_manager import (
     StorageManager,
 )
-from twitch_spy.util import OS
 
 
 def test_init():
@@ -18,27 +15,19 @@ def test_init():
         assert os.path.exists(os.path.join(tempdir, "storage", "failed_split.txt"))
 
 
-def test_multiton():
+def test_instances_are_independent():
     with tempfile.TemporaryDirectory() as tempdir:
         instance1 = StorageManager(tempdir)
         instance2 = StorageManager(tempdir)
-        print(StorageManager.describe_class())
-        assert instance1 is instance2
+        assert instance1 is not instance2
+        assert instance1.download_dir == instance2.download_dir
 
 
-def test_thread_safety():
+def test_instances_have_independent_locks():
     with tempfile.TemporaryDirectory() as tempdir:
         instance1 = StorageManager(tempdir)
-        instance2 = None
-
-        def set_instance():
-            nonlocal instance2
-            instance2 = StorageManager(tempdir)
-
-        thread = threading.Thread(target=set_instance)
-        thread.start()
-        thread.join()
-        assert instance1 is instance2
+        instance2 = StorageManager(tempdir)
+        assert instance1.lock is not instance2.lock
 
 
 def test_already_downloaded():
@@ -58,16 +47,15 @@ def test_troublesome_download():
     with tempfile.TemporaryDirectory() as tempdir:
         instance = StorageManager(tempdir)
         instance.troublesome_download("http://example.com/file1")
-        assert (
-            "http://example.com/file1"
-            in OS.read_file(instance.failed_downloads).splitlines()
-        )
+        assert instance.read_entries(instance.failed_downloads) == [
+            ("http://example.com/file1", None, None, None)
+        ]
 
 
 def test_troublesome_split():
     with tempfile.TemporaryDirectory() as tempdir:
         instance = StorageManager(tempdir)
         instance.troublesome_split("http://example.com/file1")
-        assert (
-            "http://example.com/file1" in OS.read_file(instance.failed_split).splitlines()
-        )
+        assert instance.read_entries(instance.failed_split) == [
+            ("http://example.com/file1", None, None, None)
+        ]
