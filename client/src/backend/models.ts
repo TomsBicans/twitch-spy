@@ -11,25 +11,27 @@ export interface Atom {
   media_file_os_path?: string;
   status: ProcessingStates;
 }
-export enum PLATFORM {
-  TWITCH = "TWITCH",
-  YOUTUBE = "YOUTUBE",
-  UNDEFINED = "UNDEFINED",
-}
+export const PLATFORM = {
+  YOUTUBE: "YOUTUBE",
+  UNDEFINED: "UNDEFINED",
+} as const;
+export type PLATFORM = (typeof PLATFORM)[keyof typeof PLATFORM];
 
-export enum CONTENT_MODE {
-  VIDEO = "VIDEO",
-  AUDIO = "AUDIO",
-  BOTH = "BOTH",
-}
-export enum ProcessingStates {
-  QUEUED = "queued",
-  PROCESSING = "processing",
-  FINISHED = "finished",
-  CANCELLED = "cancelled",
-  FAILED = "failed",
-  INVALID = "invalid",
-}
+export const CONTENT_MODE = {
+  AUDIO: "AUDIO",
+} as const;
+export type CONTENT_MODE = (typeof CONTENT_MODE)[keyof typeof CONTENT_MODE];
+
+export const ProcessingStates = {
+  QUEUED: "queued",
+  PROCESSING: "processing",
+  FINISHED: "finished",
+  CANCELLED: "cancelled",
+  FAILED: "failed",
+  INVALID: "invalid",
+} as const;
+export type ProcessingStates =
+  (typeof ProcessingStates)[keyof typeof ProcessingStates];
 
 export interface JobStatistics {
   [ProcessingStates.QUEUED]: number;

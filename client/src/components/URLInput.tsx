@@ -100,7 +100,7 @@ export const URLInput = ({socket}: URLInputProps) => {
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
                     rows={userInput.length > 0 ? 8 : 6}
-                    placeholder="Comma or line separated links — YouTube, SoundCloud, Bandcamp..."
+                    placeholder="Comma or line separated YouTube links"
                     className={styles.urlInput}
                 />
                 <span className={styles.inputGlow} aria-hidden="true" />
