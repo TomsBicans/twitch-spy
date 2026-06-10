@@ -128,3 +128,20 @@ def test_find_mp3file_matches_full_width_punctuation(monkeypatch, tmp_path):
     )
 
     assert result == str(audio_path)
+
+
+def test_generate_atoms_refreshes_missing_titles(monkeypatch, tmp_path):
+    instance = StorageManager(str(tmp_path))
+    url = "https://www.youtube.com/watch?v=video"
+    instance.add_entry(instance.storage_file, url)
+    monkeypatch.setattr(
+        storage_manager.youtube, "get_video_title", lambda requested_url: "Video title"
+    )
+
+    atoms = instance.generate_atoms(refresh_titles=True)
+
+    atom = next(atom for atom in atoms if atom.url == url)
+    assert atom.content_title == "Video title"
+    assert instance.read_entries(instance.storage_file) == [
+        (url, "Video title", None, None)
+    ]

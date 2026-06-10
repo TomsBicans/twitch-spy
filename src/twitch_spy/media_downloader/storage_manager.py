@@ -200,7 +200,9 @@ class StorageManager:
 
                 if refresh_titles:
                     urls_to_refresh = [
-                        url for url, (title, _, _) in entries if not title
+                        url
+                        for url, title, _media_path, _thumbnail_path in entries
+                        if not title
                     ]
 
                     with ThreadPoolExecutor(max_workers=15) as executor:

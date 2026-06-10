@@ -190,3 +190,32 @@ def test_youtube_playlist_title(monkeypatch):
     assert title == "Playlist title"
     assert calls["extract_info"] == (PLAYLIST_URL, False)
     assert calls["options"]["skip_download"] is True
+
+
+def test_get_video_title_uses_metadata_only_extraction(monkeypatch):
+    calls = {}
+
+    class FakeYoutubeDL:
+        def __init__(self, options):
+            calls["options"] = options
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+        def extract_info(self, url, download):
+            calls["extract_info"] = (url, download)
+            return {"title": "Video title"}
+
+    monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", FakeYoutubeDL)
+
+    assert youtube.get_video_title("https://www.youtube.com/watch?v=video") == (
+        "Video title"
+    )
+    assert calls["extract_info"] == (
+        "https://www.youtube.com/watch?v=video",
+        False,
+    )
+    assert calls["options"]["skip_download"] is True

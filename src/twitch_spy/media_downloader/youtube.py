@@ -230,6 +230,22 @@ def get_playlist_name(playlist_url: str) -> str:
     return playlist_dict.get("title")
 
 
+def get_video_title(video_url: str) -> Optional[str]:
+    ydl_opts = {
+        "quiet": True,
+        "skip_download": True,
+        "extract_flat": True,
+    }
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=False)
+    except yt_dlp.utils.DownloadError as exc:
+        logger.warning("Could not extract title for %s: %s", video_url, exc)
+        return None
+
+    return info_dict.get("title") if info_dict else None
+
+
 def safe_pathname(dir: str) -> str:
     # Replace any character that is not allowed in Windows filenames with an underscore
     return re.sub(r'[\\/:*?"<>| ]', "_", dir)
