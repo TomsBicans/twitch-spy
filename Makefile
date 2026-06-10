@@ -12,6 +12,3 @@ run_web:
 
 run_api:
 	uv run twitch-spy --output-dir ./data --android-dest /sdcard/SdCardBackup/Music
-
-format:
-	cd client && npm run format
