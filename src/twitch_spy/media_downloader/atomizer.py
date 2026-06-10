@@ -32,12 +32,9 @@ class Atom:
 
     @staticmethod
     def _determine_platform(url: str) -> constants.PLATFORM:
-        if "twitch.tv" in url:
-            return constants.PLATFORM.TWITCH
-        elif "youtube.com" in url or "youtu.be" in url:
+        if "youtube.com" in url or "youtu.be" in url:
             return constants.PLATFORM.YOUTUBE
-        else:
-            return constants.PLATFORM.UNDEFINED
+        return constants.PLATFORM.UNDEFINED
 
     @staticmethod
     def _is_single_item(url: str) -> bool:
@@ -45,11 +42,7 @@ class Atom:
         if platform == constants.PLATFORM.YOUTUBE:
             # Playlist or single video
             return "watch?v=" in url and "list=" not in url and "list=LL&" not in url
-        elif platform == constants.PLATFORM.TWITCH:
-            # I do not know if there is any thing as a multiple item in twitch streaming service
-            return True
-        elif platform == constants.PLATFORM.UNDEFINED:
-            return True
+        return True
 
     @staticmethod
     def _is_url_valid(url: str) -> bool:

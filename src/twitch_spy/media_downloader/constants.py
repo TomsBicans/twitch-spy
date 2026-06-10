@@ -16,12 +16,9 @@ class PROCESS_STATUS(Enum):
 
 
 class CONTENT_MODE(Enum):
-    VIDEO = "video"
     AUDIO = "audio"
-    STREAM = "stream"
 
 
 class PLATFORM(Enum):
     YOUTUBE = "youtube"
-    TWITCH = "twitch"
     UNDEFINED = None

@@ -8,17 +8,12 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "emoji>=2.15.0",
     "flask>=3.1.3",
     "flask-cors>=6.0.2",
     "flask-socketio>=5.6.1",
-    "moviepy>=2.2.1",
     "mutagen>=1.47.0",
     "psutil>=7.2.2",
     "pytest>=9.0.2",
-    "pyyaml>=6.0.3",
-    "requests>=2.32.5",
-    "streamlink>=8.2.1",
     "tqdm>=4.67.3",
     "yt-dlp>=2026.3.3",
 ]
