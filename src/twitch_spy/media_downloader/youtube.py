@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import logging
 import re
 import subprocess
@@ -19,6 +20,11 @@ class VideoMetadata:
     def __init__(self, title: str, url: str) -> None:
         self.title = title
         self.url = url
+
+
+def thumbnail_cache_name(thumbnail_name: str, youtube_video_url: str) -> str:
+    video_key = hashlib.sha256(youtube_video_url.encode("utf-8")).hexdigest()[:12]
+    return f"{safe_pathname(thumbnail_name)}__{video_key}"
 
 
 def _is_corrupt_audio(filepath: str) -> bool:
@@ -50,7 +56,10 @@ class YoutubeDownloader:
         thumbnails_dir = path.join(output_directory, "thumbnails")
         os.makedirs(thumbnails_dir, exist_ok=True)
 
-        thumbnail_base = path.join(thumbnails_dir, safe_pathname(thumbnail_name))
+        thumbnail_base = path.join(
+            thumbnails_dir,
+            thumbnail_cache_name(thumbnail_name, youtube_video_url),
+        )
         thumbnail_path = thumbnail_base + ".jpg"
         if path.isfile(thumbnail_path):
             return thumbnail_path

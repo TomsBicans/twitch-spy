@@ -9,7 +9,9 @@ PLAYLIST_URL = "https://www.youtube.com/playlist?list=playlist-id"
 
 def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
     calls = {}
-    expected_path = tmp_path / "thumbnails" / "Video_Title.jpg"
+    video_url = "https://www.youtube.com/watch?v=video"
+    cache_name = youtube.thumbnail_cache_name("Video Title", video_url)
+    expected_path = tmp_path / "thumbnails" / f"{cache_name}.jpg"
 
     class FakeYoutubeDL:
         def __init__(self, options):
@@ -29,18 +31,18 @@ def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
     monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", FakeYoutubeDL)
 
     result = youtube.YoutubeDownloader.download_thumbnail(
-        "https://www.youtube.com/watch?v=video", "Video Title", str(tmp_path)
+        video_url, "Video Title", str(tmp_path)
     )
 
     assert result == str(expected_path)
     assert calls["extract_info"] == (
-        "https://www.youtube.com/watch?v=video",
+        video_url,
         True,
     )
     assert calls["options"]["skip_download"] is True
     assert calls["options"]["writethumbnail"] is True
     assert calls["options"]["outtmpl"]["thumbnail"].endswith(
-        os.path.join("thumbnails", "Video_Title.%(ext)s")
+        os.path.join("thumbnails", f"{cache_name}.%(ext)s")
     )
     assert calls["options"]["postprocessors"] == [
         {
@@ -52,7 +54,9 @@ def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
 
 
 def test_download_thumbnail_reuses_existing_file(monkeypatch, tmp_path):
-    thumbnail_path = tmp_path / "thumbnails" / "Video_Title.jpg"
+    video_url = "https://www.youtube.com/watch?v=video"
+    cache_name = youtube.thumbnail_cache_name("Video Title", video_url)
+    thumbnail_path = tmp_path / "thumbnails" / f"{cache_name}.jpg"
     thumbnail_path.parent.mkdir()
     thumbnail_path.write_bytes(b"jpeg-data")
 
@@ -62,10 +66,23 @@ def test_download_thumbnail_reuses_existing_file(monkeypatch, tmp_path):
     monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", fail_if_called)
 
     result = youtube.YoutubeDownloader.download_thumbnail(
-        "https://www.youtube.com/watch?v=video", "Video Title", str(tmp_path)
+        video_url, "Video Title", str(tmp_path)
     )
 
     assert result == str(thumbnail_path)
+
+
+def test_thumbnail_cache_name_distinguishes_videos_with_same_title():
+    first = youtube.thumbnail_cache_name(
+        "Same Title", "https://www.youtube.com/watch?v=first"
+    )
+    second = youtube.thumbnail_cache_name(
+        "Same Title", "https://www.youtube.com/watch?v=second"
+    )
+
+    assert first != second
+    assert first.startswith("Same_Title__")
+    assert second.startswith("Same_Title__")
 
 
 def test_download_thumbnail_returns_none_when_unavailable(monkeypatch, tmp_path):
