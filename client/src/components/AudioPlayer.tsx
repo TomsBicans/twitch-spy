@@ -75,7 +75,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
 
     useEffect(() => {
         if (entry) {
-            setCurrentTrack(`${BACKEND_URL}/audio/${entry.content_name}`);
+            setCurrentTrack(`${BACKEND_URL}/audio/${encodeURIComponent(entry.content_name)}`);
             if (entry.thumbnail_image_in_base64) {
                 getAverageColor(entry.thumbnail_image_in_base64).then(setTrackColor);
             } else {

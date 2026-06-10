@@ -4,6 +4,7 @@ import csv
 import threading
 import re
 import base64
+import unicodedata
 from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.media_downloader.constants as const
@@ -307,6 +308,7 @@ class LibraryManager:
 
 
 def normalize_string(s: str) -> str:
+    s = unicodedata.normalize("NFKC", s)
     # Replace spaces with hyphens
     s = s.replace(" ", "-")
     # Replace all other non-alphanumeric characters with hyphens

@@ -1,7 +1,9 @@
 import os
 import tempfile
+import twitch_spy.media_downloader.storage_manager as storage_manager
 from twitch_spy.media_downloader.storage_manager import (
     StorageManager,
+    normalize_string,
 )
 from twitch_spy.media_downloader.youtube import thumbnail_cache_name
 
@@ -110,3 +112,19 @@ def test_find_thumbnail_path_falls_back_to_legacy_name(tmp_path):
     assert instance._find_thumbnail_path(
         "Video Title", "https://www.youtube.com/watch?v=video", None
     ) == str(thumbnail_path)
+
+
+def test_normalize_string_matches_full_width_punctuation():
+    assert normalize_string("WHAT TO DO?") == normalize_string("WHAT TO DO？")
+
+
+def test_find_mp3file_matches_full_width_punctuation(monkeypatch, tmp_path):
+    audio_path = tmp_path / "JACKBOYS, Travis Scott - WHAT TO DO？ (Audio).mp3"
+    audio_path.write_bytes(b"audio")
+    monkeypatch.setattr(storage_manager, "AUDIO_LIBRARY", str(tmp_path))
+
+    result = storage_manager.find_mp3file_with_title(
+        "JACKBOYS, Travis Scott - WHAT TO DO? (Audio)"
+    )
+
+    assert result == str(audio_path)
