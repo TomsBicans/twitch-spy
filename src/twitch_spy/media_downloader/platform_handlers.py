@@ -2,7 +2,6 @@ from typing import Callable, List, Optional
 import os.path as path
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.media_downloader.youtube as youtube
-import twitch_spy.media_downloader.twitch as twitch
 import twitch_spy.media_downloader.constants as const
 from twitch_spy.media_downloader.storage_manager import StorageManager
 from twitch_spy.system_logger import logger
@@ -24,24 +23,11 @@ class PlatformHandler(ABC):
 
 
 class YouTubeHandler(PlatformHandler):
-    CONTENT_TYPE_TO_DIR = {
-        const.CONTENT_MODE.AUDIO: "random_audio",
-        const.CONTENT_MODE.VIDEO: "random_videos",
-        const.CONTENT_MODE.STREAM: "random_videos",
-    }
-
-    CONTENT_TYPE_HANDLER = {
-        const.CONTENT_MODE.AUDIO: youtube.YoutubeDownloader.download_audio,
-        const.CONTENT_MODE.VIDEO: youtube.download_video,
-        const.CONTENT_MODE.STREAM: None,
-    }
+    AUDIO_SUBDIR = "random_audio"
 
     def atomize(self, atom: Atom) -> List[Atom]:
         if atom.single_item:
-            subdir = self.CONTENT_TYPE_TO_DIR.get(atom.content_type, "")
-            new_download_dir = (
-                path.join(atom.download_dir, subdir) if subdir else atom.download_dir
-            )
+            new_download_dir = path.join(atom.download_dir, self.AUDIO_SUBDIR)
             # Title is resolved later during download_audio() from info_dict,
             # avoiding a redundant network round-trip here.
             new_atom = Atom(
@@ -88,51 +74,12 @@ class YouTubeHandler(PlatformHandler):
         return atom
 
     def select_content_handler(self, atom: Atom) -> Callable:
-        res = self.CONTENT_TYPE_HANDLER.get(atom.content_type)
-        if res:
-            return res
-        else:
-            return None
-
-
-class TwitchHandler(PlatformHandler):
-    CONTENT_TYPE_TO_DIR = {
-        const.CONTENT_MODE.AUDIO: "random_stream_audio",
-        const.CONTENT_MODE.VIDEO: "random_stream_videos",
-        const.CONTENT_MODE.STREAM: "random_stream_videos",
-    }
-
-    CONTENT_TYPE_HANDLER = {
-        # Implement in the future
-        const.CONTENT_MODE.AUDIO: None,
-        const.CONTENT_MODE.VIDEO: None,
-        const.CONTENT_MODE.STREAM: None,
-    }
-
-    def atomize(self, atom: Atom) -> List[Atom]:
-        subdir = self.CONTENT_TYPE_TO_DIR.get(atom.content_type, "")
-        new_download_dir = (
-            path.join(atom.download_dir, subdir) if subdir else atom.download_dir
-        )
-        return [Atom(atom.url, atom.content_type, new_download_dir)]
-
-    def process(self, atom: Atom) -> Atom:
-        return atom
-
-    def select_content_handler(self, atom: Atom) -> Callable:
-        res = self.CONTENT_TYPE_HANDLER.get(atom.content_type)
-        if res:
-            return res
-        else:
-            return None
+        return youtube.YoutubeDownloader.download_audio
 
 
 class Atomizer:
-    # Map platforms to their handlers
     PLATFORM_HANDLERS = {
         const.PLATFORM.YOUTUBE: YouTubeHandler(),
-        const.PLATFORM.TWITCH: TwitchHandler(),
-        # add other platforms here...
     }
 
     @staticmethod
@@ -151,7 +98,7 @@ class Atomizer:
             if handler:
                 atoms.extend(handler.atomize(atom))
             else:
-                atoms.append(atom)  # Default behavior for unsupported platforms
+                logger.warning("Skipping unsupported URL: %s", url)
             if on_url:
                 on_url(i, total)
         return atoms

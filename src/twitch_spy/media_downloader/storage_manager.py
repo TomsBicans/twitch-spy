@@ -1,8 +1,10 @@
 import os.path as path
 import os
+import csv
 import threading
 import re
 import base64
+import unicodedata
 from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.media_downloader.constants as const
@@ -73,9 +75,16 @@ class StorageManager:
         thumbnail_path: str = None,
     ):
         with self.lock:
-            with open(location, "a", encoding="utf-8", errors="replace") as f:
-                f.write(
-                    f"{url},{title if title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
+            with open(
+                location, "a", encoding="utf-8", errors="replace", newline=""
+            ) as f:
+                csv.writer(f, lineterminator="\n").writerow(
+                    [
+                        url,
+                        title if title else "None",
+                        media_path if media_path else "None",
+                        thumbnail_path if thumbnail_path else "None",
+                    ]
                 )
             return location
 
@@ -83,37 +92,30 @@ class StorageManager:
         with self.lock:
             if not path.exists(self.storage_file):
                 return False
-            data = self.read_file(self.storage_file)
-            data = [
-                line.split(",")[0] if "," in line else line
-                for line in data.splitlines()
-            ]
-            return url in data
+            return any(entry_url == url for entry_url, *_ in self.read_entries(self.storage_file))
 
     def mark_successful_download(self, url: str, title: str = None):
         self.add_entry(self.storage_file, url, title)
 
     def remove_failed_entry(self, url: str):
         with self.lock:
-            data = self.read_file(self.failed_downloads)
-            lines = [line for line in data.splitlines() if line.split(",")[0].strip() != url]
-            with open(self.failed_downloads, "w", encoding="utf-8") as f:
-                f.write("\n".join(lines) + ("\n" if lines else ""))
+            entries = [
+                entry
+                for entry in self.read_entries(self.failed_downloads)
+                if entry[0] != url
+            ]
+            self._write_entries(self.failed_downloads, entries)
 
     def troublesome_download(self, url: str, title: str = None):
-        data = self.read_file(self.failed_downloads)
-        data = [
-            line.split(",")[0] if "," in line else line for line in data.splitlines()
-        ]
-        if url not in data:
+        if not any(
+            entry_url == url for entry_url, *_ in self.read_entries(self.failed_downloads)
+        ):
             self.add_entry(self.failed_downloads, url, title)
 
     def troublesome_split(self, url: str, title: str = None):
-        data = self.read_file(self.failed_split)
-        data = [
-            line.split(",")[0] if "," in line else line for line in data.splitlines()
-        ]
-        if url not in data:
+        if not any(
+            entry_url == url for entry_url, *_ in self.read_entries(self.failed_split)
+        ):
             self.add_entry(self.failed_split, url, title)
 
     def read_entries(
@@ -122,19 +124,35 @@ class StorageManager:
         entries = []
         if not path.exists(location):
             return entries
-        data = self.read_file(location)
-        for line in data.splitlines():
-            parts = line.split(",")
-            url = parts[0].strip()
-            title = parts[1].strip() if len(parts) > 1 and parts[1] != "None" else None
-            media_path = (
-                parts[2].strip() if len(parts) > 2 and parts[2] != "None" else None
-            )
-            thumbnail_path = (
-                parts[3].strip() if len(parts) > 3 and parts[3] != "None" else None
-            )
-            entries.append((url, title, media_path, thumbnail_path))
+        with open(location, "r", encoding="utf-8", errors="replace", newline="") as f:
+            rows = csv.reader(f)
+            for row in rows:
+                if not row:
+                    continue
+                if len(row) > 4:
+                    row = [row[0], ",".join(row[1:-2]), row[-2], row[-1]]
+                row += ["None"] * (4 - len(row))
+
+                url = row[0].strip()
+                title = row[1].strip() if row[1] != "None" else None
+                media_path = row[2].strip() if row[2] != "None" else None
+                thumbnail_path = row[3].strip() if row[3] != "None" else None
+                entries.append((url, title, media_path, thumbnail_path))
         return entries
+
+    @staticmethod
+    def _write_entries(location: str, entries) -> None:
+        with open(location, "w", encoding="utf-8", errors="replace", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            for url, title, media_path, thumbnail_path in entries:
+                writer.writerow(
+                    [
+                        url,
+                        title if title else "None",
+                        media_path if media_path else "None",
+                        thumbnail_path if thumbnail_path else "None",
+                    ]
+                )
 
     def update_entry_title(self, location: str, url: str, new_title: str):
         with self.lock:
@@ -154,16 +172,7 @@ class StorageManager:
                     )
 
             # Write updated entries back to the file
-            with open(location, "w", encoding="utf-8", errors="replace") as f:
-                for (
-                    entry_url,
-                    entry_title,
-                    media_path,
-                    thumbnail_path,
-                ) in updated_entries:
-                    f.write(
-                        f"{entry_url},{entry_title if entry_title else 'None'},{media_path if media_path else 'None'},{thumbnail_path if thumbnail_path else 'None'}\n"
-                    )
+            self._write_entries(location, updated_entries)
 
     def generate_atoms(self, refresh_titles: bool = False) -> List[Atom]:
         atoms = []
@@ -191,7 +200,9 @@ class StorageManager:
 
                 if refresh_titles:
                     urls_to_refresh = [
-                        url for url, (title, _, _) in entries if not title
+                        url
+                        for url, title, _media_path, _thumbnail_path in entries
+                        if not title
                     ]
 
                     with ThreadPoolExecutor(max_workers=15) as executor:
@@ -225,7 +236,9 @@ class StorageManager:
                         )
                 for url, (title, media_path, thumbnail_path) in updated_entries.items():
                     media_path = self._find_file_path(self.download_dir, title)
-                    thumbnail_path = self._find_file_path(self.thumbnails_folder, title)
+                    thumbnail_path = self._find_thumbnail_path(
+                        title, url, thumbnail_path
+                    )
                     thumbnail_base64 = (
                         self.read_img_base64(thumbnail_path) if thumbnail_path else None
                     )
@@ -250,6 +263,23 @@ class StorageManager:
             if normalized_file_name == normalized_title:
                 return path.join(dir, file)
         return None
+
+    def _find_thumbnail_path(
+        self, title: str | None, url: str, stored_path: str | None
+    ) -> Optional[str]:
+        if stored_path and path.isfile(stored_path):
+            return stored_path
+        if not title:
+            return None
+
+        thumbnail_path = self._find_file_path(
+            self.thumbnails_folder, youtube.thumbnail_cache_name(title, url)
+        )
+        if thumbnail_path:
+            return thumbnail_path
+
+        # Existing libraries used title-only thumbnail names before URL-based keys.
+        return self._find_file_path(self.thumbnails_folder, title)
 
     def read_img_base64(self, filepath: str) -> str:
         if os.path.exists(filepath):
@@ -280,6 +310,7 @@ class LibraryManager:
 
 
 def normalize_string(s: str) -> str:
+    s = unicodedata.normalize("NFKC", s)
     # Replace spaces with hyphens
     s = s.replace(" ", "-")
     # Replace all other non-alphanumeric characters with hyphens

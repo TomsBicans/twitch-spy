@@ -1,13 +1,12 @@
-import pytest
 import twitch_spy.media_downloader.atomizer as atomizer
 import twitch_spy.media_downloader.constants as const
-import os.path as path
+from twitch_spy.media_downloader.platform_handlers import Atomizer
 
 
 def test_determine_platform():
     assert (
         atomizer.Atom._determine_platform("https://twitch.tv/somechannel")
-        == const.PLATFORM.TWITCH
+        == const.PLATFORM.UNDEFINED
     )
     assert (
         atomizer.Atom._determine_platform("https://youtube.com/watch?v=someID")
@@ -52,21 +51,15 @@ def test_atomize_urls():
         "https://someotherwebsite.com/",
     ]
 
-    atoms = atomizer.Atomizer.atomize_urls(
+    atoms = Atomizer.atomize_urls(
         urls, const.CONTENT_MODE.AUDIO, "/path/to/download"
     )
 
-    assert len(atoms) == 3  # Ensure we get 3 atoms
+    assert len(atoms) == 1
 
     youtube_atoms = [atom for atom in atoms if atom.platform == const.PLATFORM.YOUTUBE]
-    twitch_atoms = [atom for atom in atoms if atom.platform == const.PLATFORM.TWITCH]
-    undefined_atoms = [
-        atom for atom in atoms if atom.platform == const.PLATFORM.UNDEFINED
-    ]
 
     assert len(youtube_atoms) == 1
-    assert len(twitch_atoms) == 1
-    assert len(undefined_atoms) == 1
 
 
 def test_is_single_item():
@@ -77,5 +70,4 @@ def test_is_single_item():
         )
         == False
     )
-    assert atomizer.Atom._is_single_item("https://twitch.tv/somechannel") == True
     assert atomizer.Atom._is_single_item("https://someotherwebsite.com/") == True

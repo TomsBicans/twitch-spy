@@ -4,7 +4,6 @@ from urllib.parse import urlparse, urlunparse
 import psutil
 from flask import Blueprint, render_template, jsonify, send_file
 import twitch_spy.config as config
-import twitch_spy.app as app
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.util as util
 import twitch_spy.media_downloader.platform_handlers as ph
@@ -15,8 +14,11 @@ import flask
 import os.path as path
 from twitch_spy.socket_instance import socketio
 from twitch_spy.system_logger import logger
-from typing import TypedDict, List, Optional
+from typing import TYPE_CHECKING, TypedDict, List, Optional
 import time
+
+if TYPE_CHECKING:
+    import twitch_spy.app as app
 
 
 home_routes = Blueprint("home_routes", __name__)
@@ -32,7 +34,7 @@ def normalize_url(url: str) -> str:
 @home_routes.route("/form_submit", methods=["POST"])
 def form_submit():
     logger.debug("Handling form submit.")
-    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
 
     logger.debug("POST method detected")
     data = flask.request.json
@@ -75,7 +77,7 @@ def form_submit():
 
 @socketio.on("request_initial_data")
 def handle_ready_for_data():
-    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
     my_app.event_dispatcher.dispatch_event(
         Events.STATISTICS_UPDATE.value, my_app.job_manager.stats
     )
@@ -89,7 +91,7 @@ def handle_ready_for_data():
 @home_routes.route("/jobs", methods=["GET"])
 def get_all_jobs():
     logger.debug("Fetching all jobs.")
-    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
     all_jobs: List[Atom] = my_app.job_manager.get_all_jobs()
     jobs_list = [job.to_dict() for job in all_jobs]
     return jsonify(jobs_list)
@@ -97,7 +99,7 @@ def get_all_jobs():
 
 @home_routes.route("/jobs/<job_id>/retry", methods=["POST"])
 def retry_job(job_id: str):
-    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
     job = my_app.job_manager.get_job(UUID(job_id))
     if not job:
         return jsonify({"error": "Job not found"}), 404
@@ -112,7 +114,7 @@ def retry_job(job_id: str):
 @home_routes.route("/jobs/<job_id>", methods=["GET"])
 def get_job_by_id(job_id: str):
     logger.debug(f"Fetching job: {job_id}")
-    my_app: app.Application = flask.current_app.config[util.MagicStrings.APP]
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
     job = my_app.job_manager.get_job(UUID(job_id))
     if job:
         return jsonify(job.to_dict())
@@ -306,7 +308,7 @@ def get_system_stats_ALL():
 @home_routes.route("/audio/<filename>")
 def stream_audio(filename: str):
     file_path = sm.find_mp3file_with_title(filename)
-    if path.exists(file_path):
+    if file_path and path.exists(file_path):
         return send_file(file_path, mimetype="audio/mpeg")
     else:
         return "File not found", 404

@@ -7,7 +7,6 @@ from twitch_spy.socket_instance import socketio
 import twitch_spy.event_dispatcher as event_dispatcher
 import twitch_spy.config as config
 import twitch_spy.util as util
-import twitch_spy.cli as cli
 import time
 import threading
 from twitch_spy.system_logger import logger

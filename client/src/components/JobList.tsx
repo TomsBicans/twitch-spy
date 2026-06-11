@@ -12,7 +12,11 @@ interface JobStatusesProps {
 
 type SelectedProcessingState = ProcessingStates | "all";
 
-const RETRIABLE_STATES = new Set([ProcessingStates.FAILED, ProcessingStates.INVALID, ProcessingStates.CANCELLED]);
+const RETRIABLE_STATES = new Set<ProcessingStates>([
+    ProcessingStates.FAILED,
+    ProcessingStates.INVALID,
+    ProcessingStates.CANCELLED,
+]);
 
 const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
     job: Atom;
