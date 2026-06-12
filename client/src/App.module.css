@@ -80,6 +80,21 @@
   color: var(--text-tertiary);
 }
 
+.quitButton {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-muted);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.quitButton:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
 /* ─── Sidebar sections ──────────────────────────────────── */
 .sidebarSection {
   display: flex;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const BACKEND_URL = "http://localhost:5000";
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? window.location.origin;
 
 const percentageSchema = z.number().min(0).max(100);
 const bytesSchema = z.number().nonnegative();

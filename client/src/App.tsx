@@ -27,6 +27,16 @@ function App() {
         };
     }, []);
 
+    const quitApplication = async () => {
+        const token = document.querySelector<HTMLMetaElement>('meta[name="twitch-spy-shutdown-token"]')?.content;
+        if (!token || token.startsWith("__TWITCH_SPY_")) return;
+        await fetch(`${BACKEND_URL}/shutdown`, {
+            method: "POST",
+            headers: {"X-Twitch-Spy-Shutdown": token},
+        });
+        window.close();
+    };
+
     return (
         <div className={styles.appShell}>
             <aside className={styles.sidebar}>
@@ -40,6 +50,7 @@ function App() {
                     </div>
                     <h1 className={styles.appTitle}>twitch-spy</h1>
                     <p className={styles.appSubtitle}>music library</p>
+                    <button type="button" className={styles.quitButton} onClick={quitApplication}>Quit application</button>
                 </div>
 
                 <div className={styles.sidebarSection}>

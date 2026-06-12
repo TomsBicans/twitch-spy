@@ -7,9 +7,12 @@ downloads/*
 program.log
 venv/*
 py3.10/*
+.venv/
+.pytest_cache/
 build/
 dist/
+client/dist/
+client/node_modules/
 main.spec
-
-
+*.spec.bak
 .idea/
