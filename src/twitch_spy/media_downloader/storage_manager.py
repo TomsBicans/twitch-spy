@@ -4,6 +4,7 @@ import csv
 import threading
 import re
 import base64
+import sys
 import unicodedata
 from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
@@ -14,6 +15,11 @@ from typing import List, Tuple, Optional
 from twitch_spy.system_logger import logger
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
+
+
+def progress(iterable=None, **kwargs):
+    kwargs.setdefault("disable", not callable(getattr(sys.stderr, "write", None)))
+    return tqdm(iterable, **kwargs)
 
 
 class StorageFiles(Enum):
@@ -189,7 +195,9 @@ class StorageManager:
                 pbar.update(1)
             return title
 
-        for file_name, status in tqdm(file_statuses.items(), desc="Processing files"):
+        for file_name, status in progress(
+            file_statuses.items(), desc="Processing files"
+        ):
             file_path = path.join(self.storage_folder, file_name)
             if path.exists(file_path):
                 entries = self.read_entries(file_path)
@@ -206,7 +214,7 @@ class StorageManager:
                     ]
 
                     with ThreadPoolExecutor(max_workers=15) as executor:
-                        with tqdm(
+                        with progress(
                             total=len(urls_to_refresh),
                             position=0,
                         ) as pbar:
@@ -221,7 +229,7 @@ class StorageManager:
                         title, media_path, thumbnail_path = updated_entries[url]
                         updated_entries[url] = (new_title, media_path, thumbnail_path)
 
-                    for url, (title, media_path, thumbnail_path) in tqdm(
+                    for url, (title, media_path, thumbnail_path) in progress(
                         updated_entries.items(),
                         desc=f"Processing entries for {file_path}",
                     ):

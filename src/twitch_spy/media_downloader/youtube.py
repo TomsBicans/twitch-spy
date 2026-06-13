@@ -2,7 +2,6 @@ import base64
 import hashlib
 import logging
 import re
-import subprocess
 
 logger = logging.getLogger(__name__)
 import os
@@ -28,20 +27,15 @@ def thumbnail_cache_name(thumbnail_name: str, youtube_video_url: str) -> str:
 
 
 def _is_corrupt_audio(filepath: str) -> bool:
-    """Return True if the file is missing, empty, or ffprobe reports any error in the stream."""
+    """Return True if the file is missing, empty, or Mutagen cannot parse it."""
     if not os.path.isfile(filepath):
         return True
     if os.path.getsize(filepath) == 0:
         return True
     try:
-        result = subprocess.run(
-            ["ffprobe", "-v", "error", "-i", filepath],
-            capture_output=True,
-            text=True,
-            timeout=15,
-        )
-        return bool(result.stderr.strip())
-    except Exception:
+        audio = mutagen.File(filepath)
+        return audio is None or audio.info is None or getattr(audio.info, "length", 0) <= 0
+    except (OSError, mutagen.MutagenError):
         return True
 
 
@@ -80,6 +74,9 @@ class YoutubeDownloader:
                 }
             ],
         }
+        from twitch_spy import config
+        if config.FFMPEG_LOCATION:
+            ydl_opts["ffmpeg_location"] = config.FFMPEG_LOCATION
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(youtube_video_url, download=True)
 
@@ -140,6 +137,9 @@ class YoutubeDownloader:
                 }
             ],
         }
+        from twitch_spy import config
+        if config.FFMPEG_LOCATION:
+            ydl_opts["ffmpeg_location"] = config.FFMPEG_LOCATION
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(atom.url, download=False)
             atom.content_title = info_dict.get("title") or atom.content_title

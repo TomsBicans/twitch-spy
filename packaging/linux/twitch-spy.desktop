@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Twitch Spy
+Exec=twitch-spy
+Icon=twitch-spy
+Categories=AudioVideo;Audio;
+Terminal=false

@@ -92,11 +92,16 @@ const SyncPanel: React.FC<SyncPanelProps> = ({socket}) => {
     const confirmSync = async (plan: SyncPlan) => {
         setPhase({tag: "syncing", plan, progress: null});
         try {
-            await fetch(`${BACKEND_URL}/sync/execute`, {
+            const res = await fetch(`${BACKEND_URL}/sync/execute`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(plan),
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                setPhase({tag: "error", message: data.error ?? `HTTP ${res.status}`});
+                return;
+            }
             // Completion arrives via sync_complete socket event.
         } catch (err) {
             setPhase({tag: "error", message: String(err)});

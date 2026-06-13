@@ -47,6 +47,8 @@ downloads, tags, and organizes them into a local audio library with a real-time 
 - [uv](https://github.com/astral-sh/uv)
 - ffmpeg
 
+Prebuilt desktop releases do not require Python, Node.js, FFmpeg, or ADB to be installed.
+
 ```bash
 # Install ffmpeg (Debian/Ubuntu/WSL)
 make install-ffmpeg
@@ -80,7 +82,71 @@ make run_web
 
 Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
-The `--output-dir` flag (set in the Makefile) controls where the library and logs are written. The default is `./data`.
+`make run_api` fixes the development backend at `127.0.0.1:5000`, which is where the Vite proxy sends API and Socket.IO traffic. It also passes `--no-browser` and `--dev`, because Vite owns the development UI at port 5173 and needs its origin enabled for Socket.IO. Packaged desktop builds still select an available port and open the browser automatically.
+
+The `--output-dir` flag (set in the Makefile) controls where the development library and logs are written. It is `./data` for `make run_api`.
+
+### Desktop releases
+
+Version tags publish native x86_64 artifacts for Windows and Linux:
+
+- `twitch-spy-vX.Y.Z-windows-x64.exe`
+- `twitch-spy-vX.Y.Z-linux-x86_64.AppImage`
+
+The desktop application opens its local UI in the default browser and stores persistent data in `%LOCALAPPDATA%\TwitchSpy` on Windows or `$XDG_DATA_HOME/twitch-spy` on Linux (defaulting to `~/.local/share/twitch-spy`). Use the UI's **Quit application** button to stop the local server.
+
+Useful runtime overrides are `--output-dir`, `--port`, `--no-browser`, `--adb-exe`, and `--ffmpeg-location`.
+
+Local release builds mirror CI:
+
+```bash
+# Build for the current native platform (WSL defaults to Linux)
+make build
+
+# Linux or WSL: produce the Linux AppImage
+make build-linux
+
+# Explicit WSL alias
+make build-wsl
+
+# From WSL: stage and run the build using native Windows Python
+make build-windows
+
+# Build both artifacts sequentially
+make build-all
+
+# Run tests, frontend lint, and frontend build
+make verify
+
+# Smoke-test an existing Linux AppImage
+make smoke-linux
+
+# Smoke-test whichever desktop artifacts currently exist
+make smoke
+
+# Generate .sha256 files
+make checksums
+
+# Show generated artifacts
+make artifacts
+```
+
+All build logic is implemented by one Python command. Make targets are convenience aliases:
+
+```bash
+uv run python scripts/build.py build --target linux
+uv run python scripts/build.py build --target windows
+uv run python scripts/build.py build --target all
+uv run python scripts/build.py verify
+uv run python scripts/build.py smoke --target all
+uv run python scripts/build.py checksums --target all
+```
+
+On native Windows, run the same `scripts/build.py` command from a Windows terminal. From WSL, a Windows target is copied to a temporary Windows-side staging directory and executed with `py.exe -3.13`; the finished EXE is copied back to `dist/`. Use `--keep-staging` to retain that directory for diagnostics.
+
+Build prerequisites are Python 3.13, uv, and Node.js/npm on the native target platform. The orchestrator installs project dependencies and downloads platform-tools/appimagetool, but it does not install Python, uv, or Node. PyInstaller still runs natively, so a normal Linux host cannot produce the Windows executable and Windows cannot produce the Linux AppImage.
+
+Windows binaries are initially unsigned and may trigger SmartScreen. Android devices can still require manufacturer USB drivers on Windows or udev rules and USB permissions on Linux.
 
 ---
 

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from twitch_spy.config import LOG_DIR
 
 
@@ -13,16 +14,14 @@ def setup_logger(name, log_file, level=logging.INFO):
     file_handler.setFormatter(formatter)
 
     # Create and set a handler for writing log messages to the console
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-
-    # Create the logger and set its level
     logger = logging.getLogger(name)
     logger.setLevel(level)
-
-    # Add handlers to the logger
+    logger.handlers.clear()
     logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
+    if sys.stderr is not None:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     return logger
 

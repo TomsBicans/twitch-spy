@@ -14,8 +14,6 @@ Socket.IO events emitted during execute
   sync_complete  { uploaded, skipped, failed, errors }
 """
 
-import threading
-
 import flask
 from flask import Blueprint, jsonify, request
 
@@ -34,7 +32,7 @@ sync_routes = Blueprint("sync_routes", __name__)
 
 def _syncer() -> AndroidLibrarySync:
     return AndroidLibrarySync(
-        adb_exe="adb.exe",
+        adb_exe=config.ADB_EXE,
         android_dest=config.ANDROID_DEST,
     )
 
@@ -43,8 +41,11 @@ def _syncer() -> AndroidLibrarySync:
 def get_devices():
     """List connected adb devices and report whether any are online."""
     syncer = _syncer()
-    devices = syncer.list_devices()
-    return jsonify({"devices": devices, "connected": len(devices) > 0})
+    try:
+        devices = syncer.list_devices()
+        return jsonify({"devices": devices, "connected": len(devices) > 0})
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc), "devices": [], "connected": False}), 503
 
 
 @sync_routes.route("/sync/plan", methods=["POST"])
@@ -59,12 +60,14 @@ def plan_sync():
     """
     syncer = _syncer()
 
-    if not syncer.device_connected():
-        return jsonify({"error": "No Android device connected via adb"}), 503
-
     try:
+        if not syncer.device_connected():
+            return jsonify({"error": "No Android device connected via adb"}), 503
         plan = syncer.plan_sync(config.AUDIO_LIBRARY)
         return jsonify(plan.to_dict())
+    except RuntimeError as exc:
+        logger.warning("plan_sync unavailable: %s", exc)
+        return jsonify({"error": str(exc)}), 503
     except Exception as exc:
         logger.error("plan_sync error: %s", exc)
         return jsonify({"error": str(exc)}), 500
@@ -116,7 +119,8 @@ def execute_sync():
         result = syncer.execute_plan(plan, progress_callback=on_progress)
         socketio.emit("sync_complete", result.to_dict())
 
-    thread = threading.Thread(target=run, daemon=True, name="android-sync")
-    thread.start()
+    my_app = flask.current_app.config[util.MagicStrings.APP]
+    if not my_app.start_sync(run):
+        return jsonify({"error": "Android synchronization is already running"}), 409
 
     return jsonify({"message": "Sync started"}), 202

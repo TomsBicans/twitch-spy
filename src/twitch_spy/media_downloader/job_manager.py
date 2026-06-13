@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
 import time
 import random
+import threading
 
 
 class JobStats:
@@ -53,11 +54,13 @@ class JobManager:
         self.stats = JobStats()
         self.job_update_callback = job_update_callback
         self.executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
+        self.futures: set[Future] = set()
+        self.futures_lock = threading.Lock()
+        self.shutting_down = False
+        self.shutdown_complete = threading.Event()
 
     def add_job(self, job: Atom) -> None:
-        self.add_job_to_archive(job)
-        future: Future = self.executor.submit(self.process_job, job)
-        future.add_done_callback(self.job_done)
+        self._submit_job(job, archive=True)
 
     def add_job_to_archive(self, job: Atom) -> None:
         self.jobs[job.id] = job
@@ -82,10 +85,23 @@ class JobManager:
     def retry_job(self, job: Atom) -> None:
         job.update_status(const.PROCESS_STATUS.QUEUED)
         self.send_update(job)
-        future: Future = self.executor.submit(self.process_job, job)
+        self._submit_job(job)
+
+    def _submit_job(self, job: Atom, archive: bool = False) -> None:
+        with self.futures_lock:
+            if self.shutting_down:
+                raise RuntimeError("Job manager is shutting down")
+            if archive:
+                self.add_job_to_archive(job)
+            future: Future = self.executor.submit(self.process_job, job)
+            self.futures.add(future)
         future.add_done_callback(self.job_done)
 
     def job_done(self, future: Future) -> None:
+        with self.futures_lock:
+            self.futures.discard(future)
+        if future.cancelled():
+            return
         exception: Union[BaseException, None] = future.exception()
         if exception:
             logger.error(f"Unexpected error during job processing: {exception}", exc_info=exception)
@@ -101,3 +117,22 @@ class JobManager:
         job.update_status(const.PROCESS_STATUS.FINISHED)
         self.send_update(job)
         logger.debug(f"Processing finished for job {job}")
+
+    def has_active_jobs(self) -> bool:
+        with self.futures_lock:
+            return any(not future.done() for future in self.futures)
+
+    def shutdown(self) -> None:
+        with self.futures_lock:
+            if self.shutting_down:
+                already_shutting_down = True
+            else:
+                self.shutting_down = True
+                already_shutting_down = False
+        if already_shutting_down:
+            self.shutdown_complete.wait()
+            return
+        try:
+            self.executor.shutdown(wait=True, cancel_futures=True)
+        finally:
+            self.shutdown_complete.set()

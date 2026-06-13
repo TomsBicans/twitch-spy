@@ -2,9 +2,51 @@ import os
 
 import pytest
 import twitch_spy.media_downloader.youtube as youtube
+from twitch_spy import config
+from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.constants import CONTENT_MODE
 
 
 PLAYLIST_URL = "https://www.youtube.com/playlist?list=playlist-id"
+
+
+def test_download_audio_uses_configured_ffmpeg(monkeypatch, tmp_path):
+    calls = {}
+    audio_path = tmp_path / "Audio.mp3"
+
+    class FakeYoutubeDL:
+        def __init__(self, options):
+            calls["options"] = options
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+        def extract_info(self, url, download):
+            return {"title": "Audio"}
+
+        def prepare_filename(self, info):
+            return str(tmp_path / "Audio.webm")
+
+        def download(self, urls):
+            audio_path.write_bytes(b"audio")
+
+    monkeypatch.setattr(config, "FFMPEG_LOCATION", "/bundled/ffmpeg")
+    monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    monkeypatch.setattr(youtube, "_is_corrupt_audio", lambda _path: False)
+    monkeypatch.setattr(youtube.YoutubeDownloader, "add_metadata_to_audio_file", lambda *_args: None)
+    monkeypatch.setattr(youtube.YoutubeDownloader, "download_thumbnail", lambda *_args: None)
+    monkeypatch.setattr(youtube.YoutubeDownloader, "add_preview_picture_to_audio_file", lambda *_args: None)
+    atom = Atom(
+        "https://youtube.com/watch?v=video",
+        CONTENT_MODE.AUDIO,
+        str(tmp_path),
+    )
+
+    assert youtube.YoutubeDownloader.download_audio(atom) == str(audio_path)
+    assert calls["options"]["ffmpeg_location"] == "/bundled/ffmpeg"
 
 
 def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
@@ -29,6 +71,7 @@ def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
             return {"thumbnails": [{"filepath": str(expected_path)}]}
 
     monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    monkeypatch.setattr(config, "FFMPEG_LOCATION", "/bundled/ffmpeg")
 
     result = youtube.YoutubeDownloader.download_thumbnail(
         video_url, "Video Title", str(tmp_path)
@@ -41,6 +84,7 @@ def test_download_thumbnail_uses_yt_dlp(monkeypatch, tmp_path):
     )
     assert calls["options"]["skip_download"] is True
     assert calls["options"]["writethumbnail"] is True
+    assert calls["options"]["ffmpeg_location"] == "/bundled/ffmpeg"
     assert calls["options"]["outtmpl"]["thumbnail"].endswith(
         os.path.join("thumbnails", f"{cache_name}.%(ext)s")
     )

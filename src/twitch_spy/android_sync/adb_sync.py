@@ -43,6 +43,7 @@ import logging
 import os
 import shlex
 import subprocess
+import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -112,6 +113,14 @@ class AndroidLibrarySync:
         self.adb_exe = adb_exe
         self.android_dest = android_dest.rstrip("/")
 
+    def _uses_windows_adb_from_wsl(self) -> bool:
+        if sys.platform != "linux" or not self.adb_exe.lower().endswith(".exe"):
+            return False
+        try:
+            return "microsoft" in Path("/proc/sys/kernel/osrelease").read_text().lower()
+        except OSError:
+            return False
+
     # ── Low-level subprocess helpers ──────────────────────────────────────────
 
     def _run(self, args: list[str], check: bool = False) -> subprocess.CompletedProcess:
@@ -157,7 +166,14 @@ class AndroidLibrarySync:
 
     def list_devices(self) -> list[str]:
         """Return serial numbers of all connected (online) devices."""
-        result = self._run([self.adb_exe, "devices"])
+        try:
+            result = self._run([self.adb_exe, "devices"])
+        except FileNotFoundError as exc:
+            raise RuntimeError(f"ADB was not found at {self.adb_exe!r}. Use --adb-exe to select it.") from exc
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            hint = (" Install the device manufacturer's Windows USB driver and enable USB debugging." if sys.platform == "win32" else " Check USB access and install the Android udev rules for your Linux distribution.")
+            raise RuntimeError(f"ADB could not list devices: {detail}.{hint}")
         devices = []
         for line in result.stdout.splitlines()[1:]:  # skip header
             line = line.strip()
@@ -217,14 +233,14 @@ class AndroidLibrarySync:
         Errors are logged but not raised, so callers can continue on failure.
         """
         try:
-            win_path = self._wsl_to_windows(local_path)
+            host_path = self._wsl_to_windows(local_path) if self._uses_windows_adb_from_wsl() else local_path
         except subprocess.CalledProcessError as exc:
             logger.error("wslpath failed for %r: %s", local_path, exc)
             return False
 
         # remote_path is passed as a direct argument — no shell involved here,
         # so no additional quoting is needed at this layer.
-        result = self._run([self.adb_exe, "push", win_path, remote_path])
+        result = self._run([self.adb_exe, "push", host_path, remote_path])
         if result.returncode != 0:
             logger.error(
                 "push failed [%s → %s]: %s",
