@@ -145,3 +145,14 @@ def test_generate_atoms_refreshes_missing_titles(monkeypatch, tmp_path):
     assert instance.read_entries(instance.storage_file) == [
         (url, "Video title", None, None)
     ]
+
+
+def test_generate_atoms_without_console_stream(monkeypatch, tmp_path):
+    instance = StorageManager(str(tmp_path))
+    url = "https://www.youtube.com/watch?v=video"
+    instance.add_entry(instance.storage_file, url, "Video title")
+    monkeypatch.setattr(storage_manager.sys, "stderr", None)
+
+    atoms = instance.generate_atoms(refresh_titles=False)
+
+    assert next(atom for atom in atoms if atom.url == url).content_title == "Video title"

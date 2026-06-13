@@ -148,6 +148,20 @@ def test_available_port_returns_bound_port(monkeypatch):
     assert build.available_port() == 45123
 
 
+def test_smoke_library_contains_persisted_entry(tmp_path):
+    build.seed_smoke_library(tmp_path)
+
+    storage = (
+        tmp_path
+        / "stream_downloads"
+        / "audio_library"
+        / "smoke-library"
+        / "storage"
+        / "local_storage.txt"
+    )
+    assert "Smoke track" in storage.read_text(encoding="utf-8")
+
+
 def test_native_windows_build_is_rejected_on_linux(monkeypatch, tmp_path):
     monkeypatch.setattr(build, "native_platform", lambda: "linux")
 

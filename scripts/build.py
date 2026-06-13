@@ -404,6 +404,21 @@ def available_port() -> int:
         return int(candidate.getsockname()[1])
 
 
+def seed_smoke_library(data_dir: Path) -> None:
+    storage = (
+        data_dir
+        / "stream_downloads"
+        / "audio_library"
+        / "smoke-library"
+        / "storage"
+    )
+    storage.mkdir(parents=True, exist_ok=True)
+    (storage / "local_storage.txt").write_text(
+        "https://www.youtube.com/watch?v=smoke,Smoke track,None,None\n",
+        encoding="utf-8",
+    )
+
+
 def smoke_artifact(artifact: Path, port: int | None = None) -> None:
     artifact = artifact.resolve()
     if not artifact.exists():
@@ -412,6 +427,7 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
     windows_from_wsl = artifact.suffix.lower() == ".exe" and is_wsl()
     data_parent = windows_temp_directory(repository_root()) if windows_from_wsl else None
     data_dir = Path(tempfile.mkdtemp(prefix="twitch-spy-smoke-", dir=data_parent))
+    seed_smoke_library(data_dir)
     output_dir = to_windows_path(data_dir, repository_root()) if windows_from_wsl else str(data_dir)
     env = os.environ.copy()
     if artifact.suffix == ".AppImage":
