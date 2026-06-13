@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import secrets
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -14,7 +15,7 @@ from werkzeug.serving import BaseWSGIServer, make_server
 import twitch_spy.config as config
 import twitch_spy.event_dispatcher as event_dispatcher
 import twitch_spy.util as util
-from twitch_spy.desktop import resource_path
+from twitch_spy.desktop import open_directory, resource_path
 from twitch_spy.media_downloader.atomizer import Atom
 from twitch_spy.media_downloader.job_manager import JobManager, JobStats
 from twitch_spy.media_downloader.storage_manager import LibraryManager
@@ -102,6 +103,20 @@ class Application:
                 abort(403)
             threading.Timer(0.1, self.request_shutdown).start()
             return jsonify({"status": "shutting-down"})
+
+        @self.app.post("/open-music-directory")
+        def open_music_directory():
+            if (
+                not self.development
+                and request.headers.get("X-Twitch-Spy-Shutdown") != self.shutdown_token
+            ):
+                abort(403)
+            try:
+                open_directory(config.AUDIO_LIBRARY)
+            except (OSError, subprocess.SubprocessError) as exc:
+                logger.warning("Could not open music directory: %s", exc)
+                return jsonify({"error": f"Could not open music directory: {exc}"}), 503
+            return jsonify({"status": "opened"})
 
         @self.app.get("/")
         @self.app.get("/<path:frontend_path>")

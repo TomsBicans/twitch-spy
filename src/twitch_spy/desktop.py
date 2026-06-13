@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import socket
+import subprocess
 import sys
 import time
 from dataclasses import dataclass
@@ -103,3 +105,36 @@ def bundled_ffmpeg() -> str:
 def open_when_ready(url: str, opener: Callable[[str], object]) -> None:
     if wait_until_ready(url):
         opener(url)
+
+
+def is_wsl() -> bool:
+    if not sys.platform.startswith("linux"):
+        return False
+    release = platform.release().lower()
+    return "microsoft" in release or "wsl" in release
+
+
+def open_directory(directory: str | Path) -> None:
+    path = Path(directory).resolve()
+    path.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "win32":
+        os.startfile(path)  # type: ignore[attr-defined]
+        return
+    if is_wsl():
+        converted = subprocess.run(
+            ["wslpath", "-w", str(path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        subprocess.Popen(
+            ["explorer.exe", converted],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return
+    subprocess.Popen(
+        ["xdg-open", str(path)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )

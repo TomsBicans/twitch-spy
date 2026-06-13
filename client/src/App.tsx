@@ -15,6 +15,7 @@ const socket = io(BACKEND_URL);
 function App() {
     const [currentTrack, setCurrentTrack] = useState<Atom | undefined>(undefined);
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
+    const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const handleConnect = () => setIsConnected(true);
@@ -37,6 +38,26 @@ function App() {
         window.close();
     };
 
+    const openMusicDirectory = async () => {
+        const token = document.querySelector<HTMLMetaElement>('meta[name="twitch-spy-shutdown-token"]')?.content;
+        try {
+            const response = await fetch(`${BACKEND_URL}/open-music-directory`, {
+                method: "POST",
+                headers: token && !token.startsWith("__TWITCH_SPY_")
+                    ? {"X-Twitch-Spy-Shutdown": token}
+                    : {},
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                setDesktopMessage(data.error ?? `Could not open music folder (HTTP ${response.status})`);
+                return;
+            }
+            setDesktopMessage("Music folder opened.");
+        } catch (error) {
+            setDesktopMessage(`Could not open music folder: ${String(error)}`);
+        }
+    };
+
     return (
         <div className={styles.appShell}>
             <aside className={styles.sidebar}>
@@ -50,7 +71,11 @@ function App() {
                     </div>
                     <h1 className={styles.appTitle}>twitch-spy</h1>
                     <p className={styles.appSubtitle}>music library</p>
-                    <button type="button" className={styles.quitButton} onClick={quitApplication}>Quit application</button>
+                    <div className={styles.desktopActions}>
+                        <button type="button" className={styles.desktopButton} onClick={openMusicDirectory}>Open music folder</button>
+                        <button type="button" className={styles.desktopButton} onClick={quitApplication}>Quit application</button>
+                    </div>
+                    {desktopMessage && <p className={styles.desktopMessage}>{desktopMessage}</p>}
                 </div>
 
                 <div className={styles.sidebarSection}>

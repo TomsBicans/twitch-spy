@@ -80,8 +80,14 @@
   color: var(--text-tertiary);
 }
 
-.quitButton {
+.desktopActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 10px;
+}
+
+.desktopButton {
   padding: 7px 10px;
   border: 1px solid var(--border-muted);
   border-radius: 6px;
@@ -90,9 +96,16 @@
   cursor: pointer;
 }
 
-.quitButton:hover {
+.desktopButton:hover {
   color: var(--text-primary);
   border-color: var(--accent);
+}
+
+.desktopMessage {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
 }
 
 /* ─── Sidebar sections ──────────────────────────────────── */

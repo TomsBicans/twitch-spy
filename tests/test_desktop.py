@@ -2,7 +2,10 @@ import json
 import os
 from pathlib import Path
 
-from twitch_spy.desktop import InstanceLock, resource_path, select_port, user_data_dir
+import subprocess
+
+import twitch_spy.desktop as desktop
+from twitch_spy.desktop import InstanceLock, open_directory, resource_path, select_port, user_data_dir
 
 
 def test_user_data_directories():
@@ -43,3 +46,40 @@ def test_instance_lock_replaces_stale_file(tmp_path):
     lock = InstanceLock(path)
     assert lock.acquire("new") is None
     lock.release()
+
+
+def test_open_directory_uses_windows_shell(monkeypatch, tmp_path):
+    opened = []
+    monkeypatch.setattr(desktop.sys, "platform", "win32")
+    monkeypatch.setattr(desktop.os, "startfile", opened.append, raising=False)
+
+    open_directory(tmp_path / "music")
+
+    assert opened == [(tmp_path / "music").resolve()]
+
+
+def test_open_directory_uses_linux_file_manager(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(desktop.sys, "platform", "linux")
+    monkeypatch.setattr(desktop.platform, "release", lambda: "6.8.0-generic")
+    monkeypatch.setattr(desktop.subprocess, "Popen", lambda args, **kwargs: calls.append((args, kwargs)))
+
+    open_directory(tmp_path / "music")
+
+    assert calls[0][0] == ["xdg-open", str((tmp_path / "music").resolve())]
+
+
+def test_open_directory_converts_wsl_path_for_explorer(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(desktop.sys, "platform", "linux")
+    monkeypatch.setattr(desktop.platform, "release", lambda: "6.6.0-microsoft-standard-WSL2")
+    monkeypatch.setattr(
+        desktop.subprocess,
+        "run",
+        lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "C:\\Music\n", ""),
+    )
+    monkeypatch.setattr(desktop.subprocess, "Popen", lambda args, **kwargs: calls.append((args, kwargs)))
+
+    open_directory(tmp_path / "music")
+
+    assert calls[0][0] == ["explorer.exe", "C:\\Music"]

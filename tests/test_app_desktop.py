@@ -16,6 +16,62 @@ def test_health_frontend_spa_and_shutdown_auth(tmp_path):
     assert b'id="root"' in client.get("/client/route").data
     assert client.get("/socket.io/?EIO=4&transport=polling").status_code == 200
     assert client.post("/shutdown").status_code == 403
+    assert client.post("/open-music-directory").status_code == 403
+
+
+def test_open_music_directory_uses_configured_library(monkeypatch, tmp_path):
+    frontend = tmp_path / "dist"
+    frontend.mkdir()
+    (frontend / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    application = Application(frontend_dir=frontend)
+    opened = []
+    monkeypatch.setattr(app_module, "open_directory", opened.append)
+
+    response = application.app.test_client().post(
+        "/open-music-directory",
+        headers={"X-Twitch-Spy-Shutdown": application.shutdown_token},
+    )
+
+    assert response.status_code == 200
+    assert response.json == {"status": "opened"}
+    assert opened == [app_module.config.AUDIO_LIBRARY]
+    application.job_manager.shutdown()
+
+
+def test_open_music_directory_returns_json_error(monkeypatch, tmp_path):
+    frontend = tmp_path / "dist"
+    frontend.mkdir()
+    (frontend / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    application = Application(frontend_dir=frontend)
+    monkeypatch.setattr(
+        app_module,
+        "open_directory",
+        lambda _path: (_ for _ in ()).throw(OSError("file manager unavailable")),
+    )
+
+    response = application.app.test_client().post(
+        "/open-music-directory",
+        headers={"X-Twitch-Spy-Shutdown": application.shutdown_token},
+    )
+
+    assert response.status_code == 503
+    assert "file manager unavailable" in response.json["error"]
+    application.job_manager.shutdown()
+
+
+def test_development_can_open_music_directory_without_packaged_token(monkeypatch, tmp_path):
+    frontend = tmp_path / "dist"
+    frontend.mkdir()
+    (frontend / "index.html").write_text('<div id="root"></div>', encoding="utf-8")
+    application = Application(frontend_dir=frontend, development=True)
+    opened = []
+    monkeypatch.setattr(app_module, "open_directory", opened.append)
+
+    response = application.app.test_client().post("/open-music-directory")
+
+    assert response.status_code == 200
+    assert opened == [app_module.config.AUDIO_LIBRARY]
+    application.job_manager.shutdown()
 
 
 def test_development_mode_accepts_vite_socket_origin(tmp_path):
