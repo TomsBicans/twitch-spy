@@ -48,6 +48,39 @@ def test_instance_lock_replaces_stale_file(tmp_path):
     lock.release()
 
 
+def test_instance_lock_replaces_reused_pid_with_wrong_start_time(monkeypatch, tmp_path):
+    path = tmp_path / "instance.json"
+    path.write_text(
+        json.dumps(
+            {
+                "pid": os.getpid(),
+                "url": "http://127.0.0.1:54321",
+                "process_started_at": 1.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(desktop, "instance_health_matches", lambda _url: False)
+    lock = InstanceLock(path)
+
+    assert lock.acquire("http://127.0.0.1:1234") is None
+    assert lock.read().url.endswith(":1234")
+    lock.release()
+
+
+def test_legacy_instance_lock_uses_health_validation(monkeypatch, tmp_path):
+    path = tmp_path / "instance.json"
+    url = "http://127.0.0.1:5000"
+    path.write_text(json.dumps({"pid": os.getpid(), "url": url}), encoding="utf-8")
+    monkeypatch.setattr(desktop, "instance_health_matches", lambda candidate: candidate == url)
+
+    assert InstanceLock(path).running_instance() == desktop.InstanceInfo(os.getpid(), url)
+
+
+def test_instance_health_rejects_non_local_url():
+    assert not desktop.instance_health_matches("https://example.com")
+
+
 def test_open_directory_uses_windows_shell(monkeypatch, tmp_path):
     opened = []
     monkeypatch.setattr(desktop.sys, "platform", "win32")

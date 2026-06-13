@@ -14,7 +14,7 @@ def test_existing_instance_is_checked_before_explicit_port(monkeypatch, tmp_path
         def __init__(self, _path):
             pass
 
-        def read(self):
+        def running_instance(self):
             return existing
 
     args = SimpleNamespace(
@@ -32,7 +32,6 @@ def test_existing_instance_is_checked_before_explicit_port(monkeypatch, tmp_path
     monkeypatch.setattr(desktop, "InstanceLock", Lock)
     monkeypatch.setattr(desktop, "user_data_dir", lambda: tmp_path)
     monkeypatch.setattr(desktop, "select_port", lambda _port: pytest.fail("port must not be bound"))
-    monkeypatch.setattr(main_module.psutil, "pid_exists", lambda pid: pid == 1234)
     monkeypatch.setattr(main_module.webbrowser, "open", opened.append)
 
     main_module.main()

@@ -7,6 +7,8 @@ import socket
 import subprocess
 import sys
 import time
+from urllib.parse import urlparse
+from urllib.request import urlopen
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -39,6 +41,29 @@ def select_port(preferred: int | None = None) -> int:
 class InstanceInfo:
     pid: int
     url: str
+    process_started_at: float | None = None
+
+
+def instance_health_matches(url: str, timeout: float = 0.5) -> bool:
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}:
+        return False
+    try:
+        with urlopen(f"{url.rstrip('/')}/health", timeout=timeout) as response:
+            payload = json.load(response)
+        return response.status == 200 and payload.get("status") == "ok"
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False
+
+
+def process_identity_matches(info: InstanceInfo) -> bool:
+    if info.process_started_at is None:
+        return False
+    try:
+        actual = psutil.Process(info.pid).create_time()
+    except (psutil.Error, OSError):
+        return False
+    return abs(actual - info.process_started_at) < 0.01
 
 
 class InstanceLock:
@@ -52,13 +77,20 @@ class InstanceLock:
             try:
                 fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
             except FileExistsError:
-                existing = self.read()
-                if existing and psutil.pid_exists(existing.pid):
+                existing = self.running_instance()
+                if existing:
                     return existing
                 self.path.unlink(missing_ok=True)
                 continue
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump({"pid": os.getpid(), "url": url}, handle)
+                json.dump(
+                    {
+                        "pid": os.getpid(),
+                        "url": url,
+                        "process_started_at": psutil.Process().create_time(),
+                    },
+                    handle,
+                )
             self.acquired = True
             return None
         raise RuntimeError(f"Could not acquire instance lock: {self.path}")
@@ -66,9 +98,22 @@ class InstanceLock:
     def read(self) -> InstanceInfo | None:
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-            return InstanceInfo(pid=int(data["pid"]), url=str(data["url"]))
+            started_at = data.get("process_started_at")
+            return InstanceInfo(
+                pid=int(data["pid"]),
+                url=str(data["url"]),
+                process_started_at=float(started_at) if started_at is not None else None,
+            )
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
             return None
+
+    def running_instance(self) -> InstanceInfo | None:
+        existing = self.read()
+        if not existing or not psutil.pid_exists(existing.pid):
+            return None
+        if process_identity_matches(existing) or instance_health_matches(existing.url):
+            return existing
+        return None
 
     def release(self) -> None:
         if self.acquired:
@@ -77,8 +122,6 @@ class InstanceLock:
 
 
 def wait_until_ready(url: str, timeout: float = 30.0) -> bool:
-    from urllib.request import urlopen
-
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:

@@ -4,7 +4,6 @@ import threading
 import webbrowser
 import subprocess
 import sys
-import psutil
 
 if sys.stderr is not None:
     logging.basicConfig(
@@ -32,8 +31,8 @@ def main():
         return
 
     lock = InstanceLock(user_data_dir() / "instance.json")
-    existing = lock.read()
-    if existing and psutil.pid_exists(existing.pid):
+    existing = lock.running_instance()
+    if existing:
         if not args.no_browser:
             webbrowser.open(existing.url)
         return
