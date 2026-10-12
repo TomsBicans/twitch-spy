@@ -258,6 +258,9 @@ const SyncPanel: React.FC<SyncPanelProps> = ({socket}) => {
 
                 <div className={styles.btnRow}>
                     <button className={styles.ghostBtn} onClick={reset}>Cancel</button>
+                    <button type="button" className={styles.ghostBtn} onClick={buildPlan}>
+                        Refresh plan
+                    </button>
                     <button
                         className={styles.primaryBtn}
                         onClick={() => confirmSync(plan)}

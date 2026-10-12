@@ -248,7 +248,17 @@
 /* ── Buttons ────────────────────────────────────────────── */
 .btnRow {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.btnRow .primaryBtn {
+  flex: 1 1 180px;
+  width: auto;
+}
+
+.btnRow .ghostBtn {
+  white-space: nowrap;
 }
 
 .primaryBtn {
