@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import "./App.css";
 import styles from "./App.module.css";
 import URLInput from "./components/URLInput.tsx";
@@ -14,6 +14,7 @@ import {io} from "socket.io-client";
 const socket = io(BACKEND_URL);
 
 function App() {
+    const syncDialogRef = useRef<HTMLDialogElement>(null);
     const [showDiagnostics, setShowDiagnostics] = useState(window.location.hash === "#diagnostics");
     useEffect(() => {
         const onHashChange = () => setShowDiagnostics(window.location.hash === "#diagnostics");
@@ -96,11 +97,22 @@ function App() {
                     <JobOverview socket={socket} />
                 </div>
 
-                <div className={styles.sidebarSection}>
-                    <span className={styles.sectionLabel}>Sync to device</span>
-                    <SyncPanel socket={socket} />
+                <div className={`${styles.sidebarSection} ${styles.syncSection}`}>
+                    <button type="button" className={styles.syncButton}
+                        onClick={() => syncDialogRef.current?.showModal()}>
+                        Sync to device
+                    </button>
                 </div>
             </aside>
+
+            <dialog ref={syncDialogRef} className={styles.syncDialog} aria-labelledby="sync-title">
+                <div className={styles.syncDialogHeader}>
+                    <h2 id="sync-title">Sync to device</h2>
+                    <button type="button" className={styles.desktopButton}
+                        onClick={() => syncDialogRef.current?.close()}>Close</button>
+                </div>
+                <SyncPanel socket={socket} />
+            </dialog>
 
             <main className={styles.mainContent}>
                 {showDiagnostics && <Diagnostics onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}

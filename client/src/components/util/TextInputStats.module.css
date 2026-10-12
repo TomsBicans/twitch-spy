@@ -1,7 +1,7 @@
 .statsContainer {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 8px;
 }
 
 .countBlock {
@@ -11,13 +11,13 @@
 }
 
 .countValue {
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .countLabel {
-  font-size: 0.85rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
@@ -27,11 +27,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   transition: background-color var(--transition-medium) ease, color var(--transition-medium) ease, box-shadow var(--transition-medium) ease;
 }
 

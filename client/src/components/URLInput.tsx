@@ -99,7 +99,7 @@ export const URLInput = ({socket}: URLInputProps) => {
                 <textarea
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
-                    rows={userInput.length > 0 ? 8 : 6}
+                    rows={3}
                     placeholder="Comma or line separated YouTube links"
                     className={styles.urlInput}
                 />

@@ -1,12 +1,13 @@
 .stat {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   align-items: center;
   justify-content: center;
-  min-height: 76px;
+  min-height: 44px;
   border-radius: 12px;
-  padding: 10px 8px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -34,12 +35,12 @@
 
 .icon {
   font-size: 1.1rem;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   z-index: 1;
 }
 
 .statValue {
-  font-size: 1.45rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
   z-index: 1;
@@ -47,12 +48,14 @@
 }
 
 .statLabel {
+  width: 100%;
+  text-align: center;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-tertiary);
   z-index: 1;
-  margin-top: 3px;
+  margin-top: 0;
 }
 
 .QUEUED {
@@ -83,6 +86,14 @@
 .CANCELLED {
   background: linear-gradient(180deg, rgba(167, 177, 199, 0.18), rgba(61, 68, 86, 0.24));
   color: rgba(192, 198, 216, 0.9);
+}
+
+@media (min-width: 901px) and (max-height: 740px) {
+  .stat {
+    min-height: 32px;
+    gap: 2px 6px;
+    padding: 4px 6px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

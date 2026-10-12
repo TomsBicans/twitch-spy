@@ -1,7 +1,12 @@
 .block {
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.block > :not(.detailsPanel) {
+  flex-shrink: 0;
 }
 
 .statusText {
@@ -143,7 +148,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 260px;
+  min-height: 0;
+  max-height: 45dvh;
   overflow-y: auto;
   padding: 10px 12px;
   border-radius: 10px;
@@ -190,6 +196,8 @@
 }
 
 .fileGroupHeader {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: 0.72rem;
   color: var(--text-secondary);
@@ -227,9 +235,7 @@
 
 .detailName {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 

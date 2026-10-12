@@ -1,7 +1,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .formHeader {
@@ -27,8 +27,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px;
+  gap: 6px;
+  padding: 10px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -50,7 +50,8 @@
 
 .urlInput {
   width: 100%;
-  min-height: 90px;
+  min-height: 60px;
+  max-height: 100px;
   border: none;
   resize: vertical;
   background: transparent;
@@ -96,19 +97,19 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .buttonGroup {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  width: 100%;
+  gap: 6px;
 }
 
 .primaryButton,
 .secondaryButton {
-  font-size: 0.85rem;
-  padding: 0.6em 1.1em;
+  font-size: 0.78rem;
+  padding: 0.6em 0.75em;
 }
 
 .primaryButton {
