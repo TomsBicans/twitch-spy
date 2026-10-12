@@ -9,6 +9,7 @@ export default defineConfig({
       '/socket.io': {target: 'http://127.0.0.1:5000', ws: true},
       '/form_submit': 'http://127.0.0.1:5000',
       '/jobs': 'http://127.0.0.1:5000',
+      '/diagnostics': 'http://127.0.0.1:5000',
       '/audio': 'http://127.0.0.1:5000',
       '/open-music-directory': 'http://127.0.0.1:5000',
       '/sync': 'http://127.0.0.1:5000',

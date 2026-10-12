@@ -14,6 +14,8 @@ dependencies = [
     "imageio-ffmpeg>=0.6.0",
     "mutagen>=1.47.0",
     "psutil>=7.2.2",
+    "pystray>=0.19.5; sys_platform == 'win32'",
+    "pillow>=11.0; sys_platform == 'win32'",
     "pytest>=9.0.2",
     "tqdm>=4.67.3",
     "yt-dlp[default,curl-cffi]>=2026.3.3",

@@ -1,0 +1,13 @@
+.panel { padding: 24px; margin-bottom: 24px; background: #161b27; color: #e7eaf2; border: 1px solid #384258; border-radius: 14px; }
+.heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.heading h2 { margin: 0; font-size: 1.2rem; }
+.heading button { margin-left: 8px; padding: 6px 12px; color: #e7eaf2; background: #293247; border: 1px solid #53617c; border-radius: 6px; cursor: pointer; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.metrics div { display: flex; flex-direction: column; gap: 5px; padding: 16px; background: #202838; border-radius: 8px; }
+.metrics strong { font-size: 1.4rem; }
+.metrics span, .note { color: #b5bfd2; font-size: .85rem; line-height: 1.5; }
+.tableScroll { overflow: auto; }
+.panel table { width: 100%; border-collapse: collapse; text-align: left; }
+.panel td, .panel th { padding: 8px; border-bottom: 1px solid #384258; }
+.logs { max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #0e121b; padding: 16px; font-size: .8rem; border-radius: 8px; }
+.error { color: #ffb4b4; }

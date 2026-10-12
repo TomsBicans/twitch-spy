@@ -430,6 +430,8 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
     seed_smoke_library(data_dir)
     output_dir = to_windows_path(data_dir, repository_root()) if windows_from_wsl else str(data_dir)
     env = os.environ.copy()
+    env["LOCALAPPDATA"] = f"{output_dir}/profile"
+    env["XDG_DATA_HOME"] = str(data_dir / "profile")
     if artifact.suffix == ".AppImage":
         env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
     run([artifact, "--check-tools"], cwd=artifact.parent, env=env, timeout=15)
@@ -460,6 +462,16 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
         if not handshake.startswith(b"0"):
             raise BuildError("Socket.IO handshake failed")
         token = html.split('name="twitch-spy-shutdown-token" content="', 1)[1].split('"', 1)[0]
+        diagnostics_request = Request(
+            f"{base}/diagnostics",
+            headers={"X-Twitch-Spy-Shutdown": token, "X-Twitch-Spy-Diagnostics": "1"},
+        )
+        with urlopen(diagnostics_request, timeout=2) as response:
+            diagnostics = json.load(response)
+        if diagnostics.get("memory_bytes", 0) <= 0:
+            raise BuildError("Packaged process diagnostics failed")
+        if artifact.suffix.lower() == ".exe" and not diagnostics.get("tray_active"):
+            raise BuildError("Windows tray icon did not start")
         request = Request(
             f"{base}/shutdown",
             method="POST",

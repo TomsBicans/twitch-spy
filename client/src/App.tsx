@@ -7,12 +7,19 @@ import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
 import JobList from "./components/JobList.tsx";
 import SyncPanel from "./components/SyncPanel.tsx";
+import Diagnostics from "./components/Diagnostics.tsx";
 import {BACKEND_URL} from "./backend/backend.ts";
 import {io} from "socket.io-client";
 
 const socket = io(BACKEND_URL);
 
 function App() {
+    const [showDiagnostics, setShowDiagnostics] = useState(window.location.hash === "#diagnostics");
+    useEffect(() => {
+        const onHashChange = () => setShowDiagnostics(window.location.hash === "#diagnostics");
+        window.addEventListener("hashchange", onHashChange);
+        return () => window.removeEventListener("hashchange", onHashChange);
+    }, []);
     const [currentTrack, setCurrentTrack] = useState<Atom | undefined>(undefined);
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
@@ -72,6 +79,7 @@ function App() {
                     <h1 className={styles.appTitle}>twitch-spy</h1>
                     <p className={styles.appSubtitle}>music library</p>
                     <div className={styles.desktopActions}>
+                        <button type="button" className={styles.desktopButton} onClick={() => { window.location.hash = "diagnostics"; setShowDiagnostics(true); }}>Health and logs</button>
                         <button type="button" className={styles.desktopButton} onClick={openMusicDirectory}>Open music folder</button>
                         <button type="button" className={styles.desktopButton} onClick={quitApplication}>Quit application</button>
                     </div>
@@ -95,6 +103,7 @@ function App() {
             </aside>
 
             <main className={styles.mainContent}>
+                {showDiagnostics && <Diagnostics onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
                 <JobList
                     socket={socket}
                     onMusicSelected={(atom) => setCurrentTrack(atom)}

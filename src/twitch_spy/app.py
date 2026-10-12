@@ -16,6 +16,7 @@ import twitch_spy.config as config
 import twitch_spy.event_dispatcher as event_dispatcher
 import twitch_spy.util as util
 from twitch_spy.desktop import open_directory, resource_path
+from twitch_spy.diagnostics import ProcessMetrics, recent_logs
 from twitch_spy.media_downloader.atomizer import Atom
 from twitch_spy.media_downloader.job_manager import JobManager, JobStats
 from twitch_spy.media_downloader.storage_manager import LibraryManager
@@ -42,6 +43,8 @@ class Application:
         self.frontend_dir = frontend_dir or resource_path("client", "dist")
         self.disconnect_grace = disconnect_grace
         self.development = development
+        self.keep_running = False
+        self.metrics = ProcessMetrics()
         self.shutdown_token = secrets.token_urlsafe(32)
         self.shutdown_event = threading.Event()
         self.sync_thread: threading.Thread | None = None
@@ -50,6 +53,7 @@ class Application:
         self.had_browser_client = False
         self.disconnect_timer: threading.Timer | None = None
         self.server: BaseWSGIServer | None = None
+        self.server_lock = threading.Lock()
 
         self.app = Flask(__name__, static_folder=None)
         development_frontend = development or not self.frontend_dir.exists()
@@ -97,6 +101,30 @@ class Application:
         def health():
             return jsonify({"status": "ok", "version": app_version()})
 
+        @self.app.get("/diagnostics")
+        def diagnostics():
+            if request.headers.get("X-Twitch-Spy-Diagnostics") != "1":
+                abort(403)
+            if not self.development and request.headers.get("X-Twitch-Spy-Shutdown") != self.shutdown_token:
+                abort(403)
+            try:
+                payload = self.metrics.snapshot()
+                payload.update({
+                    "status": "stopping" if self.shutdown_event.is_set() else "running",
+                    "version": app_version(),
+                    "downloads_active": self.job_manager.has_active_jobs(),
+                    "sync_active": self.has_active_sync(),
+                    "browser_clients": self.connected_clients,
+                    "tray_active": self.keep_running,
+                    "logs": recent_logs(Path(config.LOG_DIR) / "application.log"),
+                })
+            except OSError:
+                logger.exception("Could not read application diagnostics")
+                return jsonify({"error": "Could not read application diagnostics"}), 503
+            response = jsonify(payload)
+            response.headers["Cache-Control"] = "no-store"
+            return response
+
         @self.app.post("/shutdown")
         def shutdown():
             if request.headers.get("X-Twitch-Spy-Shutdown") != self.shutdown_token:
@@ -141,13 +169,13 @@ class Application:
         @socketio.on("disconnect")
         def disconnected():
             self.connected_clients = max(0, self.connected_clients - 1)
-            if not self.development and self.had_browser_client and self.connected_clients == 0:
+            if not self.development and not self.keep_running and self.had_browser_client and self.connected_clients == 0:
                 self.disconnect_timer = threading.Timer(self.disconnect_grace, self._shutdown_if_idle)
                 self.disconnect_timer.daemon = True
                 self.disconnect_timer.start()
 
     def _shutdown_if_idle(self) -> None:
-        if self.development:
+        if self.development or self.keep_running:
             return
         if self.connected_clients == 0 and not self.has_active_sync() and not self.job_manager.has_active_jobs():
             self.request_shutdown()
@@ -188,18 +216,31 @@ class Application:
         self.event_dispatcher.dispatch_event(event_dispatcher.Events.STATISTICS_UPDATE.value, stats)
 
     def request_shutdown(self) -> None:
-        self.shutdown_event.set()
-        if self.server is not None:
-            self.server.shutdown()
+        with self.server_lock:
+            self.shutdown_event.set()
+            server = self.server
+        if server is not None:
+            server.shutdown()
 
     def main_web(self, port: int = 5000):
-        self.server = make_server("127.0.0.1", port, self.app, threaded=True)
         try:
+            with self.server_lock:
+                if self.shutdown_event.is_set():
+                    return
+                self.server = make_server("127.0.0.1", port, self.app, threaded=True)
+            logger.info("Backend listening on http://127.0.0.1:%s", port)
             self.server.serve_forever()
         finally:
+            with self.server_lock:
+                self.server = None
             if self.disconnect_timer:
                 self.disconnect_timer.cancel()
             self.job_manager.shutdown()
+            with self.sync_lock:
+                sync_thread = self.sync_thread
+            if sync_thread is not None:
+                sync_thread.join()
+            logger.info("Backend stopped")
 
 
 def main(port: int = 5000, development: bool = False):

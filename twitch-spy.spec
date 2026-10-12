@@ -11,13 +11,14 @@ if platform_tools.exists():
     datas.append((str(platform_tools), "platform-tools"))
 datas += collect_data_files("imageio_ffmpeg")
 datas += copy_metadata("twitch-spy")
+datas.append((str(root / "packaging" / "assets" / "twitch-spy.png"), "packaging/assets"))
 
 a = Analysis(
     [str(root / "src" / "twitch_spy" / "main.py")],
     pathex=[str(root / "src")],
     binaries=[],
     datas=datas,
-    hiddenimports=["engineio.async_drivers.threading"],
+    hiddenimports=["engineio.async_drivers.threading"] + (["pystray._win32"] if sys.platform == "win32" else []),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

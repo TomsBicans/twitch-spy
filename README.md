@@ -95,7 +95,21 @@ Version tags publish native x86_64 artifacts for Windows and Linux:
 
 The desktop application opens its local UI in the default browser and stores persistent data in `%LOCALAPPDATA%\TwitchSpy` on Windows or `$XDG_DATA_HOME/twitch-spy` on Linux (defaulting to `~/.local/share/twitch-spy`). Use the UI's **Quit application** button to stop the local server.
 
-Useful runtime overrides are `--output-dir`, `--port`, `--no-browser`, `--adb-exe`, and `--ffmpeg-location`.
+Windows executables also show a tray icon with **Open Twitch Spy**, **Health and resource usage**, **Open logs folder**, and **Quit Twitch Spy**. While the tray is active, closing the browser leaves the backend running. Quit stops the server, cancels queued downloads, and waits for active downloads and Android sync to finish. Windows may place the icon in the taskbar's hidden-icons menu.
+
+The tray is optional for native Windows CLI/development runs:
+
+```powershell
+uv run twitch-spy --dev --port 5000 --output-dir ./data --no-browser --tray
+```
+
+Start Vite separately as usual; development tray links open `http://localhost:5173`. Source/CLI runs default to no tray. Use `--no-tray` to disable it in the executable, including headless or service sessions. `--no-browser` only suppresses automatic browser launch. Linux/WSL runs do not create a Windows tray icon. If tray initialization fails, the app logs the error and retains its existing browser-controlled lifecycle.
+
+Select **Health and logs** in the UI (or the tray's health action) for backend status, uptime, download/sync activity, CPU, working-set/RSS memory, threads, live child processes, and recent application logs. Metrics refresh every two seconds only while the panel is open and the tab is visible; Pause freezes the view. CPU uses 100% per logical core and needs two samples. Values cover the backend and its live descendants, not whole-system usage, the browser, or the separate Vite server. Shared memory may be counted more than once; short-lived subprocesses can fall between samples. The panel reports backend reachability and activity, not whether an individual download is making progress.
+
+Logs are stored in `<output-dir>/logs/application.log`, rotating at 5 MiB with three backups. The UI reads at most 64 KiB / 200 recent lines. The tray's logs action opens the full log directory. CLI users can inspect these same files (for example, `Get-Content ./data/logs/application.log -Tail 100 -Wait`).
+
+Useful runtime overrides are `--output-dir`, `--port`, `--no-browser`, `--tray` / `--no-tray`, `--adb-exe`, and `--ffmpeg-location`.
 
 Python installs and desktop builds include yt-dlp's recommended dependencies, including
 `curl_cffi` for browser impersonation and `yt_dlp_ejs` for YouTube challenge scripts.

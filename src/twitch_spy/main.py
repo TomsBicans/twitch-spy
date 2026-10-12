@@ -47,14 +47,24 @@ def main():
     config.init(output_dir, android_dest=args.android_dest, adb_exe=adb_exe, ffmpeg_location=ffmpeg_location)
 
     import twitch_spy.app as app
+    from pathlib import Path
+    from twitch_spy.tray import DesktopTray, tray_enabled
 
+    tray = None
     try:
+        application = app.Application(development=args.dev)
+        browser_url = "http://localhost:5173" if args.dev else url
+        if tray_enabled(args.tray):
+            tray = DesktopTray(browser_url, Path(config.LOG_DIR), application.request_shutdown)
+            application.keep_running = tray.start()
         if not args.no_browser:
-            threading.Thread(target=open_when_ready, args=(url, webbrowser.open), daemon=True, name="browser-launcher").start()
+            threading.Thread(target=open_when_ready, args=(url, lambda _: webbrowser.open(browser_url)), daemon=True, name="browser-launcher").start()
         start_time = time.time()
-        app.main(port=port, development=args.dev)
+        application.main_web(port=port)
         logging.info("Program finished in %.2f seconds.", time.time() - start_time)
     finally:
+        if tray is not None:
+            tray.stop()
         lock.release()
 
 

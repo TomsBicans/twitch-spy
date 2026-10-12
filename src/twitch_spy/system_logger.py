@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 from twitch_spy.config import LOG_DIR
 
 
@@ -10,7 +11,7 @@ def setup_logger(name, log_file, level=logging.INFO):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
     # Create and set a handler for writing log messages to a file
-    file_handler = logging.FileHandler(log_file)
+    file_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8")
     file_handler.setFormatter(formatter)
 
     # Create and set a handler for writing log messages to the console
