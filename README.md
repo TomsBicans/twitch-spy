@@ -97,6 +97,12 @@ The desktop application opens its local UI in the default browser and stores per
 
 Useful runtime overrides are `--output-dir`, `--port`, `--no-browser`, `--adb-exe`, and `--ffmpeg-location`.
 
+Python installs and desktop builds include yt-dlp's recommended dependencies, including
+`curl_cffi` for browser impersonation and `yt_dlp_ejs` for YouTube challenge scripts.
+Executing those scripts also requires [Deno](https://docs.deno.com/runtime/getting_started/installation/)
+on the user's `PATH`; the desktop build does not bundle a JavaScript runtime.
+See [yt-dlp's EJS setup guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
+
 Local release builds mirror CI:
 
 ```bash
