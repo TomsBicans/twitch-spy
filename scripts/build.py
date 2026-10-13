@@ -30,13 +30,14 @@ PLATFORM_TOOLS_ARCHIVES = {
     ),
 }
 APPIMAGETOOL_URL = (
-    "https://api.github.com/repos/AppImage/appimagetool/releases/assets/324406882"
+    "https://github.com/AppImage/appimagetool/releases/download/1.9.1/"
+    "appimagetool-x86_64.AppImage"
 )
-APPIMAGETOOL_SHA256 = "a6d71e2b6cd66f8e8d16c37ad164658985e0cf5fcaa950c90a482890cb9d13e0"
+APPIMAGETOOL_SHA256 = "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
 APPIMAGE_RUNTIME_URL = (
-    "https://api.github.com/repos/AppImage/type2-runtime/releases/assets/369052327"
+    "https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64"
 )
-APPIMAGE_RUNTIME_SHA256 = "a2419dce47568395ae79c01ffa9a5a341dd339581352ff104d073527543177e5"
+APPIMAGE_RUNTIME_SHA256 = "2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d"
 STAGING_FILES = (
     "pyproject.toml",
     "uv.lock",

@@ -87,10 +87,12 @@ def test_platform_tools_archives_are_checksum_pinned():
         assert len(digest) == 64
 
 
-def test_appimagetool_is_immutable_and_checksum_pinned():
-    assert build.APPIMAGETOOL_URL.endswith("/assets/324406882")
+def test_appimage_dependencies_use_versioned_releases_and_checksums():
+    assert "/releases/download/1.9.1/" in build.APPIMAGETOOL_URL
+    assert build.APPIMAGETOOL_URL.endswith("/appimagetool-x86_64.AppImage")
     assert len(build.APPIMAGETOOL_SHA256) == 64
-    assert build.APPIMAGE_RUNTIME_URL.endswith("/assets/369052327")
+    assert "/releases/download/20251108/" in build.APPIMAGE_RUNTIME_URL
+    assert build.APPIMAGE_RUNTIME_URL.endswith("/runtime-x86_64")
     assert len(build.APPIMAGE_RUNTIME_SHA256) == 64
 
 
