@@ -28,8 +28,8 @@ class EventDispatcher:
             listener(event_name, *args)
 
 
-def atom_to_dict(event_name: str, atom: Atom) -> dict:
-    return {
+def atom_to_dict(event_name: str, atom: Atom, *, include_thumbnail: bool = True) -> dict:
+    data = {
         "event": event_name,
         "id": str(atom.id),
         "url": atom.url,
@@ -40,9 +40,13 @@ def atom_to_dict(event_name: str, atom: Atom) -> dict:
         "content_name": str(atom.content_title),
         "download_dir": atom.download_dir,
         "media_file_os_path": atom.media_file_os_path,
-        "thumbnail_image_in_base64": atom.thumbnail_image_in_base64,
         "status": atom.status.value,
     }
+    if include_thumbnail:
+        data["thumbnail_image_in_base64"] = atom.thumbnail_image_in_base64
+    elif atom.thumbnail_image_in_base64:
+        data["thumbnail_url"] = f"/jobs/{atom.id}/thumbnail"
+    return data
 
 
 def atom_status_listener(event_name: str, atom: Atom):

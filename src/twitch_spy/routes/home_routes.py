@@ -1,4 +1,6 @@
 from uuid import UUID
+import base64
+from io import BytesIO
 import re
 from urllib.parse import urlparse, urlunparse
 import psutil
@@ -85,6 +87,52 @@ def handle_ready_for_data():
     socketio.emit(
         "initial_jobs",
         [atom_to_dict(Events.JOB_RENDER.value, job) for job in jobs],
+        to=flask.request.sid,
+    )
+
+
+@socketio.on("request_statistics")
+def handle_request_statistics() -> None:
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
+    socketio.emit(
+        Events.STATISTICS_UPDATE.value,
+        my_app.job_manager.stats.get_stats(),
+        to=flask.request.sid,
+    )
+
+
+@home_routes.get("/library")
+def get_library_page() -> flask.Response:
+    try:
+        offset = int(flask.request.args.get("offset", "0"))
+    except ValueError:
+        flask.abort(400, description="offset must be a nonnegative integer")
+    if offset < 0:
+        flask.abort(400, description="offset must be a nonnegative integer")
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
+    jobs = my_app.job_manager.get_all_jobs()
+    page = jobs[offset:offset + 48]
+    next_offset = offset + len(page)
+    return jsonify(
+        jobs=[
+            atom_to_dict(Events.JOB_RENDER.value, job, include_thumbnail=False)
+            for job in page
+        ],
+        total=len(jobs),
+        next_offset=next_offset if next_offset < len(jobs) else None,
+    )
+
+
+@home_routes.get("/jobs/<uuid:job_id>/thumbnail")
+def get_job_thumbnail(job_id: UUID) -> flask.Response:
+    my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
+    job = my_app.job_manager.get_job(job_id)
+    if job is None or not job.thumbnail_image_in_base64:
+        flask.abort(404)
+    return send_file(
+        BytesIO(base64.b64decode(job.thumbnail_image_in_base64)),
+        mimetype="image/jpeg",
+        max_age=3600,
     )
 
 

@@ -29,10 +29,11 @@ const getRandomColor = () => {
     return `rgb(${r},${g},${b})`;
 };
 
-const getAverageColor = (base64Image: string): Promise<string> => {
+const getAverageColor = (imageUrl: string): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
-        img.src = `data:image/jpeg;base64,${base64Image}`;
+        img.crossOrigin = "anonymous";
+        img.src = imageUrl;
         img.onload = () => {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
@@ -77,7 +78,9 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
         if (entry) {
             setCurrentTrack(`${BACKEND_URL}/audio/${encodeURIComponent(entry.content_name)}`);
             if (entry.thumbnail_image_in_base64) {
-                getAverageColor(entry.thumbnail_image_in_base64).then(setTrackColor);
+                getAverageColor(`data:image/jpeg;base64,${entry.thumbnail_image_in_base64}`).then(setTrackColor);
+            } else if (entry.thumbnail_url) {
+                getAverageColor(`${BACKEND_URL}${entry.thumbnail_url}`).then(setTrackColor);
             } else {
                 setTrackColor(getRandomColor());
             }

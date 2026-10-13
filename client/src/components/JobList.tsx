@@ -11,6 +11,13 @@ interface JobStatusesProps {
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
+const PAGE_SIZE = 48;
+
+interface LibraryPage {
+    jobs: Atom[];
+    total: number;
+    next_offset: number | null;
+}
 
 const RETRIABLE_STATES = new Set<ProcessingStates>([
     ProcessingStates.FAILED,
@@ -43,10 +50,11 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
         return () => observer.disconnect();
     }, []);
 
-    const thumbnail =
-        thumbnailVisible && job.thumbnail_image_in_base64
+    const thumbnail = thumbnailVisible
+        ? job.thumbnail_image_in_base64
             ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
-            : "";
+            : job.thumbnail_url ? `${BACKEND_URL}${job.thumbnail_url}` : ""
+        : "";
 
     const status = job.status.toLowerCase();
     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
@@ -101,41 +109,79 @@ export const JobList = ({
                         }: JobStatusesProps) => {
     const [jobs, setJobs] = useState<Array<Atom>>([]);
     const [loading, setLoading] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [loadError, setLoadError] = useState("");
+    const [reloadKey, setReloadKey] = useState(0);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [selectedJobProcessingState, setSelectedJobProcessingState] =
         useState<SelectedProcessingState>(ProcessingStates.FINISHED);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const updateAtomStatus = (data: Atom) => {
-        setJobs((prevJobs) => {
-            const existingJob = prevJobs.find((job) => job.id === data.id);
-            if (existingJob) {
-                return prevJobs.map((job) =>
-                    job.id === data.id ? {...job, ...data} : job
-                );
-            }
-            return [{...data}, ...prevJobs];
-        });
-    };
-
     useEffect(() => {
-        const handleBatch = (data: Atom[]) => { setJobs(data); setLoading(false); };
-        const handleUpdate = (data: Atom) => updateAtomStatus(data);
+        let controller: AbortController;
+        let nextPageTimer: ReturnType<typeof setTimeout>;
+        const updates = new Map<string, Atom>();
+        const handleUpdate = (data: Atom) => {
+            updates.set(data.id, data);
+            setJobs((previous) => previous.some((job) => job.id === data.id)
+                ? previous.map((job) => job.id === data.id ? {...job, ...data} : job)
+                : [data, ...previous]);
+        };
         const requestData = () => {
+            controller?.abort();
+            clearTimeout(nextPageTimer);
+            controller = new AbortController();
+            const {signal} = controller;
+            const received = new Map<string, Atom>();
+            updates.clear();
             setLoading(true);
-            socket.emit("request_initial_data");
+            setLoadError("");
+
+            const loadPage = async (offset: number) => {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/library?offset=${offset}`, {signal});
+                    if (!response.ok) throw new Error(`Library request failed (${response.status})`);
+                    const page: LibraryPage = await response.json();
+                    if (signal.aborted) return;
+                    for (const job of page.jobs) received.set(job.id, job);
+                    // Live status changes take precedence over an in-flight page.
+                    for (const [id, job] of updates) received.set(id, {...received.get(id), ...job});
+                    const snapshot = [...received.values()];
+                    setJobs((previous) => {
+                        if (page.next_offset === null) return snapshot;
+                        const merged = new Map(previous.map((job) => [job.id, job]));
+                        for (const job of snapshot) merged.set(job.id, job);
+                        return [...merged.values()];
+                    });
+                    setTotal(page.total);
+                    const nextOffset = page.next_offset;
+                    if (nextOffset === null) {
+                        setLoading(false);
+                    } else {
+                        // Give the browser a chance to paint before requesting another batch.
+                        nextPageTimer = setTimeout(() => void loadPage(nextOffset), 50);
+                    }
+                } catch (error) {
+                    if (signal.aborted) return;
+                    console.error("Library loading failed:", error);
+                    setLoadError("Could not finish loading the library. Your loaded tracks are still available.");
+                    setLoading(false);
+                }
+            };
+            void loadPage(0);
         };
 
-        socket.on("initial_jobs", handleBatch);
         socket.on("atom_update_status", handleUpdate);
         socket.on("connect", requestData);
-        socket.emit("request_initial_data");
+        requestData();
 
         return () => {
-            socket.off("initial_jobs", handleBatch);
+            controller.abort();
+            clearTimeout(nextPageTimer);
             socket.off("atom_update_status", handleUpdate);
             socket.off("connect", requestData);
         };
-    }, [socket]);
+    }, [socket, reloadKey]);
 
     const filterJobs = (
         jobs: Array<Atom>,
@@ -159,9 +205,11 @@ export const JobList = ({
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
+        setVisibleCount(PAGE_SIZE);
     };
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setVisibleCount(PAGE_SIZE);
         setSelectedJobProcessingState(
             event.target.value as SelectedProcessingState
         );
@@ -231,20 +279,33 @@ export const JobList = ({
                     />
                 </div>
             </div>
+            {loading && (
+                <p className={styles.loadingText} role="status">
+                    {jobs.length === 0 ? "Loading your first tracks…" :
+                        `Loading library… ${jobs.length} of ${Math.max(total, jobs.length)} tracks available. You can already browse and play.`}
+                </p>
+            )}
+            {loadError && (
+                <div role="alert">
+                    <p>{loadError}</p>
+                    <button className={styles.filterSelect} onClick={() => setReloadKey((key) => key + 1)}>Retry loading</button>
+                </div>
+            )}
             <div className={styles.gridContainer}>
-                {loading ? (
-                    <div className={styles.loadingState}>
-                        <span className={styles.spinner} aria-hidden="true" />
-                        <p className={styles.loadingText}>Loading library…</p>
-                    </div>
-                ) : filteredJobs.length === 0 ? (
+                {loading && jobs.length === 0 ? (
+                    Array.from({length: 6}, (_, index) => (
+                        <div key={index} className={styles.skeletonCard} aria-hidden="true">
+                            <span /><span /><span />
+                        </div>
+                    ))
+                ) : filteredJobs.length === 0 && !loadError ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyGlow} aria-hidden="true" />
-                        <h3>Nothing here just yet</h3>
-                        <p>{emptyStateMessage}</p>
+                        <h3>{loading ? "Looking for matching tracks…" : "Nothing here just yet"}</h3>
+                        <p>{loading ? "More tracks are still loading. Matches will appear here as they arrive." : emptyStateMessage}</p>
                     </div>
                 ) : (
-                    filteredJobs.map((job) => (
+                    filteredJobs.slice(0, visibleCount).map((job) => (
                         <SongCard
                             key={job.id}
                             job={job}
@@ -255,6 +316,18 @@ export const JobList = ({
                     ))
                 )}
             </div>
+            {filteredJobs.length > 0 && (
+                <div className={styles.listFooter}>
+                    <p className={styles.loadingText}>
+                        Showing {Math.min(visibleCount, filteredJobs.length)} of {filteredJobs.length} matching tracks{loading ? " loaded so far" : ""}
+                    </p>
+                    {visibleCount < filteredJobs.length && (
+                        <button className={styles.filterSelect} onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>
+                            Show more tracks
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

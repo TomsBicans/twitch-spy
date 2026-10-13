@@ -36,10 +36,13 @@ export const JobOverview = ({socket}: JobOverviewProps) => {
         };
 
         socket.on("statistics_update", handleStatsUpdate);
-        socket.emit("request_initial_data");
+        const requestStats = () => socket.emit("request_statistics");
+        socket.on("connect", requestStats);
+        if (socket.connected) requestStats();
 
         return () => {
             socket.off("statistics_update", handleStatsUpdate);
+            socket.off("connect", requestStats);
         };
     }, [socket]);
 
