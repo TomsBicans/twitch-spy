@@ -1,11 +1,21 @@
 .PHONY: help install install-ffmpeg test lint frontend-build verify run_web run_api \
 	build build-linux build-wsl build-windows build-all smoke smoke-linux \
-	smoke-windows checksums artifacts clean-build
+	smoke-windows checksums artifacts clean-build next-version release-help
 
 BUILD := uv run python scripts/build.py
+RELEASE := uv run python scripts/release.py
+BUMP ?= patch
 
 help:
 	@$(BUILD) --help
+	@echo "make next-version [BUMP=patch|minor|major] - preview using local tags"
+	@echo "make release-help - show release script commands"
+
+next-version:
+	$(RELEASE) next-version --bump "$(BUMP)"
+
+release-help:
+	@$(RELEASE) --help
 
 install:
 	uv sync

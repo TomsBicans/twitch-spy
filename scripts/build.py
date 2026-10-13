@@ -184,7 +184,7 @@ def prepare_build_environment(root: Path) -> None:
     env.setdefault("UV_CACHE_DIR", str(root / "build" / "uv-cache"))
     run([require_command("npm"), "ci"], cwd=root / "client", env=env)
     run([require_command("npm"), "run", "build"], cwd=root / "client", env=env)
-    run([require_command("uv"), "sync", "--group", "dev"], cwd=root, env=env)
+    run([require_command("uv"), "sync", "--locked", "--group", "dev"], cwd=root, env=env)
 
 
 def run_pyinstaller(root: Path) -> None:
@@ -452,6 +452,11 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
             raise BuildError("Packaged application did not become ready")
         if health.get("status") != "ok":
             raise BuildError(f"Unexpected health response: {health}")
+        expected_version = project_version(repository_root())
+        if health.get("version") != expected_version:
+            raise BuildError(
+                f"Packaged version {health.get('version')!r} != {expected_version!r}"
+            )
         html = urlopen(base, timeout=2).read().decode()
         if '<div id="root"></div>' not in html:
             raise BuildError("Packaged frontend root was not served")

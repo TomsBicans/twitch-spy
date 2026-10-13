@@ -2,15 +2,54 @@ name: Desktop release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Version increment (an existing reservation is reused on retries)
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+  queue: max
 
 jobs:
-  verify:
+  version:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.reserve.outputs.version }}
+      tag: ${{ steps.reserve.outputs.tag }}
+      release_id: ${{ steps.reserve.outputs.release_id }}
+      published: ${{ steps.reserve.outputs.published }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Reserve the next version
+        id: reserve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP: ${{ inputs.bump || 'patch' }}
+        run: python scripts/release.py reserve --bump "$BUMP"
+
+  verify:
+    needs: version
+    if: needs.version.outputs.published != 'true'
+    runs-on: ubuntu-22.04
+    env:
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,15 +61,18 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
-      - name: Verify tag version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: uv run python scripts/build.py verify --tag ${{ github.ref_name }}
-      - name: Verify manual build
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        run: uv run python scripts/build.py verify
+      - name: Stamp package metadata
+        run: python scripts/release.py stamp --version "$RELEASE_VERSION"
+      - name: Verify release candidate
+        run: uv run --locked python scripts/build.py verify --tag "v$RELEASE_VERSION"
 
   build:
-    needs: verify
+    needs: [version, verify]
+    env:
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         include:
@@ -52,26 +94,42 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: client/package-lock.json
-      - run: uv run python scripts/build.py build --target ${{ matrix.target }}
-      - run: uv run python scripts/build.py smoke --target ${{ matrix.target }}
-      - run: uv run python scripts/build.py checksums --target ${{ matrix.target }}
+      - name: Stamp package metadata
+        run: python scripts/release.py stamp --version "$RELEASE_VERSION"
+      - run: uv run --locked python scripts/build.py build --target ${{ matrix.target }}
+      - run: uv run --locked python scripts/build.py smoke --target ${{ matrix.target }}
+      - run: uv run --locked python scripts/build.py checksums --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ runner.os }}
+          overwrite: true
+          if-no-files-found: error
           path: |
             ${{ matrix.artifact }}
             ${{ matrix.artifact }}.sha256
 
   release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: build
+    needs: [version, build]
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: desktop-*
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/*
-          generate_release_notes: true
+      - name: Publish verified artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+          RELEASE_ID: ${{ needs.version.outputs.release_id }}
+        run: >-
+          python scripts/release.py publish
+          --version "$RELEASE_VERSION" --release-id "$RELEASE_ID"

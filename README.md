@@ -88,10 +88,55 @@ The `--output-dir` flag (set in the Makefile) controls where the development lib
 
 ### Desktop releases
 
-Version tags publish native x86_64 artifacts for Windows and Linux:
+Every push to `main` automatically builds and publishes native x86_64 artifacts for Windows and Linux after verification succeeds:
 
 - `twitch-spy-vX.Y.Z-windows-x64.exe`
 - `twitch-spy-vX.Y.Z-linux-x86_64.AppImage`
+
+CI calculates the next patch version from numeric `vX.Y.Z` tags and GitHub release
+reservations. For example, `v0.1.641` becomes `v0.1.642`; you do not edit a version
+or create a tag. A push containing multiple commits builds its final commit.
+Configuration and dependency changes trigger the same workflow.
+
+The version job reserves a draft release for the exact source commit and passes
+its version to all build jobs. Each job stamps `pyproject.toml` and the root package
+entry in `uv.lock` in its disposable checkout before installing dependencies.
+The installed package metadata, health endpoint, diagnostics, and artifact names
+therefore use the same version. No version-bump commit is pushed back to `main`.
+The checked-in version remains the local development version and initial release
+seed when no release tags or reservations exist.
+
+Release runs are serialized, with up to 100 pending runs queued by GitHub Actions.
+Failed runs retain their draft reservation; rerun the failed workflow to retry the
+same version. Later pushes receive higher versions, so gaps are possible. Do not
+delete draft reservations if you intend to retry them. Published releases are
+skipped on retries and their assets are never overwritten. Retrying an older draft
+does not replace a newer release as **Latest**. Tags are created when the verified
+draft is published, and point to the source commit shown in its release notes.
+
+To inspect the next patch number locally without changing files:
+
+```bash
+git fetch --tags origin
+make next-version
+# Optional previews for larger increments (no files or releases are changed):
+make next-version BUMP=minor
+make next-version BUMP=major
+make release-help
+# Windows, or without Make:
+uv run python scripts/release.py next-version
+```
+
+This preview uses local tags only; CI also sees unpublished draft reservations.
+In GitHub, open **Actions → Desktop release** to inspect the calculated version
+and build jobs. **Run workflow** on `main` offers patch/minor/major increments;
+an already reserved or published commit keeps its version. To select a minor or
+major increment for a new commit, skip its automatic push run with `[skip ci]` in
+the commit message, then manually run the workflow on `main` with the desired bump.
+Normal commits need no special message. The workflow uses the built-in
+`GITHUB_TOKEN` with `contents: write` for reservation and publication; no personal
+token is needed. Repository or organization rules must allow this workflow to
+create release tags.
 
 The desktop application opens its local UI in the default browser and stores persistent data in `%LOCALAPPDATA%\TwitchSpy` on Windows or `$XDG_DATA_HOME/twitch-spy` on Linux (defaulting to `~/.local/share/twitch-spy`). Use the UI's **Quit application** button to stop the local server.
 
@@ -117,7 +162,7 @@ Executing those scripts also requires [Deno](https://docs.deno.com/runtime/getti
 on the user's `PATH`; the desktop build does not bundle a JavaScript runtime.
 See [yt-dlp's EJS setup guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
 
-Local release builds mirror CI:
+Local builds use the same build commands as CI and the checked-in development version:
 
 ```bash
 # Build for the current native platform (WSL defaults to Linux)
