@@ -9,5 +9,5 @@
 .tableScroll { overflow: auto; }
 .panel table { width: 100%; border-collapse: collapse; text-align: left; }
 .panel td, .panel th { padding: 8px; border-bottom: 1px solid #384258; }
-.logs { max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #0e121b; padding: 16px; font-size: .8rem; border-radius: 8px; }
+.logs { height: 50dvh; min-height: 320px; resize: vertical; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #0e121b; padding: 16px; font-size: .8rem; border-radius: 8px; }
 .error { color: #ffb4b4; }

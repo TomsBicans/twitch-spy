@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {BACKEND_URL} from "../backend/backend";
 import styles from "./Diagnostics.module.css";
 
@@ -33,6 +33,13 @@ export default function Diagnostics({onClose}: {onClose: () => void}) {
     const [snapshot, setSnapshot] = useState<Snapshot>();
     const [error, setError] = useState("");
     const [paused, setPaused] = useState(false);
+    const logsRef = useRef<HTMLPreElement>(null);
+    const followLogsRef = useRef(true);
+
+    useLayoutEffect(() => {
+        const logs = logsRef.current;
+        if (logs && followLogsRef.current) logs.scrollTop = logs.scrollHeight;
+    }, [snapshot?.logs]);
 
     useEffect(() => {
         if (paused) return;
@@ -91,7 +98,10 @@ export default function Diagnostics({onClose}: {onClose: () => void}) {
             </table></div>
             <h3>Recent application logs</h3>
             <p className={styles.note}>Latest 200 lines, limited to 64 KiB. Pause updates to inspect or copy. Full logs are available through the tray’s Open logs folder action.</p>
-            <pre className={styles.logs}>{snapshot.logs || "No application log entries yet."}</pre>
+            <pre ref={logsRef} className={styles.logs} onScroll={event => {
+                const logs = event.currentTarget;
+                followLogsRef.current = logs.scrollHeight - logs.clientHeight - logs.scrollTop <= 4;
+            }}>{snapshot.logs || "No application log entries yet."}</pre>
         </>}
     </section>;
 }
