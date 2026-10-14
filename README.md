@@ -234,6 +234,22 @@ On native Windows, run the same `scripts/build.py` command from a Windows termin
 
 Build prerequisites are Python 3.13, uv, and Node.js/npm on the native target platform. The orchestrator installs project dependencies and downloads platform-tools/appimagetool, but it does not install Python, uv, or Node. PyInstaller still runs natively, so a normal Linux host cannot produce the Windows executable and Windows cannot produce the Linux AppImage.
 
+Manual browser verification scripts live in `tests/` and belong in version control.
+They are separate from the automated pytest suite and CI smoke tests:
+
+```bash
+make check-preview     # Latest Windows executable: tray and diagnostics UI
+make check-components  # Responsive sidebar and sync dialog; requires Vite on port 5173
+make check-library     # Library UI; requires Vite on port 5173
+```
+
+These checks use headless Microsoft Edge and install the Playwright Python package
+through `uv run --with playwright`; Edge must already be installed. Without Make,
+run `uv run --with playwright python -m tests.check_preview` (or the corresponding
+`tests.check_components` / `tests.check_library_browser` module). Screenshots are
+generated under `dist/`, which remains ignored and safe to remove with
+`make clean-build`. Executable build logic lives in `scripts/`, never in `dist/`.
+
 Windows binaries are initially unsigned and may trigger SmartScreen. Android devices can still require manufacturer USB drivers on Windows or udev rules and USB permissions on Linux.
 
 ---
