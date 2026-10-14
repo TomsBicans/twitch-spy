@@ -73,6 +73,101 @@ def project_version(root: Path) -> str:
         return str(tomllib.load(handle)["project"]["version"])
 
 
+def local_version(root: Path) -> str:
+    def git(*args: str) -> str:
+        return capture(["git", *args], cwd=root)
+
+    if not (root / ".git").exists():
+        raise BuildError("Local builds require a Git checkout to identify their version")
+    sha = git("rev-parse", "--short=12", "HEAD")
+    dirty = bool(git("status", "--porcelain", "--untracked-files=normal"))
+    pattern = r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    exact = [tag for tag in git("tag", "--points-at", "HEAD").splitlines()
+             if re.fullmatch(pattern, tag)]
+    if len(exact) > 1:
+        raise BuildError("Multiple release tags point to HEAD; cannot choose a build version")
+    if exact and not dirty:
+        return exact[0][1:]
+    tags = [tag for tag in git("tag", "--merged", "HEAD").splitlines()
+            if re.fullmatch(pattern, tag)]
+    if tags:
+        latest = max(tags, key=lambda tag: tuple(map(int, tag[1:].split("."))))
+        major, minor, patch = map(int, latest[1:].split("."))
+        base = f"{major}.{minor}.{patch + 1}"
+        distance = git("rev-list", "--count", f"{latest}..HEAD")
+    else:
+        base = project_version(root)
+        distance = git("rev-list", "--count", "HEAD")
+    return f"{base}.dev{distance}+g{sha}{'.dirty' if dirty else ''}"
+
+
+def refresh_tags(root: Path) -> None:
+    remotes = capture(["git", "remote"], cwd=root).splitlines()
+    if "origin" not in remotes:
+        return
+    try:
+        subprocess.run(
+            ["git", "fetch", "--tags", "origin"], cwd=root, check=True,
+            capture_output=True, text=True, timeout=20,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        print(f"Warning: could not refresh release tags; using local tags: {exc}", file=sys.stderr)
+
+
+def build_versioned(
+    root: Path, target: str, keep_staging: bool, native_only: bool, no_fetch: bool,
+) -> None:
+    if native_only:
+        build_target(root, target, keep_staging, native_only=True)
+        return
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        version = os.environ.get("RELEASE_VERSION")
+        if not version or version != project_version(root):
+            raise BuildError("CI must stamp its reserved RELEASE_VERSION before building")
+        artifacts = build_target(root, target, keep_staging, native_only=False)
+    else:
+        if not no_fetch:
+            refresh_tags(root)
+        version = local_version(root)
+        print(f"Building version {version}", flush=True)
+        if __package__:
+            from .release import stamp
+        else:
+            from release import stamp
+
+        build_directory = root / "build"
+        build_directory.mkdir(exist_ok=True)
+        staging = Path(tempfile.mkdtemp(prefix="local-", dir=build_directory))
+        previous_cache = os.environ.get("UV_CACHE_DIR")
+        os.environ.setdefault("UV_CACHE_DIR", str(build_directory / "uv-cache"))
+        try:
+            copy_staging_source(root, staging)
+            stamp(staging, version, development=True)
+            staged = build_target(staging, target, keep_staging, native_only=False)
+            (root / "dist").mkdir(exist_ok=True)
+            artifacts = []
+            for source in staged:
+                destination = root / "dist" / source.name
+                shutil.copy2(source, destination)
+                artifacts.append(destination)
+        finally:
+            if previous_cache is None:
+                os.environ.pop("UV_CACHE_DIR", None)
+            else:
+                os.environ["UV_CACHE_DIR"] = previous_cache
+            if keep_staging:
+                print(f"Retained build checkout: {staging}")
+            else:
+                if not staging.resolve().is_relative_to(build_directory.resolve()):
+                    raise BuildError("Build checkout escaped its staging directory")
+                shutil.rmtree(staging)
+    for artifact in artifacts:
+        platform_name = "windows" if artifact.suffix == ".exe" else "linux"
+        manifest = root / "dist" / f"latest-{platform_name}.json"
+        manifest.write_text(json.dumps({"artifact": artifact.name, "version": version}) + "\n", encoding="utf-8")
+        print(f"Ready: {artifact}")
+
+
 def is_wsl() -> bool:
     if sys.platform != "linux":
         return False
@@ -359,6 +454,9 @@ def delegate_windows_smoke(root: Path, artifact: Path, port: int | None = None) 
         shutil.copy2(root / "scripts" / "build.py", staging / "scripts" / "build.py")
         shutil.copy2(root / "pyproject.toml", staging / "pyproject.toml")
         shutil.copy2(artifact, staging / "dist" / artifact.name)
+        manifest = root / "dist" / "latest-windows.json"
+        if manifest.exists():
+            shutil.copy2(manifest, staging / "dist" / manifest.name)
         windows_script = to_windows_path(staging / "scripts" / "build.py", root)
         args = [launcher, "-3.13", windows_script, "smoke", "--target", "windows"]
         if port is not None:
@@ -453,7 +551,8 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
             raise BuildError("Packaged application did not become ready")
         if health.get("status") != "ok":
             raise BuildError(f"Unexpected health response: {health}")
-        expected_version = project_version(repository_root())
+        match = re.fullmatch(r"twitch-spy-v(.+)-(?:windows-x64\.exe|linux-x86_64\.AppImage)", artifact.name)
+        expected_version = match[1] if match else project_version(repository_root())
         if health.get("version") != expected_version:
             raise BuildError(
                 f"Packaged version {health.get('version')!r} != {expected_version!r}"
@@ -494,7 +593,16 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
 
 def selected_artifacts(root: Path, target: str) -> list[Path]:
     targets = ("linux", "windows") if target == "all" else (target,)
-    artifacts = [artifact_path(root, item) for item in targets]
+    artifacts = []
+    for item in targets:
+        manifest = root / "dist" / f"latest-{item}.json"
+        if manifest.exists():
+            filename = json.loads(manifest.read_text(encoding="utf-8"))["artifact"]
+            if Path(filename).name != filename or "/" in filename or "\\" in filename:
+                raise BuildError(f"Invalid artifact filename in {manifest}")
+            artifacts.append(root / "dist" / filename)
+        else:
+            artifacts.append(artifact_path(root, item))
     existing = [artifact for artifact in artifacts if artifact.exists()]
     if not existing:
         raise BuildError(f"No {target} desktop artifacts found in {root / 'dist'}")
@@ -535,6 +643,7 @@ def parser() -> argparse.ArgumentParser:
     build.add_argument("--target", choices=("linux", "windows", "all"), default=None)
     build.add_argument("--keep-staging", action="store_true")
     build.add_argument("--native-only", action="store_true", help=argparse.SUPPRESS)
+    build.add_argument("--no-fetch", action="store_true", help="Use local tags without fetching origin")
 
     verify_command = subcommands.add_parser("verify", help="Run project verification")
     verify_command.add_argument("--tag")
@@ -557,7 +666,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "build":
             target = args.target or native_platform()
-            build_target(root, target, args.keep_staging, args.native_only)
+            build_versioned(root, target, args.keep_staging, args.native_only, args.no_fetch)
         elif args.command == "verify":
             verify(root, tag=args.tag)
         elif args.command == "smoke":

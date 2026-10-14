@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
+import json
 import platform
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -10,11 +11,7 @@ from pathlib import Path
 import pytest
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "build.py"
-SPEC = importlib.util.spec_from_file_location("twitch_spy_build", SCRIPT)
-build = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-SPEC.loader.exec_module(build)
+from scripts import build
 
 
 def project(tmp_path: Path, version: str = "1.2.3") -> Path:
@@ -31,6 +28,83 @@ def test_project_version_and_artifact_paths(tmp_path):
     assert build.project_version(root) == "1.2.3"
     assert build.artifact_path(root, "linux").name == "twitch-spy-v1.2.3-linux-x86_64.AppImage"
     assert build.artifact_path(root, "windows").name == "twitch-spy-v1.2.3-windows-x64.exe"
+
+
+def git(root: Path, *args: str) -> str:
+    return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
+
+
+def versioned_repository(root: Path) -> None:
+    project(root)
+    git(root, "init", "--quiet")
+    git(root, "config", "user.name", "Build tests")
+    git(root, "config", "user.email", "build@example.invalid")
+    git(root, "add", "pyproject.toml")
+    git(root, "commit", "--quiet", "-m", "initial")
+    git(root, "tag", "v1.2.3")
+
+
+def test_clean_tag_build_uses_release_version(tmp_path: Path) -> None:
+    versioned_repository(tmp_path)
+    assert build.local_version(tmp_path) == "1.2.3"
+
+
+def test_commits_after_release_have_development_version(tmp_path: Path) -> None:
+    versioned_repository(tmp_path)
+    git(tmp_path, "commit", "--quiet", "--allow-empty", "-m", "next")
+    sha = git(tmp_path, "rev-parse", "--short=12", "HEAD")
+    assert build.local_version(tmp_path) == f"1.2.4.dev1+g{sha}"
+
+
+def test_uncommitted_files_never_claim_release_version(tmp_path: Path) -> None:
+    versioned_repository(tmp_path)
+    (tmp_path / "new.py").write_text("print('new')", encoding="utf-8")
+    version = build.local_version(tmp_path)
+    assert version.startswith("1.2.4.dev0+g")
+    assert version.endswith(".dirty")
+
+
+def test_local_build_stamps_snapshot_without_modifying_sources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.test_release import project as release_project
+
+    release_project(tmp_path)
+    before = [(tmp_path / name).read_bytes() for name in ("pyproject.toml", "uv.lock")]
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setattr(build, "local_version", lambda _root: "0.1.1.dev2+g123abc.dirty")
+    monkeypatch.setattr(build, "STAGING_FILES", ("pyproject.toml", "uv.lock"))
+    monkeypatch.setattr(build, "STAGING_DIRECTORIES", ())
+
+    def fake_build(root: Path, *_args: object, **_kwargs: object) -> list[Path]:
+        assert root != tmp_path
+        assert build.project_version(root) == "0.1.1.dev2+g123abc.dirty"
+        artifact = build.artifact_path(root, "windows")
+        artifact.parent.mkdir()
+        artifact.write_bytes(b"built")
+        return [artifact]
+
+    monkeypatch.setattr(build, "build_target", fake_build)
+    build.build_versioned(tmp_path, "windows", False, False, True)
+    assert before == [(tmp_path / name).read_bytes() for name in ("pyproject.toml", "uv.lock")]
+    assert build.selected_artifacts(tmp_path, "windows")[0].read_bytes() == b"built"
+    assert not list((tmp_path / "build").glob("local-*"))
+
+
+def test_ci_refuses_unstamped_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    project(tmp_path)
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("RELEASE_VERSION", "1.2.4")
+    with pytest.raises(build.BuildError, match="must stamp"):
+        build.build_versioned(tmp_path, "windows", False, False, True)
+
+
+def test_smoke_selection_uses_last_build_even_after_source_changes(tmp_path: Path) -> None:
+    project(tmp_path, "9.0.0")
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    filename = "twitch-spy-v1.2.3-windows-x64.exe"
+    (dist / filename).write_bytes(b"built")
+    (dist / "latest-windows.json").write_text(json.dumps({"artifact": filename}), encoding="utf-8")
+    assert build.selected_artifacts(tmp_path, "windows") == [dist / filename]
 
 
 def test_wsl_detection(monkeypatch):

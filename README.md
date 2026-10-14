@@ -103,8 +103,8 @@ its version to all build jobs. Each job stamps `pyproject.toml` and the root pac
 entry in `uv.lock` in its disposable checkout before installing dependencies.
 The installed package metadata, health endpoint, diagnostics, and artifact names
 therefore use the same version. No version-bump commit is pushed back to `main`.
-The checked-in version remains the local development version and initial release
-seed when no release tags or reservations exist.
+The checked-in version is the initial version seed when no release tags or
+reservations exist. Local desktop builds derive their version from Git automatically.
 
 Release runs are serialized, with up to 100 pending runs queued by GitHub Actions.
 Failed runs retain their draft reservation; rerun the failed workflow to retry the
@@ -162,7 +162,30 @@ Executing those scripts also requires [Deno](https://docs.deno.com/runtime/getti
 on the user's `PATH`; the desktop build does not bundle a JavaScript runtime.
 See [yt-dlp's EJS setup guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
 
-Local builds use the same build commands as CI and the checked-in development version:
+Run `make build` to build locally; no version editing or stamping is needed.
+The build refreshes tags from `origin` and chooses the version automatically:
+
+| Source state | Example build version |
+| --- | --- |
+| Clean checkout at release tag `v0.1.641` | `0.1.641` |
+| Two commits after that tag | `0.1.642.dev2+g123456abcdef` |
+| Uncommitted changes | `0.1.642.dev2+g123456abcdef.dirty` |
+| CI release candidate | The version reserved by CI |
+
+Local builds stamp a temporary copy of the source, leaving your tracked files
+unchanged, and put the finished artifact in `dist/`. `make smoke` and
+`make checksums` automatically select the latest successful build for each platform,
+even if you edit the source afterwards. A clean checkout of a published release
+builds with the same version as CI; unpublished commits use development versions
+and do not allocate official release numbers.
+
+If fetching tags fails, the build warns and uses local tags. Use
+`uv run python scripts/build.py build --no-fetch` to skip that fetch explicitly;
+dependency installation and build-tool downloads may still require network access.
+Local builds require a Git checkout. Source archives without Git metadata should
+be built through the CI workflow or replaced with a clone.
+
+Available build commands:
 
 ```bash
 # Build for the current native platform (WSL defaults to Linux)

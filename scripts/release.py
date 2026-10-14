@@ -129,8 +129,12 @@ def replace_version(section: str, version: str) -> str:
     return updated
 
 
-def stamp(root: Path, version: str) -> None:
-    parse_version(version)
+def stamp(root: Path, version: str, *, development: bool = False) -> None:
+    if development:
+        if not re.fullmatch(r"\d+\.\d+\.\d+(?:\.dev\d+\+g[0-9a-f]+(?:\.dirty)?)?", version):
+            raise ValueError(f"Invalid build version: {version!r}")
+    else:
+        parse_version(version)
     project_path = root / "pyproject.toml"
     project_text = project_path.read_text(encoding="utf-8")
     project_match = re.search(r"(?ms)^\[project\]\n.*?(?=^\[|\Z)", project_text)

@@ -195,13 +195,14 @@ def test_reserve_creates_draft_for_exact_sha(monkeypatch: pytest.MonkeyPatch, tm
     }
 
 
-def test_stamped_repository_lock_remains_valid_offline(tmp_path: Path) -> None:
+@pytest.mark.parametrize("version", ["0.1.641", "0.1.642.dev2+g123abc.dirty"])
+def test_stamped_repository_lock_remains_valid_offline(tmp_path: Path, version: str) -> None:
     uv = shutil.which("uv")
     if uv is None:
         pytest.skip("uv is required to validate its lockfile")
     for name in ("pyproject.toml", "uv.lock", "README.md"):
         shutil.copy2(release.ROOT / name, tmp_path / name)
-    release.stamp(tmp_path, "0.1.641")
+    release.stamp(tmp_path, version, development="dev" in version)
     result = subprocess.run(
         [uv, "lock", "--check", "--offline", "--directory", str(tmp_path),
          "--cache-dir", str(tmp_path / "cache")],
