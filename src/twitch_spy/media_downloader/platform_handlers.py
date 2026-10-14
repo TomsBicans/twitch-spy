@@ -60,7 +60,9 @@ class YouTubeHandler(PlatformHandler):
 
     def process(self, atom: Atom) -> Atom:
         storage_manager = StorageManager(atom.download_dir)
+        atom.error_message = None
         if storage_manager.already_downloaded(atom.url):
+            storage_manager.remove_failed_entry(atom.url)
             atom.update_status(const.PROCESS_STATUS.FINISHED)
             return atom
         content_handler = self.select_content_handler(atom)
@@ -68,9 +70,14 @@ class YouTubeHandler(PlatformHandler):
         try:
             content_handler(atom)
             storage_manager.mark_successful_download(atom.url, title=atom.content_title)
-        except:
-            storage_manager.troublesome_download(atom.url, title=atom.content_title)
+            storage_manager.remove_failed_entry(atom.url)
+        except Exception as exc:
+            atom.error_message = f"{type(exc).__name__}: {exc}"
+            logger.exception("Download failed for job %s (%s)", atom.id, atom.url)
             atom.update_status(const.PROCESS_STATUS.FAILED)
+            storage_manager.troublesome_download(
+                atom.url, title=atom.content_title, error_message=atom.error_message
+            )
         return atom
 
     def select_content_handler(self, atom: Atom) -> Callable:

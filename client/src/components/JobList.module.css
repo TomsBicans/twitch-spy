@@ -240,6 +240,25 @@
   border-color: rgba(255, 157, 141, 0.65);
 }
 
+.errorDetails {
+  position: relative;
+  z-index: 2;
+  color: #ff9d8d;
+  font-size: 0.8rem;
+  user-select: text;
+}
+
+.errorDetails summary {
+  cursor: pointer;
+}
+
+.errorDetails pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
 .listFooter {
   display: flex;
   flex-wrap: wrap;

@@ -1,6 +1,9 @@
 import os.path as path
 import os
 import csv
+import hashlib
+from pathlib import Path
+import tempfile
 import threading
 import re
 import base64
@@ -15,6 +18,10 @@ from typing import List, Tuple, Optional
 from twitch_spy.system_logger import logger
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
+
+
+# Workers create separate managers for the same library files.
+_storage_write_lock = threading.RLock()
 
 
 def progress(iterable=None, **kwargs):
@@ -80,7 +87,7 @@ class StorageManager:
         media_path: str = None,
         thumbnail_path: str = None,
     ):
-        with self.lock:
+        with _storage_write_lock, self.lock:
             with open(
                 location, "a", encoding="utf-8", errors="replace", newline=""
             ) as f:
@@ -104,15 +111,40 @@ class StorageManager:
         self.add_entry(self.storage_file, url, title)
 
     def remove_failed_entry(self, url: str):
-        with self.lock:
+        with _storage_write_lock, self.lock:
             entries = [
                 entry
                 for entry in self.read_entries(self.failed_downloads)
                 if entry[0] != url
             ]
             self._write_entries(self.failed_downloads, entries)
+            self._error_path(url).unlink(missing_ok=True)
 
-    def troublesome_download(self, url: str, title: str = None):
+    def _error_path(self, url: str) -> Path:
+        key = hashlib.sha256(url.encode("utf-8")).hexdigest()
+        return Path(self.storage_folder) / "errors" / f"{key}.txt"
+
+    def read_download_error(self, url: str) -> str | None:
+        try:
+            return self._error_path(url).read_text(encoding="utf-8")
+        except FileNotFoundError:
+            return None
+
+    def troublesome_download(
+        self, url: str, title: str | None = None, error_message: str | None = None
+    ) -> None:
+        if error_message is not None:
+            error_path = self._error_path(url)
+            error_path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=error_path.parent, delete=False
+            ) as error_file:
+                temporary_path = Path(error_file.name)
+                error_file.write(error_message)
+            try:
+                temporary_path.replace(error_path)
+            finally:
+                temporary_path.unlink(missing_ok=True)
         if not any(
             entry_url == url for entry_url, *_ in self.read_entries(self.failed_downloads)
         ):
@@ -259,6 +291,8 @@ class StorageManager:
                         thumbnail_image_in_base64=thumbnail_base64,
                     )
                     a.update_status(status)
+                    if status == const.PROCESS_STATUS.FAILED:
+                        a.error_message = self.read_download_error(url)
                     atoms.append(a)
         return atoms
 

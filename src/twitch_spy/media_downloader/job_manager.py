@@ -83,6 +83,7 @@ class JobManager:
         return job
 
     def retry_job(self, job: Atom) -> None:
+        job.error_message = None
         job.update_status(const.PROCESS_STATUS.QUEUED)
         self.send_update(job)
         self._submit_job(job)

@@ -11,6 +11,7 @@ export interface Atom {
   thumbnail_url?: string;
   media_file_os_path?: string;
   status: ProcessingStates;
+  error_message?: string | null;
 }
 export const PLATFORM = {
   YOUTUBE: "YOUTUBE",

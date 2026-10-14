@@ -19,6 +19,7 @@ const JobDataOutputSchema = z.object({
   content_name: z.string().optional(),
   download_dir: z.string(),
   status: z.string(),
+  error_message: z.string().nullable().optional(),
 });
 
 const FormSubmitInputSchema = z.object({

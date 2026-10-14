@@ -88,6 +88,16 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
                 </div>
                 <h3 className={styles.jobName}>{job.content_name || "Untitled"}</h3>
                 <p className={styles.jobUrl}>{job.url}</p>
+                {job.status === ProcessingStates.FAILED && (
+                    <details
+                        className={styles.errorDetails}
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                    >
+                        <summary>Error details</summary>
+                        <pre>{job.error_message || "Error details were not recorded. Retry this download to capture the reason."}</pre>
+                    </details>
+                )}
                 {RETRIABLE_STATES.has(job.status) && (
                     <button
                         className={styles.retryButton}

@@ -41,6 +41,7 @@ def atom_to_dict(event_name: str, atom: Atom, *, include_thumbnail: bool = True)
         "download_dir": atom.download_dir,
         "media_file_os_path": atom.media_file_os_path,
         "status": atom.status.value,
+        "error_message": atom.error_message,
     }
     if include_thumbnail:
         data["thumbnail_image_in_base64"] = atom.thumbnail_image_in_base64

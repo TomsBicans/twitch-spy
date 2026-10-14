@@ -24,6 +24,7 @@ class Atom:
         self.content_title = content_title
         self.download_dir = download_dir
         self.status = constants.PROCESS_STATUS.QUEUED
+        self.error_message: str | None = None
         self.media_file_os_path = media_file_os_path or None
         self.thumbnail_image_in_base64 = thumbnail_image_in_base64 or None
 
@@ -74,4 +75,5 @@ class Atom:
             "content_type": self.content_type.name,
             "download_dir": self.download_dir,
             "status": self.status.name,
+            "error_message": self.error_message,
         }
