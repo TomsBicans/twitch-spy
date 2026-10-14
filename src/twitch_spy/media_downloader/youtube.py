@@ -13,6 +13,7 @@ import yt_dlp
 from typing import Optional
 
 from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.ydl_options import downloader_options
 
 
 class VideoMetadata:
@@ -59,6 +60,7 @@ class YoutubeDownloader:
             return thumbnail_path
 
         ydl_opts = {
+            **downloader_options(),
             "skip_download": True,
             "writethumbnail": True,
             "quiet": True,
@@ -74,9 +76,6 @@ class YoutubeDownloader:
                 }
             ],
         }
-        from twitch_spy import config
-        if config.FFMPEG_LOCATION:
-            ydl_opts["ffmpeg_location"] = config.FFMPEG_LOCATION
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(youtube_video_url, download=True)
 
@@ -127,6 +126,7 @@ class YoutubeDownloader:
     @staticmethod
     def download_audio(atom: Atom) -> str:
         ydl_opts = {
+            **downloader_options(),
             "format": "bestaudio/best",
             "outtmpl": os.path.join(atom.download_dir, "%(title)s.%(ext)s"),
             "postprocessors": [
@@ -137,9 +137,6 @@ class YoutubeDownloader:
                 }
             ],
         }
-        from twitch_spy import config
-        if config.FFMPEG_LOCATION:
-            ydl_opts["ffmpeg_location"] = config.FFMPEG_LOCATION
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(atom.url, download=False)
             atom.content_title = info_dict.get("title") or atom.content_title
@@ -190,6 +187,7 @@ class YoutubeDownloader:
 def get_playlist_video_urls(playlist_url: str) -> list[VideoMetadata]:
     with yt_dlp.YoutubeDL(
             {
+                **downloader_options(),
                 "ignoreerrors": True,
                 "quiet": True,
                 "extract_flat": True,
@@ -215,6 +213,7 @@ def get_playlist_video_urls(playlist_url: str) -> list[VideoMetadata]:
 
 def get_playlist_name(playlist_url: str) -> str:
     ydl_opts = {
+        **downloader_options(),
         "ignoreerrors": True,
         "quiet": True,
         "extract_flat": True,
@@ -232,6 +231,7 @@ def get_playlist_name(playlist_url: str) -> str:
 
 def get_video_title(video_url: str) -> Optional[str]:
     ydl_opts = {
+        **downloader_options(),
         "quiet": True,
         "skip_download": True,
         "extract_flat": True,

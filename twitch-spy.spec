@@ -10,13 +10,20 @@ platform_tools = root / "build" / "platform-tools"
 if platform_tools.exists():
     datas.append((str(platform_tools), "platform-tools"))
 datas += collect_data_files("imageio_ffmpeg")
+datas += collect_data_files("yt_dlp_ejs", includes=["**/*.js"])
+datas += copy_metadata("yt-dlp-ejs")
+node_dir = root / "build" / "node-runtime"
+node_name = "node.exe" if sys.platform == "win32" else "node"
+if not (node_dir / node_name).is_file():
+    raise RuntimeError("Missing Node runtime; build with scripts/build.py")
+datas.append((str(node_dir / "LICENSE"), "node-runtime"))
 datas += copy_metadata("twitch-spy")
 datas.append((str(root / "packaging" / "assets" / "twitch-spy.png"), "packaging/assets"))
 
 a = Analysis(
     [str(root / "src" / "twitch_spy" / "main.py")],
     pathex=[str(root / "src")],
-    binaries=[],
+    binaries=[(str(node_dir / node_name), "node-runtime")],
     datas=datas,
     hiddenimports=["engineio.async_drivers.threading"] + (["pystray._win32"] if sys.platform == "win32" else []),
     hookspath=[],

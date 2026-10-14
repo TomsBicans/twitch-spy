@@ -284,12 +284,27 @@ def prepare_build_environment(root: Path) -> None:
 
 
 def run_pyinstaller(root: Path) -> None:
+    prepare_node_runtime(root)
     env = os.environ.copy()
     env.setdefault("UV_CACHE_DIR", str(root / "build" / "uv-cache"))
     run(
         [require_command("uv"), "run", "pyinstaller", "--noconfirm", "--clean", "twitch-spy.spec"],
         cwd=root,
         env=env,
+    )
+
+
+def prepare_node_runtime(root: Path) -> None:
+    node = Path(require_command("node"))
+    version = capture([str(node), "--version"], cwd=root)
+    if not re.fullmatch(r"v\d+\.\d+\.\d+", version) or int(version[1:].split(".")[0]) < 22:
+        raise BuildError("YouTube downloads require Node.js 22 or newer at build time")
+    destination = root / "build" / "node-runtime"
+    destination.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(node, destination / ("node.exe" if sys.platform == "win32" else "node"))
+    download(
+        f"https://raw.githubusercontent.com/nodejs/node/{version}/LICENSE",
+        destination / "LICENSE",
     )
 
 

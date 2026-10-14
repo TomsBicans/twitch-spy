@@ -43,7 +43,7 @@ downloads, tags, and organizes them into a local audio library with a real-time 
 ## Prerequisites
 
 - Python 3.11+
-- Node.js 18+
+- Node.js 22+ (also used to solve YouTube JavaScript challenges)
 - [uv](https://github.com/astral-sh/uv)
 - ffmpeg
 
