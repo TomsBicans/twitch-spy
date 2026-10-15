@@ -1,0 +1,56 @@
+.dialog {
+    color: #e8eaf6;
+    background: #050914;
+    border: 1px solid #32364e;
+    border-radius: 18px;
+    padding: 0;
+    width: min(1200px, 94vw);
+    height: min(820px, 90dvh);
+    max-width: none;
+    max-height: none;
+    overflow: hidden;
+}
+.dialog::backdrop { background: #02040bd9; }
+.viewport { position: relative; width: 100%; height: 100%; background: #050914; }
+.viewport:fullscreen { width: 100vw; height: 100dvh; }
+.stage { position: absolute; inset: 0; }
+.actions { position: absolute; top: 18px; right: 18px; display: flex; gap: 8px; }
+.dialog button, .dialog select {
+    border: 1px solid #5f6480;
+    border-radius: 8px;
+    padding: 9px 12px;
+    background: #151a2a;
+    color: #f0edff;
+    cursor: pointer;
+    font: inherit;
+}
+.dialog button:hover { background: #30304d; }
+.dialog button[aria-pressed=true] { background: #513c91; }
+.dialog button:disabled { opacity: 0.5; cursor: default; }
+.dialog :focus-visible { outline: 2px solid #ad9aff; outline-offset: 3px; }
+.dialog kbd { font-size: 10px; opacity: 0.6; padding-left: 5px; }
+.controls { position: absolute; bottom: 0; left: 0; right: 0; padding: 50px 28px 24px; background: linear-gradient(transparent, #080c19f5 30%); }
+.eyebrow { color: #aea2eb; font-size: 10px; letter-spacing: 0.18em; }
+.controls h2 { font-size: clamp(16px, 2vw, 24px); margin: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.controls p { color: #a4aec4; font-size: 13px; margin: 8px 0 18px; }
+.options { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.options label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #b6bfd4; }
+.options .check { flex-direction: row; align-items: center; }
+.dialog input { accent-color: #a394ff; }
+.transport { display: flex; gap: 12px; align-items: center; }
+.transport span { font-size: 12px; font-variant-numeric: tabular-nums; }
+.transport input[aria-label=Seek] { flex: 1; min-width: 40px; }
+.volume { width: 80px; }
+.error { position: absolute; top: 70px; left: 24px; right: 24px; background: #34202d; padding: 12px; }
+@media (max-width: 650px) {
+    .controls { padding: 40px 14px 16px; }
+    .options { gap: 12px; }
+    .transport { flex-wrap: wrap; gap: 8px; }
+    .actions { top: 10px; right: 10px; gap: 5px; }
+    .dialog button { padding: 8px; font-size: 12px; }
+}
+@media (max-height: 500px) {
+    .controls { padding-top: 15px; }
+    .controls header { display: none; }
+    .options { margin-bottom: 8px; }
+}

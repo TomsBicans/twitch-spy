@@ -25,6 +25,21 @@ downloads, tags, and organizes them into a local audio library with a real-time 
 
 ## Preview
 
+Play a track to start the live 3D preview below the sidebar queue. Use **Expand**
+to open its controls or **Fullscreen** to jump directly into fullscreen.
+Choose Spectrum halo, Wave terrain, or Particle orbit; adjust intensity and quality,
+disable camera motion, or enter fullscreen. Playback, seeking, volume, mute, and loop
+controls operate on the same track as the library player. **Hide controls** (or **H**)
+hides the settings and transport; the show/fullscreen/close buttons stay available.
+Closing the expanded view keeps the music playing and restores the sidebar preview.
+The selected scene carries back to the preview.
+
+The visualizer uses Three.js and the browser's Web Audio API. The preview defaults
+to 30 fps with capped resolution. Animation stops when paused, offscreen, or when
+the tab is hidden. Only one scene renders while the expanded view is open. It visualizes this app's playback,
+not system audio, and does not import projectM/MilkDrop presets.
+See [visualizer development](docs/visualizer.md) to add new scenes.
+
 ![Library UI](docs/ui_preview.jpg)
 
 ---

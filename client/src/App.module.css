@@ -121,6 +121,12 @@
   flex-shrink: 0;
 }
 
+.visualizerSlot {
+  flex: 1 0 210px;
+  min-height: 210px;
+  display: flex;
+}
+
 .syncButton {
   width: 100%;
   border-radius: 10px;

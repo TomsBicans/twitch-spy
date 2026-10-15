@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState} from "react";
+import {lazy, Suspense, useEffect, useRef, useState} from "react";
+import type {VisualizerPlayback} from './visualizer/audio';
 import "./App.css";
 import styles from "./App.module.css";
 import URLInput from "./components/URLInput.tsx";
@@ -12,8 +13,10 @@ import {BACKEND_URL} from "./backend/backend.ts";
 import {io} from "socket.io-client";
 
 const socket = io(BACKEND_URL);
+const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
 
 function App() {
+    const [playback, setPlayback] = useState<VisualizerPlayback | null>(null);
     const syncDialogRef = useRef<HTMLDialogElement>(null);
     const [showDiagnostics, setShowDiagnostics] = useState(window.location.hash === "#diagnostics");
     useEffect(() => {
@@ -97,6 +100,12 @@ function App() {
                     <JobOverview socket={socket} />
                 </div>
 
+                <div className={styles.visualizerSlot}>
+                    <Suspense fallback={<p>Loading visualizer...</p>}>
+                        <SidebarVisualizer playback={playback} title={currentTrack?.content_name}/>
+                    </Suspense>
+                </div>
+
                 <div className={`${styles.sidebarSection} ${styles.syncSection}`}>
                     <button type="button" className={styles.syncButton}
                         onClick={() => syncDialogRef.current?.showModal()}>
@@ -124,7 +133,7 @@ function App() {
             </main>
 
             <div className={styles.nowPlayingDock}>
-                <MusicPlayer entry={currentTrack} />
+                <MusicPlayer entry={currentTrack} onPlaybackReady={setPlayback}/>
             </div>
         </div>
     );

@@ -39,10 +39,14 @@
 }
 
 .rightPane {
+  min-width: 0;
   flex: 1 1 auto;
   display: flex;
   align-items: center;
 }
+
+.playButton:disabled { opacity: 0.45; cursor: default; }
+.playerError { position: absolute; bottom: 100%; background: #34202d; padding: 10px; }
 
 .rightPane :global(.rhap_container) {
   width: 100%;
@@ -61,7 +65,10 @@
 @media (max-width: 600px) {
   .playerShell {
     gap: 10px;
+    flex-wrap: wrap;
   }
+
+  .rightPane { min-width: 120px; }
 
   .leftPane {
     flex: 0 0 120px;

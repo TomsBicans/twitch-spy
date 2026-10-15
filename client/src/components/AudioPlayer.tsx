@@ -5,6 +5,8 @@ import {BACKEND_URL} from "../backend/backend.ts";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
+import {getAudioAnalysis, releaseAudioAnalysis} from "../visualizer/audio";
+import type {AudioAnalysis, VisualizerPlayback} from "../visualizer/audio";
 
 const PlayIcon = () => (
     <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
@@ -20,6 +22,7 @@ const PauseIcon = () => (
 
 interface AudioPlayerProps {
     entry: Atom | undefined;
+    onPlaybackReady: (playback: VisualizerPlayback) => void;
 }
 
 const getRandomColor = () => {
@@ -68,11 +71,32 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
     });
 };
 
-const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
+const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
     const playerRef = useRef<AudioPlayer>(null);
+    const [playerError, setPlayerError] = useState('');
+    const analysisRef = useRef<AudioAnalysis | null>(null);
+
+    useEffect(() => {
+        const audio = playerRef.current?.audio.current;
+        return () => { if (audio) releaseAudioAnalysis(audio); };
+    }, []);
+
+    const prepareVisualizer = async () => {
+        const audio = playerRef.current?.audio.current;
+        if (!audio) return;
+        try {
+            setPlayerError('');
+            const analysis = getAudioAnalysis(audio);
+            analysisRef.current = analysis;
+            onPlaybackReady({audio, analysis});
+            await analysis.context.resume();
+        } catch (error) {
+            setPlayerError(`Could not start visualizer: ${String(error)}`);
+        }
+    };
 
     useEffect(() => {
         if (entry) {
@@ -87,17 +111,19 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
         }
     }, [entry]);
 
-    const handleNextTrack = () => {
-        console.log("Next track functionality can be implemented here.");
-    };
-
-    const togglePlay = () => {
+    const togglePlay = async () => {
         const audio = playerRef.current?.audio?.current;
         if (!audio) return;
         if (isPlaying) {
             audio.pause();
         } else {
-            audio.play();
+            try {
+                await analysisRef.current?.context.resume();
+                await audio.play();
+                setPlayerError('');
+            } catch (error) {
+                setPlayerError(`Playback failed: ${String(error)}`);
+            }
         }
     };
 
@@ -111,6 +137,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
                     className={styles.playButton}
                     onClick={togglePlay}
                     aria-label={isPlaying ? "Pause" : "Play"}
+                    disabled={!currentTrack}
                 >
                     {isPlaying ? <PauseIcon/> : <PlayIcon/>}
                 </button>
@@ -121,6 +148,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
                     autoPlay
                     autoPlayAfterSrcChange
                     src={currentTrack}
+                    crossOrigin="anonymous"
                     showJumpControls={false}
                     customControlsSection={[RHAP_UI.VOLUME_CONTROLS]}
                     customProgressBarSection={[
@@ -128,14 +156,17 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry}) => {
                         RHAP_UI.PROGRESS_BAR,
                         RHAP_UI.CURRENT_LEFT_TIME,
                     ]}
-                    onPlay={() => setIsPlaying(true)}
+                    onPlay={() => {
+                        setIsPlaying(true);
+                        void prepareVisualizer();
+                    }}
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => {
                         setIsPlaying(false);
-                        handleNextTrack();
                     }}
                 />
             </div>
+            {playerError && <p role="alert" className={styles.playerError}>{playerError}</p>}
         </div>
     );
 };
