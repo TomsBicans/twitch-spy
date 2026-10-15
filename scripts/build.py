@@ -546,6 +546,7 @@ def smoke_artifact(artifact: Path, port: int | None = None) -> None:
     env = os.environ.copy()
     env["LOCALAPPDATA"] = f"{output_dir}/profile"
     env["XDG_DATA_HOME"] = str(data_dir / "profile")
+    env["PYINSTALLER_SUPPRESS_SPLASH_SCREEN"] = "1"
     if artifact.suffix == ".AppImage":
         env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
     run([artifact, "--check-tools"], cwd=artifact.parent, env=env, timeout=15)

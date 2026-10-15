@@ -140,6 +140,16 @@ def bundled_adb() -> str:
 
 
 def bundled_ffmpeg() -> str:
+    override = os.environ.get("IMAGEIO_FFMPEG_EXE")
+    if override:
+        return override
+    if getattr(sys, "frozen", False):
+        binaries = resource_path("imageio_ffmpeg", "binaries")
+        candidates = sorted(binaries.glob("ffmpeg-*"))
+        executables = [path for path in candidates if path.is_file() and path.suffix != ".txt"]
+        if len(executables) == 1:
+            return str(executables[0])
+
     import imageio_ffmpeg
 
     return imageio_ffmpeg.get_ffmpeg_exe()

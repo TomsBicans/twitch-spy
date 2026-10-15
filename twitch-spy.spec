@@ -36,10 +36,24 @@ pyz = PYZ(a.pure)
 icon = str(root / "packaging" / "assets" / ("twitch-spy.ico" if sys.platform == "win32" else "twitch-spy.png"))
 
 if sys.platform == "win32":
+    class StartupSplash(Splash):
+        def generate_script(self):
+            script = super().generate_script()
+            script += "\n" + (root / "packaging" / "startup.tcl").read_text(encoding="utf-8")
+            Path(self.script_name).write_text(script, encoding="utf-8")
+            return script
+
+    splash = StartupSplash(
+        str(root / "packaging" / "assets" / "twitch-spy.png"),
+        binaries=a.binaries, datas=a.datas,
+        text_pos=(32, 330), text_default="Starting Twitch Spy...",
+        always_on_top=False,
+    )
     exe = EXE(
-        pyz, a.scripts, a.binaries, a.datas, [],
+        pyz, a.scripts, splash, splash.binaries, a.binaries, a.datas, [],
         name="twitch-spy", debug=False, bootloader_ignore_signals=False,
-        strip=False, upx=True, console=False, icon=icon,
+        strip=False, upx=False, console=False, icon=icon,
+        manifest=str(root / "packaging" / "windows.manifest"),
     )
 else:
     exe = EXE(

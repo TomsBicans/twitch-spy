@@ -140,6 +140,8 @@ create release tags.
 
 The desktop application opens its local UI in the default browser and stores persistent data in `%LOCALAPPDATA%\TwitchSpy` on Windows or `$XDG_DATA_HOME/twitch-spy` on Linux (defaulting to `~/.local/share/twitch-spy`). Use the UI's **Quit application** button to stop the local server.
 
+Windows builds show a startup window while the single-file executable unpacks and the server starts. It displays an animated activity bar, elapsed time, and a rolling stream of extraction and application messages, then closes when the browser is launched. It does not stay above other applications. Startup duration after Python loads is recorded in `logs/application.log`; this excludes executable extraction. For unattended launches, set `PYINSTALLER_SUPPRESS_SPLASH_SCREEN=1` before starting the executable. `--no-browser` and `--check-tools` close the splash once Python starts.
+
 Windows executables also show a tray icon with **Open Twitch Spy**, **Health and resource usage**, **Open logs folder**, and **Quit Twitch Spy**. While the tray is active, closing the browser leaves the backend running. Quit stops the server, cancels queued downloads, and waits for active downloads and Android sync to finish. Windows may place the icon in the taskbar's hidden-icons menu.
 
 The tray is optional for native Windows CLI/development runs:
