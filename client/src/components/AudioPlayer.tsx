@@ -91,6 +91,11 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autopl
     const analysisRef = useRef<AudioAnalysis | null>(null);
 
     useEffect(() => {
+        document.title = isPlaying && entry?.content_name ? entry.content_name : "twitch-spy";
+        return () => { document.title = "twitch-spy"; };
+    }, [isPlaying, entry?.content_name]);
+
+    useEffect(() => {
         const audio = playerRef.current?.audio.current;
         return () => { if (audio) releaseAudioAnalysis(audio); };
     }, []);
@@ -185,8 +190,14 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autopl
                         void prepareVisualizer();
                     }}
                     onPause={() => setIsPlaying(false)}
-                    onPlayError={(error) => setPlayerError(`Playback failed: ${String(error)}`)}
-                    onError={() => setPlayerError("Could not load this song. Try another track.")}
+                    onPlayError={(error) => {
+                        setIsPlaying(false);
+                        setPlayerError(`Playback failed: ${String(error)}`);
+                    }}
+                    onError={() => {
+                        setIsPlaying(false);
+                        setPlayerError("Could not load this song. Try another track.");
+                    }}
                     onEnded={() => {
                         setIsPlaying(false);
                         if (autoplay && canNext) onNext();

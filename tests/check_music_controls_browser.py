@@ -5,7 +5,7 @@ import io
 import re
 import wave
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from playwright.async_api import Route, async_playwright, expect
 
@@ -45,6 +45,7 @@ async def main() -> None:
             content_type="audio/wav", body=audio.getvalue(),
         ))
         await page.goto("http://127.0.0.1:5173")
+        await expect(page).to_have_title("twitch-spy")
         await expect(page.get_by_text("52 matching songs", exact=True)).to_be_visible()
         search = page.get_by_role("textbox", name="Search tracks")
         await search.fill("Pool")
@@ -58,15 +59,23 @@ async def main() -> None:
         await source("Pool%200000")
         await expect(page.get_by_role("button", name="Pause", exact=True)).to_be_enabled()
         await page.wait_for_function("!document.querySelector('audio').paused && document.querySelector('audio').currentTime > 0")
+        await expect(page).to_have_title("Pool 0000")
+        await page.get_by_role("button", name="Pause", exact=True).click()
+        await expect(page).to_have_title("twitch-spy")
+        await page.get_by_role("button", name="Play", exact=True).click()
+        await expect(page).to_have_title("Pool 0000")
         await page.get_by_role("button", name="Previous song", exact=True).click()
         await source("Pool%200050")
+        await expect(page).to_have_title("Pool 0050")
         await page.get_by_role("button", name="Next song", exact=True).click()
         await source("Pool%200000")
         await player.evaluate("audio => audio.dispatchEvent(new Event('ended'))")
         await source("Pool%200000")
+        await expect(page).to_have_title("twitch-spy")
         await page.get_by_role("button", name="Autoplay", exact=True).click()
         await player.evaluate("audio => audio.dispatchEvent(new Event('ended'))")
         await source("Pool%200001")
+        await expect(page).to_have_title("Pool 0001")
 
         await search.fill("Pool 000")
         await page.get_by_role("button", name="Shuffle", exact=True).click()
@@ -75,6 +84,7 @@ async def main() -> None:
         for _ in range(9):
             await page.get_by_role("button", name="Next song", exact=True).click()
             current = await player.get_attribute("src")
+            await expect(page).to_have_title(unquote(urlparse(current or "").path.removeprefix("/audio/")))
             assert current not in seen, current
             seen.add(current)
         last = await player.get_attribute("src")
