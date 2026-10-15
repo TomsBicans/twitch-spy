@@ -17,6 +17,7 @@ interface LibraryPage {
     jobs: Atom[];
     total: number;
     next_offset: number | null;
+    scan?: {state: "loading" | "complete" | "failed" | "cancelled"; processed: number; error: string | null};
 }
 
 const RETRIABLE_STATES = new Set<ProcessingStates>([
@@ -119,6 +120,8 @@ export const JobList = ({
                         }: JobStatusesProps) => {
     const [jobs, setJobs] = useState<Array<Atom>>([]);
     const [loading, setLoading] = useState(true);
+    const [scanning, setScanning] = useState(false);
+    const [scanFailed, setScanFailed] = useState(false);
     const [total, setTotal] = useState(0);
     const [loadError, setLoadError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
@@ -153,6 +156,9 @@ export const JobList = ({
                     if (!response.ok) throw new Error(`Library request failed (${response.status})`);
                     const page: LibraryPage = await response.json();
                     if (signal.aborted) return;
+                    const scanActive = page.scan?.state === "loading";
+                    setScanning(scanActive);
+                    setScanFailed(page.scan?.state === "failed");
                     for (const job of page.jobs) received.set(job.id, job);
                     // Live status changes take precedence over an in-flight page.
                     for (const [id, job] of updates) received.set(id, {...received.get(id), ...job});
@@ -165,8 +171,14 @@ export const JobList = ({
                     });
                     setTotal(page.total);
                     const nextOffset = page.next_offset;
-                    if (nextOffset === null) {
+                    if (nextOffset === null && scanActive) {
+                        nextPageTimer = setTimeout(() => void loadPage(offset + page.jobs.length), 500);
+                    } else if (nextOffset === null) {
                         setLoading(false);
+                        if (page.scan?.state === "failed") {
+                            setLoadError(page.scan.error || "Could not finish preparing your library.");
+                        }
+                        socket.emit("request_statistics");
                     } else {
                         // Give the browser a chance to paint before requesting another batch.
                         nextPageTimer = setTimeout(() => void loadPage(nextOffset), 50);
@@ -291,14 +303,15 @@ export const JobList = ({
             </div>
             {loading && (
                 <p className={styles.loadingText} role="status">
-                    {jobs.length === 0 ? "Loading your first tracks…" :
+                    {scanning ? `Preparing your library in the background… ${total} ${total === 1 ? "track" : "tracks"} available. You can keep using the app.` :
+                        jobs.length === 0 ? "Loading your first tracks…" :
                         `Loading library… ${jobs.length} of ${Math.max(total, jobs.length)} tracks available. You can already browse and play.`}
                 </p>
             )}
             {loadError && (
                 <div role="alert">
                     <p>{loadError}</p>
-                    <button className={styles.filterSelect} onClick={() => setReloadKey((key) => key + 1)}>Retry loading</button>
+                    {!scanFailed && <button className={styles.filterSelect} onClick={() => setReloadKey((key) => key + 1)}>Retry loading</button>}
                 </div>
             )}
             <div className={styles.gridContainer}>

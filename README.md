@@ -142,6 +142,8 @@ The desktop application opens its local UI in the default browser and stores per
 
 Windows builds show a startup window while the single-file executable unpacks and the server starts. It displays an animated activity bar, elapsed time, and a rolling stream of extraction and application messages, then closes when the browser is launched. It does not stay above other applications. Startup duration after Python loads is recorded in `logs/application.log`; this excludes executable extraction. For unattended launches, set `PYINSTALLER_SUPPRESS_SPLASH_SCREEN=1` before starting the executable. `--no-browser` and `--check-tools` close the splash once Python starts.
 
+Saved tracks load in the background after the server starts. The library shows loading progress and makes tracks available in batches, while downloads and other controls remain usable. Each folder is indexed once, and artwork is read only when requested. Library restoration time is recorded separately in `logs/application.log`; any scan failure is shown in the UI without removing tracks already loaded.
+
 Windows executables also show a tray icon with **Open Twitch Spy**, **Health and resource usage**, **Open logs folder**, and **Quit Twitch Spy**. While the tray is active, closing the browser leaves the backend running. Quit stops the server, cancels queued downloads, and waits for active downloads and Android sync to finish. Windows may place the icon in the taskbar's hidden-icons menu.
 
 The tray is optional for native Windows CLI/development runs:
@@ -253,6 +255,17 @@ generated under `dist/`, which remains ignored and safe to remove with
 `make clean-build`. Executable build logic lives in `scripts/`, never in `dist/`.
 
 Windows binaries are initially unsigned and may trigger SmartScreen. Android devices can still require manufacturer USB drivers on Windows or udev rules and USB permissions on Linux.
+
+Additional startup checks and developer utilities are also version-controlled:
+
+```bash
+uv run python -m tests.check_library_packaged  # Latest Windows build, temporary 1,600-track library
+uv run python -m tests.check_splash            # Latest Windows build; opens a browser tab
+uv run python scripts/preview_startup.py       # Windows splash preview and screenshot
+uv run python scripts/benchmark_library_startup.py --baseline HEAD --tracks 1600
+```
+
+The benchmark compares the working tree with the specified Git revision. After committing an optimization, select a revision from before that change with `--baseline`. The packaged checks use `dist/latest-windows.json`; build a Windows executable first. Generated screenshots, logs, and executables stay under the ignored `dist/` directory.
 
 ---
 

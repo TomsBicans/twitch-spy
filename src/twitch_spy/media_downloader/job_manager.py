@@ -18,19 +18,20 @@ class JobStats:
     def __init__(self) -> None:
         # A dictionary where each key is a status and the value is a set of job IDs having that status.
         self.jobs_by_status: Dict[str, set] = defaultdict(set)
+        self.lock = threading.RLock()
 
     def update(self, job: Atom) -> None:
         """Update job ID's set based on its status."""
         # First, remove the job ID from all sets (to ensure it's not in any incorrect set)
-        for status_set in self.jobs_by_status.values():
-            status_set.discard(job.id)
-
-        # Add the job ID to the set corresponding to its current status
-        self.jobs_by_status[job.status.value].add(job.id)
+        with self.lock:
+            for status_set in self.jobs_by_status.values():
+                status_set.discard(job.id)
+            self.jobs_by_status[job.status.value].add(job.id)
 
     def get_stats(self) -> Dict[str, int]:
         """Retrieve the statistics."""
-        return {status: len(job_ids) for status, job_ids in self.jobs_by_status.items()}
+        with self.lock:
+            return {status: len(job_ids) for status, job_ids in self.jobs_by_status.items()}
 
 
 class JobProcessor:
@@ -51,6 +52,8 @@ class JobManager:
         self, job_update_callback: Callable, max_workers: Optional[int] = None
     ):
         self.jobs: Dict[UUID, Atom] = OrderedDict()
+        self.jobs_lock = threading.RLock()
+        self.live_urls: set[str] = set()
         self.stats = JobStats()
         self.job_update_callback = job_update_callback
         self.executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
@@ -63,14 +66,26 @@ class JobManager:
         self._submit_job(job, archive=True)
 
     def add_job_to_archive(self, job: Atom) -> None:
-        self.jobs[job.id] = job
+        with self.jobs_lock:
+            self.jobs[job.id] = job
+            self.live_urls.add(job.url)
         self.send_update(job)
 
+    def restore_jobs(self, jobs: list[Atom]) -> None:
+        """Append saved tracks without flooding clients or overwriting live jobs."""
+        with self.jobs_lock:
+            for job in jobs:
+                if job.url not in self.live_urls:
+                    self.jobs[job.id] = job
+                    self.stats.update(job)
+
     def get_job(self, job_id: UUID) -> Optional[Atom]:
-        return self.jobs.get(job_id)
+        with self.jobs_lock:
+            return self.jobs.get(job_id)
 
     def get_all_jobs(self) -> List[Atom]:
-        return list(self.jobs.values())
+        with self.jobs_lock:
+            return list(self.jobs.values())
 
     def send_update(self, job: Atom):
         self.stats.update(job)

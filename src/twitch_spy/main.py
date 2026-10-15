@@ -73,7 +73,7 @@ def _run(progress: "StartupProgress") -> None:
         from pathlib import Path
         from twitch_spy.tray import DesktopTray, tray_enabled
 
-        progress.update("Preparing your music library...")
+        progress.update("Preparing the application...")
         application = app.Application(development=args.dev)
         browser_url = "http://localhost:5173" if args.dev else url
         if tray_enabled(args.tray):

@@ -110,6 +110,7 @@ def get_library_page() -> flask.Response:
     if offset < 0:
         flask.abort(400, description="offset must be a nonnegative integer")
     my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
+    scan = my_app.library_status()
     jobs = my_app.job_manager.get_all_jobs()
     page = jobs[offset:offset + 48]
     next_offset = offset + len(page)
@@ -120,6 +121,7 @@ def get_library_page() -> flask.Response:
         ],
         total=len(jobs),
         next_offset=next_offset if next_offset < len(jobs) else None,
+        scan=scan,
     )
 
 
@@ -127,7 +129,14 @@ def get_library_page() -> flask.Response:
 def get_job_thumbnail(job_id: UUID) -> flask.Response:
     my_app: "app.Application" = flask.current_app.config[util.MagicStrings.APP]
     job = my_app.job_manager.get_job(job_id)
-    if job is None or not job.thumbnail_image_in_base64:
+    if job is None:
+        flask.abort(404)
+    if job.thumbnail_file_os_path:
+        try:
+            return send_file(path.abspath(job.thumbnail_file_os_path), max_age=3600)
+        except FileNotFoundError:
+            flask.abort(404)
+    if not job.thumbnail_image_in_base64:
         flask.abort(404)
     return send_file(
         BytesIO(base64.b64decode(job.thumbnail_image_in_base64)),

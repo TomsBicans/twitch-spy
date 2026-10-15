@@ -7,6 +7,7 @@ import threading
 import time
 from pathlib import Path
 from collections.abc import Callable
+from typing import Literal, TypedDict
 
 from flask import Flask, abort, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -31,6 +32,12 @@ def app_version() -> str:
         return importlib.metadata.version("twitch-spy")
     except importlib.metadata.PackageNotFoundError:
         return "0.1.0"
+
+
+class LibraryLoadStatus(TypedDict):
+    state: Literal["loading", "complete", "failed", "cancelled"]
+    processed: int
+    error: str | None
 
 
 class Application:
@@ -93,8 +100,58 @@ class Application:
             self.event_dispatcher.register_listener(event, listener)
         self.job_manager = JobManager(job_update_callback=self.job_update_callback, max_workers=3)
         self.audio_library = LibraryManager(config.AUDIO_LIBRARY)
-        for atom in self.audio_library.count_atoms():
-            self.job_manager.add_job_to_archive(atom)
+        self.library_thread: threading.Thread | None = None
+        self.library_lock = threading.Lock()
+        self._library_status: LibraryLoadStatus = {"state": "loading", "processed": 0, "error": None}
+
+    def library_status(self) -> LibraryLoadStatus:
+        with self.library_lock:
+            return self._library_status.copy()
+
+    def start_library_loading(self) -> None:
+        with self.library_lock:
+            if self.library_thread is not None or self.shutdown_event.is_set():
+                return
+            self.library_thread = threading.Thread(
+                target=self._load_library, daemon=True, name="library-loader",
+            )
+            self.library_thread.start()
+
+    def _load_library(self) -> None:
+        started = time.perf_counter()
+        batch: list[Atom] = []
+        processed = 0
+
+        def publish() -> None:
+            nonlocal processed
+            self.job_manager.restore_jobs(batch)
+            processed += len(batch)
+            batch.clear()
+            with self.library_lock:
+                self._library_status["processed"] = processed
+
+        try:
+            for atom in self.audio_library.iter_atoms(stop_event=self.shutdown_event):
+                if self.shutdown_event.is_set():
+                    break
+                batch.append(atom)
+                if len(batch) >= 48:
+                    publish()
+            publish()
+        except Exception:
+            logger.exception("Background library loading failed")
+            with self.library_lock:
+                self._library_status.update(
+                    state="failed", error="Could not finish loading your library. Check Health and logs for details.",
+                )
+        else:
+            with self.library_lock:
+                self._library_status["state"] = "cancelled" if self.shutdown_event.is_set() else "complete"
+            logger.info("Restored %s saved tracks in %.2fs", processed, time.perf_counter() - started)
+        finally:
+            self.event_dispatcher.dispatch_event(
+                event_dispatcher.Events.STATISTICS_UPDATE.value, self.job_manager.stats,
+            )
 
     def _register_desktop_routes(self) -> None:
         @self.app.get("/health")
@@ -229,8 +286,12 @@ class Application:
                     return
                 self.server = make_server("127.0.0.1", port, self.app, threaded=True)
             logger.info("Backend listening on http://127.0.0.1:%s", port)
+            self.start_library_loading()
             self.server.serve_forever()
         finally:
+            self.shutdown_event.set()
+            if self.library_thread is not None:
+                self.library_thread.join()
             with self.server_lock:
                 self.server = None
             if self.disconnect_timer:

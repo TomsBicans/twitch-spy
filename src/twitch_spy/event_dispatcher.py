@@ -45,7 +45,7 @@ def atom_to_dict(event_name: str, atom: Atom, *, include_thumbnail: bool = True)
     }
     if include_thumbnail:
         data["thumbnail_image_in_base64"] = atom.thumbnail_image_in_base64
-    elif atom.thumbnail_image_in_base64:
+    if atom.thumbnail_file_os_path or (not include_thumbnail and atom.thumbnail_image_in_base64):
         data["thumbnail_url"] = f"/jobs/{atom.id}/thumbnail"
     return data
 

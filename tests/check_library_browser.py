@@ -50,7 +50,7 @@ async def main() -> None:
         page = await browser.new_page(viewport={"width": 1366, "height": 768})
         errors: list[str] = []
         page.on("pageerror", lambda error: errors.append(str(error)))
-        await page.route("**/src/App.tsx", lambda route: route.fulfill(
+        await page.route("**/src/App.tsx*", lambda route: route.fulfill(
             content_type="application/javascript", body=HARNESS,
         ))
         artwork: list[str] = []
@@ -139,6 +139,35 @@ async def main() -> None:
         await expect(page.get_by_role("status")).to_have_count(0, timeout=15000)
         assert "request_initial_data" not in await page.evaluate("testSocket.sent")
         assert "request_statistics" in await page.evaluate("testSocket.sent")
+
+        # An empty first page during startup must keep polling until scanning completes.
+        hold_pages = True
+        await page.reload()
+        await page.wait_for_timeout(200)
+        for route in list(held):
+            await route.fulfill(json={
+                "jobs": [], "total": 0, "next_offset": None,
+                "scan": {"state": "loading", "processed": 0, "error": None},
+            })
+            held.remove(route)
+        await expect(page.get_by_role("status")).to_contain_text("Preparing your library in the background")
+        await expect(page.get_by_text("Nothing here just yet")).to_have_count(0)
+        pending = await next_request()
+        await pending.fulfill(json={
+            "jobs": [track(0)], "total": 1, "next_offset": None,
+            "scan": {"state": "loading", "processed": 1, "error": None},
+        })
+        await expect(page.get_by_role("heading", name="Track 0000", exact=True)).to_be_visible()
+        await page.screenshot(path="dist/library-background-preview.png")
+        pending = await next_request()
+        assert "offset=1" in pending.request.url
+        await pending.fulfill(json={
+            "jobs": [track(1)], "total": 2, "next_offset": None,
+            "scan": {"state": "complete", "processed": 2, "error": None},
+        })
+        await expect(page.get_by_role("heading", name="Track 0001", exact=True)).to_be_visible()
+        await expect(page.get_by_role("status")).to_have_count(0)
+        await expect(page.locator('[role="button"]')).to_have_count(2)
         assert not errors, errors
         await page.screenshot(path="dist/library-progressive-preview.png")
         await browser.close()

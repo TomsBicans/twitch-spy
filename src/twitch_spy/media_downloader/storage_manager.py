@@ -9,6 +9,7 @@ import re
 import base64
 import sys
 import unicodedata
+from collections.abc import Iterator
 from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
 import twitch_spy.media_downloader.constants as const
@@ -193,7 +194,7 @@ class StorageManager:
                 )
 
     def update_entry_title(self, location: str, url: str, new_title: str):
-        with self.lock:
+        with _storage_write_lock, self.lock:
             # Read existing entries
             entries = self.read_entries(location)
 
@@ -213,7 +214,14 @@ class StorageManager:
             self._write_entries(location, updated_entries)
 
     def generate_atoms(self, refresh_titles: bool = False) -> List[Atom]:
-        atoms = []
+        return list(self.iter_atoms(refresh_titles=refresh_titles))
+
+    def iter_atoms(
+        self, refresh_titles: bool = False, *, lazy_thumbnails: bool = False,
+        stop_event: threading.Event | None = None,
+    ) -> Iterator[Atom]:
+        media_index = self._index_files(self.download_dir)
+        thumbnail_index = self._index_files(self.thumbnails_folder)
         file_statuses = {
             StorageFiles.FAILED_DOWNLOADS.value: const.PROCESS_STATUS.FAILED,
             StorageFiles.LOCAL_STORAGE.value: const.PROCESS_STATUS.FINISHED,
@@ -232,7 +240,8 @@ class StorageManager:
         ):
             file_path = path.join(self.storage_folder, file_name)
             if path.exists(file_path):
-                entries = self.read_entries(file_path)
+                with _storage_write_lock:
+                    entries = self.read_entries(file_path)
                 updated_entries = {
                     url: (title, media_path, thumbnail_path)
                     for url, title, media_path, thumbnail_path in entries
@@ -275,12 +284,18 @@ class StorageManager:
                             title,
                         )
                 for url, (title, media_path, thumbnail_path) in updated_entries.items():
-                    media_path = self._find_file_path(self.download_dir, title)
-                    thumbnail_path = self._find_thumbnail_path(
-                        title, url, thumbnail_path
-                    )
+                    if stop_event is not None and stop_event.is_set():
+                        return
+                    if not media_path or not path.isfile(media_path):
+                        media_path = media_index.get(normalize_string(title)) if title else None
+                    if not thumbnail_path or not path.isfile(thumbnail_path):
+                        thumbnail_path = (
+                            thumbnail_index.get(normalize_string(youtube.thumbnail_cache_name(title, url)))
+                            or thumbnail_index.get(normalize_string(title))
+                        ) if title else None
                     thumbnail_base64 = (
-                        self.read_img_base64(thumbnail_path) if thumbnail_path else None
+                        self.read_img_base64(thumbnail_path)
+                        if thumbnail_path and not lazy_thumbnails else None
                     )
                     a = Atom(
                         url,
@@ -291,10 +306,19 @@ class StorageManager:
                         thumbnail_image_in_base64=thumbnail_base64,
                     )
                     a.update_status(status)
+                    a.thumbnail_file_os_path = thumbnail_path
                     if status == const.PROCESS_STATUS.FAILED:
                         a.error_message = self.read_download_error(url)
-                    atoms.append(a)
-        return atoms
+                    yield a
+
+    @staticmethod
+    def _index_files(directory: str) -> dict[str, str]:
+        index: dict[str, str] = {}
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    index.setdefault(normalize_string(path.splitext(entry.name)[0]), entry.path)
+        return index
 
     def _find_file_path(self, dir: str, title: str | None) -> Optional[str]:
         if not title:
@@ -336,19 +360,19 @@ class LibraryManager:
         self.library_dir = library_dir
 
     def count_atoms(self) -> List[Atom]:
-        atoms = []
+        return list(self.iter_atoms())
 
-        # Recursively traverse the directory tree
-        for dirpath, dirnames, filenames in os.walk(self.library_dir):
+    def iter_atoms(self, stop_event: threading.Event | None = None) -> Iterator[Atom]:
+        def walk_error(error: OSError) -> None:
+            raise error
+
+        for dirpath, dirnames, _filenames in os.walk(self.library_dir, onerror=walk_error):
+            if stop_event is not None and stop_event.is_set():
+                return
             if "storage" in dirnames:
-                # Create a StorageManager instance for this specific download_dir
                 storage_manager = StorageManager(dirpath)
-
-                # Generate Atom objects for this specific download_dir
-                atoms += storage_manager.generate_atoms(refresh_titles=False)
-
-        # Return the list of Atom objects
-        return atoms
+                yield from storage_manager.iter_atoms(lazy_thumbnails=True, stop_event=stop_event)
+                dirnames[:] = [name for name in dirnames if name not in {"storage", "thumbnails"}]
 
 
 def normalize_string(s: str) -> str:

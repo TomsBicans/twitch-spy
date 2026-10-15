@@ -27,6 +27,7 @@ class Atom:
         self.error_message: str | None = None
         self.media_file_os_path = media_file_os_path or None
         self.thumbnail_image_in_base64 = thumbnail_image_in_base64 or None
+        self.thumbnail_file_os_path: str | None = None
 
     def update_status(self, status: constants.PROCESS_STATUS):
         self.status = status

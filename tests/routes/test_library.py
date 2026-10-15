@@ -33,6 +33,7 @@ def library_client() -> Iterator[FlaskClient]:
     app = Flask(__name__)
     app.register_blueprint(home_routes.home_routes)
     app.config[MagicStrings.APP] = SimpleNamespace(
+        library_status=lambda: {"state": "complete", "processed": 1622, "error": None},
         job_manager=SimpleNamespace(
             get_all_jobs=lambda: jobs,
             get_job=by_id.get,
@@ -70,6 +71,7 @@ def test_library_pages_cover_every_track_once(library_client: FlaskClient) -> No
     assert len(ids) == len(set(ids)) == 1622
     assert library_client.get("/library?offset=1622").json == {
         "jobs": [], "total": 1622, "next_offset": None,
+        "scan": {"state": "complete", "processed": 1622, "error": None},
     }
 
 
@@ -82,6 +84,7 @@ def test_empty_library(library_client: FlaskClient) -> None:
     library_client.application.config[MagicStrings.APP].job_manager.get_all_jobs = lambda: []
     assert library_client.get("/library").json == {
         "jobs": [], "total": 0, "next_offset": None,
+        "scan": {"state": "complete", "processed": 1622, "error": None},
     }
 
 
