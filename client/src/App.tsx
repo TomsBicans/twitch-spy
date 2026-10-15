@@ -11,6 +11,7 @@ import SyncPanel from "./components/SyncPanel.tsx";
 import Diagnostics from "./components/Diagnostics.tsx";
 import {BACKEND_URL} from "./backend/backend.ts";
 import {io} from "socket.io-client";
+import {useMusicQueue} from "./useMusicQueue";
 
 const socket = io(BACKEND_URL);
 const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
@@ -24,7 +25,9 @@ function App() {
         window.addEventListener("hashchange", onHashChange);
         return () => window.removeEventListener("hashchange", onHashChange);
     }, []);
-    const [currentTrack, setCurrentTrack] = useState<Atom | undefined>(undefined);
+    const [pool, setPool] = useState<Atom[]>([]);
+    const queue = useMusicQueue(pool);
+    const {currentTrack} = queue;
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
 
@@ -127,13 +130,18 @@ function App() {
                 {showDiagnostics && <Diagnostics onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
                 <JobList
                     socket={socket}
-                    onMusicSelected={(atom) => setCurrentTrack(atom)}
+                    onMusicSelected={queue.selectTrack}
+                    onPoolChanged={setPool}
                     currentTrack={currentTrack?.content_name}
                 />
             </main>
 
             <div className={styles.nowPlayingDock}>
-                <MusicPlayer entry={currentTrack} onPlaybackReady={setPlayback}/>
+                <MusicPlayer entry={currentTrack} onPlaybackReady={setPlayback}
+                    autoplay={queue.autoplay} onAutoplayChange={() => queue.setAutoplay(!queue.autoplay)}
+                    shuffle={queue.shuffle} onShuffleChange={queue.toggleShuffle}
+                    onNext={queue.next} onPrevious={queue.previous}
+                    canNext={queue.canNext} canPrevious={queue.canPrevious} poolSize={pool.length}/>
             </div>
         </div>
     );

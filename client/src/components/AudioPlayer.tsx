@@ -7,6 +7,7 @@ import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
 import {getAudioAnalysis, releaseAudioAnalysis} from "../visualizer/audio";
 import type {AudioAnalysis, VisualizerPlayback} from "../visualizer/audio";
+import {SkipBack, SkipForward} from "lucide-react";
 
 const PlayIcon = () => (
     <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
@@ -23,6 +24,15 @@ const PauseIcon = () => (
 interface AudioPlayerProps {
     entry: Atom | undefined;
     onPlaybackReady: (playback: VisualizerPlayback) => void;
+    autoplay: boolean;
+    onAutoplayChange: () => void;
+    shuffle: boolean;
+    onShuffleChange: () => void;
+    onNext: () => void;
+    onPrevious: () => void;
+    canNext: boolean;
+    canPrevious: boolean;
+    poolSize: number;
 }
 
 const getRandomColor = () => {
@@ -71,7 +81,8 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
     });
 };
 
-const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady}) => {
+const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autoplay,
+    onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
@@ -133,6 +144,9 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady}) => {
                 <CurrentTrackDisplay title={entry?.content_name} color={trackColor}/>
             </div>
             <div className={styles.centerPane}>
+                <div className={styles.transport}>
+                <button type="button" className={styles.skipButton} onClick={onPrevious}
+                    aria-label="Previous song" disabled={!canPrevious}><SkipBack size={20}/></button>
                 <button
                     className={styles.playButton}
                     onClick={togglePlay}
@@ -141,6 +155,16 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady}) => {
                 >
                     {isPlaying ? <PauseIcon/> : <PlayIcon/>}
                 </button>
+                <button type="button" className={styles.skipButton} onClick={onNext}
+                    aria-label="Next song" disabled={!canNext}><SkipForward size={20}/></button>
+                </div>
+                <div className={styles.modes}>
+                    <button type="button" aria-pressed={autoplay} onClick={onAutoplayChange}
+                        title="Continue to the next matching song when this song ends">Autoplay</button>
+                    <button type="button" aria-pressed={shuffle} onClick={onShuffleChange}
+                        title="Play matching songs in random order">Shuffle</button>
+                </div>
+                <span className={styles.poolCount}>{poolSize} matching {poolSize === 1 ? "song" : "songs"}</span>
             </div>
             <div className={styles.rightPane}>
                 <AudioPlayer
@@ -161,8 +185,11 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady}) => {
                         void prepareVisualizer();
                     }}
                     onPause={() => setIsPlaying(false)}
+                    onPlayError={(error) => setPlayerError(`Playback failed: ${String(error)}`)}
+                    onError={() => setPlayerError("Could not load this song. Try another track.")}
                     onEnded={() => {
                         setIsPlaying(false);
+                        if (autoplay && canNext) onNext();
                     }}
                 />
             </div>

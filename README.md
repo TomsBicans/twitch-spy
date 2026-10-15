@@ -25,6 +25,18 @@ downloads, tags, and organizes them into a local audio library with a real-time 
 
 ## Preview
 
+The player dock has **Previous song**, **Next song**, **Autoplay**, and **Shuffle**
+controls. The song pool follows the current search and status filter, including
+matches beyond the visible cards as the library loads. Only finished audio tracks
+are playable. Changing filters keeps the current song playing and updates the pool
+for subsequent navigation.
+
+Autoplay is off initially; enable it to advance when a song ends. Sequential playback
+wraps around the pool. Shuffle plays every matching song before repeating, and
+Previous retraces shuffle history. An empty pool or a pool containing only the current
+song stops automatic advancement. These controls and the temporary pool last for the
+current session; saved playlists are not yet supported.
+
 Play a track to start the live 3D preview below the sidebar queue. Use **Expand**
 to open its controls or **Fullscreen** to jump directly into fullscreen.
 Choose Spectrum halo, Wave terrain, or Particle orbit; adjust intensity and quality,

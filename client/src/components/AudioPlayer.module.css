@@ -14,9 +14,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 5px;
 }
 
+.transport, .modes { display: flex; align-items: center; gap: 6px; }
+.skipButton, .modes button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  background: transparent;
+  color: #b9bfd2;
+  cursor: pointer;
+}
+.skipButton { width: 32px; height: 36px; padding: 0; }
+.skipButton:disabled { opacity: 0.35; cursor: default; }
+.modes button { padding: 3px 7px; font-size: 0.72rem; }
+.modes button[aria-pressed="true"] { background: #5841a0; color: #fff; border-color: #a18aff; }
+.skipButton:focus-visible, .modes button:focus-visible, .playButton:focus-visible {
+  outline: 2px solid #a18aff;
+  outline-offset: 3px;
+}
+.poolCount { color: #9da5bd; font-size: 0.68rem; }
+
 .playButton {
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,6 +77,8 @@
 }
 
 @media (max-width: 900px) {
+  .playerShell { flex-wrap: wrap; gap: 10px; }
+  .rightPane { flex-basis: 180px; }
   .leftPane {
     flex: 0 0 clamp(140px, 30vw, 200px);
   }
@@ -63,6 +89,7 @@
 }
 
 @media (max-width: 600px) {
+  .rightPane { flex-basis: 100%; }
   .playerShell {
     gap: 10px;
     flex-wrap: wrap;

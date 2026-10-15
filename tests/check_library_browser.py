@@ -4,6 +4,7 @@ import asyncio
 from urllib.parse import parse_qs, urlparse
 
 from playwright.async_api import Route, async_playwright, expect
+from twitch_spy.media_downloader.constants import CONTENT_MODE
 
 
 HARNESS = """
@@ -38,7 +39,7 @@ def track(index: int) -> dict[str, object]:
     return {
         "id": str(index), "url": f"https://youtube.com/watch?v={index}",
         "content_name": f"Track {index:04d}", "status": "finished",
-        "content_type": "AUDIO", "platform": "YOUTUBE", "single_item": True,
+        "content_type": CONTENT_MODE.AUDIO.value, "platform": "YOUTUBE", "single_item": True,
         "url_valid": True, "download_dir": "music",
         "thumbnail_url": f"/jobs/{index}/thumbnail",
     }

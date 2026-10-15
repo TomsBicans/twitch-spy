@@ -1,6 +1,6 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Socket} from "socket.io-client";
-import {type Atom, ProcessingStates} from "../backend/models.ts";
+import {type Atom, CONTENT_MODE, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 
@@ -8,6 +8,7 @@ interface JobStatusesProps {
     socket: Socket;
     onMusicSelected: (selection: Atom) => void;
     currentTrack: string | undefined;
+    onPoolChanged?: (tracks: Atom[]) => void;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
@@ -83,7 +84,7 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
             <div className={styles.cardContent}>
                 <div className={styles.cardHeader}>
                     <span className={styles.contentType}>
-                        {job.content_type === "AUDIO" ? "Track" : job.content_type}
+                        {job.content_type === CONTENT_MODE.AUDIO ? "Track" : job.content_type}
                     </span>
                     <span className={styles.statusChip}>{statusLabel}</span>
                 </div>
@@ -117,6 +118,7 @@ export const JobList = ({
                             socket,
                             onMusicSelected,
                             currentTrack,
+                            onPoolChanged,
                         }: JobStatusesProps) => {
     const [jobs, setJobs] = useState<Array<Atom>>([]);
     const [loading, setLoading] = useState(true);
@@ -238,7 +240,9 @@ export const JobList = ({
     };
 
     const handleCardClick = (job: Atom) => {
-        onMusicSelected(job);
+        if (job.status === ProcessingStates.FINISHED && job.content_type === CONTENT_MODE.AUDIO) {
+            onMusicSelected(job);
+        }
     };
 
     const handleRetry = async (job: Atom) => {
@@ -249,11 +253,18 @@ export const JobList = ({
         }
     };
 
-    const filteredJobs = filterJobs(
+    const filteredJobs = useMemo(() => filterJobs(
         jobs,
         selectedJobProcessingState,
         searchQuery.toLowerCase()
-    );
+    ), [jobs, selectedJobProcessingState, searchQuery]);
+    const playablePool = useMemo(() => filteredJobs.filter(
+        (job) => job.status === ProcessingStates.FINISHED && job.content_type === CONTENT_MODE.AUDIO,
+    ), [filteredJobs]);
+
+    useEffect(() => {
+        onPoolChanged?.(playablePool);
+    }, [onPoolChanged, playablePool]);
 
     const emptyStateMessage = searchQuery
         ? "No matches yet. Try different keywords or clear the filters."

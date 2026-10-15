@@ -20,7 +20,7 @@ export const PLATFORM = {
 export type PLATFORM = (typeof PLATFORM)[keyof typeof PLATFORM];
 
 export const CONTENT_MODE = {
-  AUDIO: "AUDIO",
+  AUDIO: "audio",
 } as const;
 export type CONTENT_MODE = (typeof CONTENT_MODE)[keyof typeof CONTENT_MODE];
 
