@@ -98,7 +98,8 @@
   .rightPane { min-width: 120px; }
 
   .leftPane {
-    flex: 0 0 120px;
+    flex: 1 1 100%;
+    min-width: 0;
   }
 
   .playButton {

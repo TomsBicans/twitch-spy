@@ -89,6 +89,9 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autopl
     const playerRef = useRef<AudioPlayer>(null);
     const [playerError, setPlayerError] = useState('');
     const analysisRef = useRef<AudioAnalysis | null>(null);
+    const artwork = entry?.thumbnail_image_in_base64
+        ? `data:image/jpeg;base64,${entry.thumbnail_image_in_base64}`
+        : entry?.thumbnail_url ? `${BACKEND_URL}${entry.thumbnail_url}` : undefined;
 
     useEffect(() => {
         document.title = isPlaying && entry?.content_name ? entry.content_name : "twitch-spy";
@@ -146,7 +149,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autopl
     return (
         <div className={styles.playerShell}>
             <div className={styles.leftPane}>
-                <CurrentTrackDisplay title={entry?.content_name} color={trackColor}/>
+                <CurrentTrackDisplay title={entry?.content_name} color={trackColor} artwork={artwork}/>
             </div>
             <div className={styles.centerPane}>
                 <div className={styles.transport}>

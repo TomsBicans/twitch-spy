@@ -1,16 +1,20 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Music2 } from "lucide-react";
 import styles from "./CurrentTrackDisplay.module.css";
 
 interface CurrentTrackDisplayProps {
   title: string | undefined;
   color: string;
+  artwork?: string;
 }
 
 const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
   title,
   color,
+  artwork,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [failedArtwork, setFailedArtwork] = useState<string>();
 
   const validateColor = (color: string): string => {
     const hexRegex = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
@@ -90,9 +94,16 @@ const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
     <div className={styles.container}>
       <canvas ref={canvasRef} className={styles.backgroundCanvas} />
       <div className={styles.contentWrapper}>
+        <div className={styles.artwork} aria-hidden="true">
+          {artwork && artwork !== failedArtwork ? (
+            <img key={artwork} src={artwork} alt="" onError={() => setFailedArtwork(artwork)} />
+          ) : (
+            <Music2 size={24} />
+          )}
+        </div>
         <div className={styles.content}>
           <div className={styles.nowPlaying}>Now Playing</div>
-          <div className={styles.trackTitle}>
+          <div className={styles.trackTitle} title={title}>
             {title || "No track selected"}
           </div>
         </div>
