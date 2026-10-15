@@ -4,6 +4,7 @@ import type {AudioAnalysis} from './audio';
 import type {AudioFrame, VisualizerPreset} from './presets';
 
 interface Props {
+    color?: string;
     audio: HTMLAudioElement;
     analysis: AudioAnalysis;
     preset: VisualizerPreset;
@@ -12,15 +13,15 @@ interface Props {
     quality: 'low' | 'high';
 }
 
-export default function VisualizerCanvas({audio, analysis, preset, intensity, motion, quality}: Props) {
+export default function VisualizerCanvas({audio, analysis, color, preset, intensity, motion, quality}: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const settings = useRef({intensity, motion});
+    const settings = useRef({intensity, motion, color});
     const redraw = useRef<(() => void) | null>(null);
     const [error, setError] = useState('');
     useEffect(() => {
-        settings.current = {intensity, motion};
+        settings.current = {intensity, motion, color};
         redraw.current?.();
-    }, [intensity, motion]);
+    }, [intensity, motion, color]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -50,6 +51,8 @@ export default function VisualizerCanvas({audio, analysis, preset, intensity, mo
             waveform: new Uint8Array(analysis.analyser.fftSize),
             bass: 0, energy: 0, time: 0, ...settings.current,
         };
+        let appliedColor = settings.current.color;
+        active.setColor(appliedColor);
         let request = 0;
         let previous = 0;
         let lost = false;
@@ -65,6 +68,10 @@ export default function VisualizerCanvas({audio, analysis, preset, intensity, mo
                 frame.bass = frame.spectrum.subarray(1, 12).reduce((sum, value) => sum + value, 0) / (11 * 255);
                 frame.energy = frame.spectrum.reduce((sum, value) => sum + value, 0) / (frame.spectrum.length * 255);
                 Object.assign(frame, settings.current);
+                if (appliedColor !== settings.current.color) {
+                    appliedColor = settings.current.color;
+                    active.setColor(appliedColor);
+                }
                 active.update(frame);
                 renderer.render(scene, camera);
             }

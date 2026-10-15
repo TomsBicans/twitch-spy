@@ -10,9 +10,12 @@ import styles from './SidebarVisualizer.module.css';
 interface Props {
     playback: VisualizerPlayback | null;
     title?: string;
+    trackColor?: string;
 }
 
-export default function SidebarVisualizer({playback, title}: Props) {
+export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4a"}: Props) {
+    const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
+    const color = colorTheme === "artwork" ? trackColor : undefined;
     const [expanded, setExpanded] = useState(false);
     const [presetId, setPresetId] = useState(presets[0].id);
     const [paused, setPaused] = useState(true);
@@ -56,7 +59,7 @@ export default function SidebarVisualizer({playback, title}: Props) {
             </header>
             <div className={styles.scene}>
                 {playback && !expanded
-                    ? <VisualizerCanvas {...playback} preset={preset} quality="low" intensity={1} motion={motion}/>
+                    ? <VisualizerCanvas color={color} {...playback} preset={preset} quality="low" intensity={1} motion={motion}/>
                     : <div className={styles.placeholder}><span aria-hidden="true">◉</span><p>{expanded ? 'Expanded view is open' : 'Play a track to bring this space to life'}</p></div>}
             </div>
             <footer className={styles.footer}>
@@ -68,7 +71,7 @@ export default function SidebarVisualizer({playback, title}: Props) {
                 {error && <p role="alert">{error}</p>}
             </footer>
         </section>
-        {expanded && playback && <MusicVisualizer {...playback} title={title ?? 'Music'}
+        {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'}
             presetId={presetId} onPresetChange={setPresetId} fullscreenRef={fullscreenRef}
             onClose={() => setExpanded(false)}/>}
     </>;

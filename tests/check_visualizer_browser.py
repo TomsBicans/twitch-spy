@@ -16,13 +16,14 @@ import MusicPlayer from '/src/components/AudioPlayer.tsx';
 import SidebarVisualizer from '/src/visualizer/SidebarVisualizer.tsx';
 export default function App() {
     const [name, setName] = React.useState(undefined);
+    const [trackColor, setTrackColor] = React.useState("#4a4a4a");
     const [playback, setPlayback] = React.useState(null);
     return React.createElement(React.Fragment, null,
         React.createElement('button', {onClick: () => setName('Test tone')}, 'Start track'),
         React.createElement('button', {onClick: () => setName('Second tone')}, 'Change track'),
         React.createElement('aside', {style: {width: 248, height: 350, display: 'flex'}},
-            React.createElement(SidebarVisualizer, {playback, title: name})),
-        React.createElement(MusicPlayer, {entry: name ? {content_name: name} : undefined, onPlaybackReady: setPlayback}));
+            React.createElement(SidebarVisualizer, {playback, title: name, trackColor})),
+        React.createElement(MusicPlayer, {entry: name ? {content_name: name} : undefined, onPlaybackReady: setPlayback, onTrackColorChange: setTrackColor}));
 }
 """
 
@@ -100,6 +101,17 @@ async def main() -> None:
             await page.wait_for_timeout(250)
             await expect(dialog.get_by_role("alert")).to_have_count(0)
             await dialog.screenshot(path=str(output / f"{preset}.png"))
+        await expect(dialog.get_by_label("Colors", exact=True)).to_have_value("artwork")
+        await dialog.get_by_role("button", name="Pause", exact=True).click()
+        await page.wait_for_timeout(100)
+        artwork_frame = await dialog.locator("canvas").screenshot()
+        await dialog.get_by_label("Colors", exact=True).select_option("system")
+        await page.wait_for_timeout(100)
+        assert artwork_frame != await dialog.locator("canvas").screenshot(), "Color selection must redraw a paused scene"
+        await dialog.get_by_label("Colors", exact=True).select_option("artwork")
+        await page.wait_for_timeout(100)
+        await expect(dialog.get_by_label("Colors", exact=True)).to_have_value("artwork")
+        await dialog.get_by_role("button", name="Play", exact=True).click()
         await dialog.get_by_label("Quality", exact=True).select_option("high")
         await dialog.get_by_role("button", name="Pause", exact=True).click()
         assert await page.locator("audio").evaluate("audio => audio.paused")
@@ -154,7 +166,7 @@ async def main() -> None:
         await library_page.route("**/library?*", lambda route: route.fulfill(json={
             "jobs": [{"id": "preview-test", "content_name": "Preview test track",
                       "url": "https://example.com/music", "status": "finished",
-                      "content_type": "AUDIO", "platform": "YOUTUBE"}],
+                      "content_type": "audio", "platform": "YOUTUBE"}],
             "total": 1, "next_offset": None,
         }))
         await library_page.goto("http://127.0.0.1:5173")

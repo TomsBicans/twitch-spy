@@ -24,6 +24,7 @@ const PauseIcon = () => (
 interface AudioPlayerProps {
     entry: Atom | undefined;
     onPlaybackReady: (playback: VisualizerPlayback) => void;
+    onTrackColorChange?: (color: string) => void;
     autoplay: boolean;
     onAutoplayChange: () => void;
     shuffle: boolean;
@@ -35,29 +36,27 @@ interface AudioPlayerProps {
     poolSize: number;
 }
 
-const getRandomColor = () => {
-    const r = Math.floor(Math.random() * 256);
-    const g = Math.floor(Math.random() * 256);
-    const b = Math.floor(Math.random() * 256);
-    return `rgb(${r},${g},${b})`;
-};
-
 const getAverageColor = (imageUrl: string): Promise<string> => {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
-        img.src = imageUrl;
         img.onload = () => {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             if (!ctx) {
-                resolve(getRandomColor());
+                resolve("#4a4a4a");
                 return;
             }
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0, img.width, img.height);
-            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let data: Uint8ClampedArray;
+            try {
+                data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            } catch {
+                resolve("#4a4a4a");
+                return;
+            }
             let r = 0;
             let g = 0;
             let b = 0;
@@ -72,16 +71,17 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
             }
 
             if (count === 0) {
-                resolve(getRandomColor());
+                resolve("#4a4a4a");
                 return;
             }
-            resolve(`rgb(${Math.round(r / count)},${Math.round(g / count)},${Math.round(b / count)})`);
+            resolve(`#${[r, g, b].map(value => Math.round(value / count).toString(16).padStart(2, "0")).join("")}`);
         };
-        img.onerror = () => resolve(getRandomColor());
+        img.onerror = () => resolve("#4a4a4a");
+        img.src = imageUrl;
     });
 };
 
-const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autoplay,
+const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrackColorChange, autoplay,
     onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
@@ -120,15 +120,20 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, autopl
     useEffect(() => {
         if (entry) {
             setCurrentTrack(`${BACKEND_URL}/audio/${encodeURIComponent(entry.content_name)}`);
-            if (entry.thumbnail_image_in_base64) {
-                getAverageColor(`data:image/jpeg;base64,${entry.thumbnail_image_in_base64}`).then(setTrackColor);
-            } else if (entry.thumbnail_url) {
-                getAverageColor(`${BACKEND_URL}${entry.thumbnail_url}`).then(setTrackColor);
-            } else {
-                setTrackColor(getRandomColor());
-            }
         }
     }, [entry]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const applyColor = (color: string) => {
+            if (cancelled) return;
+            setTrackColor(color);
+            onTrackColorChange?.(color);
+        };
+        applyColor("#4a4a4a");
+        if (artwork) void getAverageColor(artwork).then(applyColor);
+        return () => { cancelled = true; };
+    }, [artwork, onTrackColorChange]);
 
     const togglePlay = async () => {
         const audio = playerRef.current?.audio?.current;

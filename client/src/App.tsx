@@ -17,6 +17,7 @@ const socket = io(BACKEND_URL);
 const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
 
 function App() {
+    const [trackColor, setTrackColor] = useState("#4a4a4a");
     const [playback, setPlayback] = useState<VisualizerPlayback | null>(null);
     const syncDialogRef = useRef<HTMLDialogElement>(null);
     const [showDiagnostics, setShowDiagnostics] = useState(window.location.hash === "#diagnostics");
@@ -105,7 +106,7 @@ function App() {
 
                 <div className={styles.visualizerSlot}>
                     <Suspense fallback={<p>Loading visualizer...</p>}>
-                        <SidebarVisualizer playback={playback} title={currentTrack?.content_name}/>
+                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={currentTrack?.content_name}/>
                     </Suspense>
                 </div>
 
@@ -137,7 +138,7 @@ function App() {
             </main>
 
             <div className={styles.nowPlayingDock}>
-                <MusicPlayer entry={currentTrack} onPlaybackReady={setPlayback}
+                <MusicPlayer onTrackColorChange={setTrackColor} entry={currentTrack} onPlaybackReady={setPlayback}
                     autoplay={queue.autoplay} onAutoplayChange={() => queue.setAutoplay(!queue.autoplay)}
                     shuffle={queue.shuffle} onShuffleChange={queue.toggleShuffle}
                     onNext={queue.next} onPrevious={queue.previous}

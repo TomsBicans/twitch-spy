@@ -13,6 +13,7 @@ export interface AudioFrame {
 export interface VisualizerScene {
     root: THREE.Object3D;
     update: (frame: AudioFrame) => void;
+    setColor: (color?: string) => void;
     dispose: () => void;
 }
 
@@ -21,6 +22,14 @@ export interface VisualizerPreset {
     name: string;
     description: string;
     create: () => VisualizerScene;
+}
+
+function artworkColor(value: string): THREE.Color {
+    const color = new THREE.Color(value);
+    const hsl = {h: 0, s: 0, l: 0};
+    color.getHSL(hsl);
+    // Keep dark artwork visible while preserving its hue and neutral tones.
+    return color.setHSL(hsl.h, hsl.s, Math.max(hsl.l, 0.3));
 }
 
 function createHalo(): VisualizerScene {
@@ -35,6 +44,17 @@ function createHalo(): VisualizerScene {
     root.add(bars);
     return {
         root,
+        setColor: value => {
+            material.color.set(value ? '#ffffff' : '#8c7cff');
+            const base = value ? artworkColor(value) : null;
+            const highlight = new THREE.Color('#ffffff');
+            for (let i = 0; i < 128; i++) {
+                if (base) color.copy(base).lerp(highlight, i / 127 * 0.45);
+                else color.setHSL(i / 190 + 0.45, 0.8, 0.65);
+                bars.setColorAt(i, color);
+            }
+            if (bars.instanceColor) bars.instanceColor.needsUpdate = true;
+        },
         update: ({spectrum, bass, time, intensity, motion}) => {
             for (let i = 0; i < 128; i++) {
                 const angle = i / 128 * Math.PI * 2;
@@ -63,6 +83,7 @@ function createTerrain(): VisualizerScene {
     const positions = geometry.getAttribute('position');
     return {
         root,
+        setColor: value => { material.color.copy(value ? artworkColor(value) : new THREE.Color('#54e5d0')); },
         update: ({spectrum, waveform, time, intensity, motion}) => {
             for (let i = 0; i < positions.count; i++) {
                 const x = positions.getX(i);
@@ -95,6 +116,16 @@ function createOrbit(): VisualizerScene {
     root.frustumCulled = false;
     return {
         root,
+        setColor: value => {
+            const base = value ? artworkColor(value) : null;
+            const highlight = new THREE.Color('#ffffff');
+            for (let i = 0; i < count; i++) {
+                if (base) color.copy(base).lerp(highlight, i / count * 0.45);
+                else color.setHSL(0.53 + i / count * 0.35, 0.8, 0.7);
+                color.toArray(colors, i * 3);
+            }
+            geometry.getAttribute('color').needsUpdate = true;
+        },
         update: ({spectrum, bass, energy, time, intensity, motion}) => {
             for (let i = 0; i < count; i++) {
                 const y = 1 - i / (count - 1) * 2;
