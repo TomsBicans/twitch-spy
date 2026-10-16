@@ -362,10 +362,10 @@ def get_system_stats_ALL():
     )
 
 
-@home_routes.route("/audio/<filename>")
-def stream_audio(filename: str):
+@home_routes.route("/audio/<path:filename>")
+def stream_audio(filename: str) -> flask.Response | tuple[str, int]:
     file_path = sm.find_mp3file_with_title(filename)
     if file_path and path.exists(file_path):
         return send_file(file_path, mimetype="audio/mpeg")
-    else:
-        return "File not found", 404
+    logger.warning("Audio file not found for title %r", filename)
+    return "File not found", 404
