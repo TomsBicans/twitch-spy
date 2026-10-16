@@ -99,6 +99,28 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     }, [isPlaying, entry?.content_name]);
 
     useEffect(() => {
+        if (!("mediaSession" in navigator)) return;
+        const session = navigator.mediaSession;
+        const handlers: [MediaSessionAction, MediaSessionActionHandler | null][] = [
+            ["nexttrack", canNext ? onNext : null],
+            ["previoustrack", canPrevious ? onPrevious : null],
+        ];
+        const registered: MediaSessionAction[] = [];
+        for (const [action, handler] of handlers) {
+            try {
+                session.setActionHandler(action, handler);
+                registered.push(action);
+            } catch (error) {
+                if (!(error instanceof DOMException) || error.name !== "NotSupportedError") throw error;
+                console.warn(`Media session action ${action} is not supported`, error);
+            }
+        }
+        return () => {
+            for (const action of registered) session.setActionHandler(action, null);
+        };
+    }, [canNext, canPrevious, onNext, onPrevious]);
+
+    useEffect(() => {
         const audio = playerRef.current?.audio.current;
         return () => { if (audio) releaseAudioAnalysis(audio); };
     }, []);

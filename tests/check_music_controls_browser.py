@@ -30,6 +30,15 @@ async def main() -> None:
         page = await browser.new_page(viewport={"width": 1366, "height": 768})
         errors: list[str] = []
         page.on("pageerror", lambda error: errors.append(str(error)))
+        await page.add_init_script("""
+            window.mediaHandlers = {};
+            const session = navigator.mediaSession;
+            const setActionHandler = session.setActionHandler.bind(session);
+            session.setActionHandler = (action, handler) => {
+                setActionHandler(action, handler);
+                window.mediaHandlers[action] = handler;
+            };
+        """)
 
         async def library(route: Route) -> None:
             offset = int(parse_qs(urlparse(route.request.url).query)["offset"][0])
@@ -57,6 +66,14 @@ async def main() -> None:
             await expect(player).to_have_attribute("src", re.compile(r"/audio/" + re.escape(name) + "$"))
 
         await source("Pool%200000")
+        await page.evaluate("window.mediaHandlers.previoustrack({action: 'previoustrack'})")
+        await source("Pool%200050")
+        await page.evaluate("window.mediaHandlers.nexttrack({action: 'nexttrack'})")
+        await source("Pool%200000")
+        await page.evaluate("window.mediaHandlers.nexttrack({action: 'nexttrack'})")
+        await source("Pool%200001")
+        await page.evaluate("window.mediaHandlers.previoustrack({action: 'previoustrack'})")
+        await source("Pool%200000")
         await expect(page.get_by_role("button", name="Pause", exact=True)).to_be_enabled()
         await page.wait_for_function("!document.querySelector('audio').paused && document.querySelector('audio').currentTime > 0")
         await expect(page).to_have_title("Pool 0000")
@@ -80,6 +97,7 @@ async def main() -> None:
         await search.fill("Pool 000")
         await page.get_by_role("button", name="Shuffle", exact=True).click()
         await expect(page.get_by_role("button", name="Previous song")).to_be_disabled()
+        assert await page.evaluate("window.mediaHandlers.previoustrack === null")
         seen = {await player.get_attribute("src")}
         for _ in range(9):
             await page.get_by_role("button", name="Next song", exact=True).click()
@@ -88,9 +106,9 @@ async def main() -> None:
             assert current not in seen, current
             seen.add(current)
         last = await player.get_attribute("src")
-        await page.get_by_role("button", name="Previous song", exact=True).click()
+        await page.evaluate("window.mediaHandlers.previoustrack({action: 'previoustrack'})")
         assert await player.get_attribute("src") != last
-        await page.get_by_role("button", name="Next song", exact=True).click()
+        await page.evaluate("window.mediaHandlers.nexttrack({action: 'nexttrack'})")
         await expect(player).to_have_attribute("src", last or "")
 
         await search.fill("Other")
@@ -98,9 +116,11 @@ async def main() -> None:
         await page.get_by_role("button", name="Next song", exact=True).click()
         await source("Other%20song")
         await expect(page.get_by_role("button", name="Next song")).to_be_disabled()
+        assert await page.evaluate("window.mediaHandlers.nexttrack === null")
         await search.fill("no matches")
         await expect(page.get_by_role("button", name="Next song")).to_be_disabled()
         await expect(page.get_by_role("button", name="Previous song")).to_be_disabled()
+        assert await page.evaluate("window.mediaHandlers.nexttrack === null && window.mediaHandlers.previoustrack === null")
         await search.fill("Pool")
         await page.locator("#statusFilter").select_option("all")
         await expect(page.get_by_text("51 matching songs", exact=True)).to_be_visible()
