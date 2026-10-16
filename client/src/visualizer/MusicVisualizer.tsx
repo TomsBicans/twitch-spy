@@ -3,6 +3,8 @@ import type {RefObject} from 'react';
 import type {AudioAnalysis} from './audio';
 import {presets} from './presets';
 import VisualizerCanvas from './VisualizerCanvas';
+import FrameRateSelect from './FrameRateSelect';
+import type {FrameRate} from './FrameRateSelect';
 import styles from './MusicVisualizer.module.css';
 
 interface Props {
@@ -16,6 +18,8 @@ interface Props {
     presetId: string;
     onPresetChange: (id: string) => void;
     fullscreenRef: RefObject<HTMLDivElement | null>;
+    frameRate: FrameRate;
+    onFrameRateChange: (value: FrameRate) => void;
 }
 
 function timestamp(seconds: number): string {
@@ -23,7 +27,7 @@ function timestamp(seconds: number): string {
     return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef}: Props) {
+export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange}: Props) {
     const dialog = useRef<HTMLDialogElement>(null);
     const viewport = fullscreenRef;
     const hideButton = useRef<HTMLButtonElement>(null);
@@ -84,7 +88,7 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
         }}>
         <div ref={viewport} className={styles.viewport}>
         <div className={styles.stage}>
-            <VisualizerCanvas color={color} audio={audio} analysis={analysis} preset={preset} intensity={intensity} motion={motion} quality={quality}/>
+            <VisualizerCanvas color={color} audio={audio} analysis={analysis} preset={preset} intensity={intensity} motion={motion} quality={quality} frameRate={frameRate}/>
         </div>
         <div className={styles.actions}>
             <button ref={hideButton} onClick={() => setHidden(value => !value)} aria-expanded={!hidden} aria-controls="visualizer-controls">{hidden ? 'Show controls' : 'Hide controls'} <kbd>H</kbd></button>
@@ -96,7 +100,8 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
             <div className={styles.options}>
                 <label>Scene<select aria-label="Scene" value={presetId} onChange={event => onPresetChange(event.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                 <label>Colors<select aria-label="Colors" value={colorTheme} onChange={event => onColorThemeChange(event.target.value as "artwork" | "system")}><option value="artwork">Match artwork</option><option value="system">System</option></select></label>
-                <label>Quality<select aria-label="Quality" value={quality} onChange={event => setQuality(event.target.value as 'low' | 'high')}><option value="low">Eco · 30 fps</option><option value="high">High · 60 fps</option></select></label>
+                <label>Quality<select aria-label="Quality" value={quality} onChange={event => setQuality(event.target.value as 'low' | 'high')}><option value="low">Eco</option><option value="high">High</option></select></label>
+                <label>Frame rate<FrameRateSelect value={frameRate} onChange={onFrameRateChange}/></label>
                 <label>Intensity<input type="range" min="0.2" max="2" step="0.1" value={intensity} onChange={event => setIntensity(Number(event.target.value))}/></label>
                 <label className={styles.check}><input type="checkbox" checked={motion} onChange={event => setMotion(event.target.checked)}/>Camera motion</label>
             </div>

@@ -69,17 +69,70 @@ async def main() -> None:
 
         await page.route("**/audio/*", serve_audio)
         await page.goto("http://127.0.0.1:5173")
+        await page.evaluate("""async () => {
+            const {presets} = await import('/src/visualizer/presets.ts');
+            const preset = presets[0];
+            if (preset.id !== 'bars') throw new Error('Spectrum bars must be the default');
+            const strongestBar = (frequency, sampleRate) => {
+                const scene = preset.create();
+                scene.setColor();
+                for (const [width, height] of [[8, 8], [8, 14], [18, 8]]) {
+                    scene.resize(width, height);
+                    const fittedWidth = 6.8 * scene.root.scale.x / width;
+                    const fittedHeight = 3.6 * scene.root.scale.y / height;
+                    if (Math.abs(fittedWidth - 0.92) > 0.001 || Math.abs(fittedHeight - 0.88) > 0.001)
+                        throw new Error('Spectrum must fill both axes at every aspect ratio');
+                }
+                const spectrum = new Uint8Array(1024);
+                spectrum[Math.round(frequency / (sampleRate / 2048))] = 255;
+                const frame = {spectrum, sampleRate, waveform: new Uint8Array(2048),
+                    bass: 0, energy: 0, time: 0, intensity: 1, motion: false};
+                for (let step = 0; step < 30; step++) {
+                    frame.time = step / 30;
+                    scene.update(frame);
+                }
+                const bars = scene.root.children[0];
+                const heights = Array.from({length: bars.count}, (_, index) =>
+                    bars.instanceMatrix.array[index * 16 + 5]);
+                const strongest = heights.indexOf(Math.max(...heights));
+                if (Math.max(...heights) < 3) throw new Error('Bars must rise with audio');
+                spectrum.fill(0);
+                for (let step = 30; step < 90; step++) {
+                    frame.time = step / 30;
+                    scene.update(frame);
+                }
+                if (bars.instanceMatrix.array[strongest * 16 + 5] > 0.03)
+                    throw new Error('Bars must decay to the baseline in silence');
+                scene.dispose();
+                return strongest;
+            };
+            for (const sampleRate of [44100, 48000]) {
+                const bass = strongestBar(100, sampleRate);
+                const treble = strongestBar(10000, sampleRate);
+                if (bass >= 16 || treble <= 32)
+                    throw new Error('Frequency bands must run from bass left to treble right');
+            }
+        }""")
         preview = page.get_by_role("region", name="Live music preview")
         await expect(preview.get_by_role("button", name="Expand visualizer")).to_be_disabled()
         await page.get_by_role("button", name="Start track").click()
         await page.wait_for_function("document.querySelector('audio')?.readyState === 4")
         await expect(preview.locator("canvas")).to_be_visible()
+        await expect(preview.locator("canvas")).to_have_attribute("aria-label", "Spectrum bars music visualization")
         first_frame = await preview.locator("canvas").screenshot()
         await page.wait_for_timeout(300)
         assert first_frame != await preview.locator("canvas").screenshot(), "Preview should animate without opening a dialog"
+        await expect(preview.get_by_label("Visualizer frame rate")).to_have_value("30")
+        await preview.locator("canvas").evaluate("canvas => { window.previewCanvas = canvas; }")
+        for frame_rate in ("60", "120", "native"):
+            await preview.get_by_label("Visualizer frame rate").select_option(frame_rate)
+            assert await preview.locator("canvas").evaluate("canvas => canvas === window.previewCanvas")
         await preview.get_by_role("button", name="Fullscreen visualizer", exact=True).click()
         dialog = page.get_by_role("dialog", name="Music visualizer")
         await expect(dialog).to_be_visible()
+        await expect(dialog.get_by_label("Scene", exact=True)).to_have_value("bars")
+        await expect(dialog.get_by_label("Visualizer frame rate")).to_have_value("native")
+        await dialog.get_by_label("Visualizer frame rate").select_option("60")
         await page.wait_for_function("document.fullscreenElement !== null")
         await dialog.get_by_role("button", name="Exit fullscreen", exact=True).click()
         await expect(preview.locator("canvas")).to_have_count(0)
@@ -96,7 +149,7 @@ async def main() -> None:
         assert energy > 0, "Visualizer must receive actual audio samples"
         output = Path("dist/visualizer-checks")
         output.mkdir(parents=True, exist_ok=True)
-        for preset in ("halo", "terrain", "orbit"):
+        for preset in ("bars", "halo", "terrain", "orbit"):
             await dialog.get_by_label("Scene", exact=True).select_option(preset)
             await page.wait_for_timeout(250)
             await expect(dialog.get_by_role("alert")).to_have_count(0)
@@ -142,6 +195,7 @@ async def main() -> None:
         await expect(dialog).to_have_count(0)
         await expect(preview.locator("canvas")).to_be_visible()
         await expect(preview.locator("canvas")).to_have_attribute("aria-label", "Particle orbit music visualization")
+        await expect(preview.get_by_label("Visualizer frame rate")).to_have_value("60")
         await preview.screenshot(path=str(output / "sidebar.png"))
         assert not await page.locator("audio").evaluate("audio => audio.paused")
         await page.get_by_role("button", name="Change track").click()

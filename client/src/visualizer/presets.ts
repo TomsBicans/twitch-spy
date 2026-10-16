@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 export interface AudioFrame {
     spectrum: Uint8Array<ArrayBuffer>;
+    sampleRate: number;
     waveform: Uint8Array<ArrayBuffer>;
     bass: number;
     energy: number;
@@ -12,6 +13,7 @@ export interface AudioFrame {
 
 export interface VisualizerScene {
     root: THREE.Object3D;
+    resize?: (width: number, height: number) => void;
     update: (frame: AudioFrame) => void;
     setColor: (color?: string) => void;
     dispose: () => void;
@@ -30,6 +32,77 @@ function artworkColor(value: string): THREE.Color {
     color.getHSL(hsl);
     // Keep dark artwork visible while preserving its hue and neutral tones.
     return color.setHSL(hsl.h, hsl.s, Math.max(hsl.l, 0.3));
+}
+
+function createSpectrumBars(): VisualizerScene {
+    const count = 48;
+    const width = 6.8;
+    const baseline = -1.8;
+    const root = new THREE.Group();
+    const geometry = new THREE.PlaneGeometry(width / count * 0.76, 1);
+    const material = new THREE.MeshBasicMaterial({color: '#ffffff'});
+    const peakMaterial = new THREE.MeshBasicMaterial({color: '#e5e0ff'});
+    const bars = new THREE.InstancedMesh(geometry, material, count);
+    const peaks = new THREE.InstancedMesh(geometry, peakMaterial, count);
+    const levels = new Float32Array(count);
+    const peakLevels = new Float32Array(count);
+    const transform = new THREE.Object3D();
+    const color = new THREE.Color();
+    const highlight = new THREE.Color('#ffffff');
+    let previousTime: number | undefined;
+    bars.frustumCulled = false;
+    peaks.frustumCulled = false;
+    bars.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    peaks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    root.add(bars, peaks);
+    return {
+        root,
+        resize: (viewportWidth, viewportHeight) => {
+            root.scale.set(viewportWidth * 0.92 / width, viewportHeight * 0.88 / 3.6, 1);
+        },
+        setColor: value => {
+            const base = value ? artworkColor(value) : null;
+            for (let index = 0; index < count; index++) {
+                if (base) color.copy(base).lerp(highlight, 0.12 + index / (count - 1) * 0.4);
+                else color.setHSL(0.48 + index / (count - 1) * 0.26, 0.75, 0.62);
+                bars.setColorAt(index, color);
+            }
+            if (bars.instanceColor) bars.instanceColor.needsUpdate = true;
+            peakMaterial.color.copy(base ? base.clone().lerp(highlight, 0.7) : highlight);
+        },
+        update: ({spectrum, sampleRate, time, intensity}) => {
+            const elapsed = previousTime === undefined ? 1 / 30 : Math.max(0, Math.min(time - previousTime, 0.1));
+            previousTime = time;
+            const binWidth = sampleRate / (spectrum.length * 2);
+            const minimum = Math.max(30, binWidth);
+            const maximum = Math.min(18000, sampleRate / 2);
+            for (let index = 0; index < count; index++) {
+                const lower = minimum * Math.pow(maximum / minimum, index / count);
+                const upper = minimum * Math.pow(maximum / minimum, (index + 1) / count);
+                const start = Math.min(spectrum.length - 1, Math.max(1, Math.floor(lower / binWidth)));
+                const end = Math.min(spectrum.length, Math.max(start + 1, Math.ceil(upper / binWidth)));
+                let amplitude = 0;
+                for (let bin = start; bin < end; bin++) amplitude = Math.max(amplitude, spectrum[bin] / 255);
+                const target = Math.min(1, amplitude * intensity);
+                const smoothing = 1 - Math.exp(-elapsed * (target > levels[index] ? 28 : 8));
+                levels[index] += (target - levels[index]) * smoothing;
+                peakLevels[index] = Math.max(levels[index], peakLevels[index] - elapsed * 0.22);
+                const height = 0.025 + levels[index] * 3.5;
+                const horizontal = -width / 2 + (index + 0.5) * width / count;
+                transform.position.set(horizontal, baseline + height / 2, 0);
+                transform.scale.set(1, height, 1);
+                transform.updateMatrix();
+                bars.setMatrixAt(index, transform.matrix);
+                transform.position.set(horizontal, baseline + 0.05 + peakLevels[index] * 3.5, 0);
+                transform.scale.set(1, 0.025, 1);
+                transform.updateMatrix();
+                peaks.setMatrixAt(index, transform.matrix);
+            }
+            bars.instanceMatrix.needsUpdate = true;
+            peaks.instanceMatrix.needsUpdate = true;
+        },
+        dispose: () => { geometry.dispose(); material.dispose(); peakMaterial.dispose(); bars.dispose(); peaks.dispose(); },
+    };
 }
 
 function createHalo(): VisualizerScene {
@@ -144,6 +217,7 @@ function createOrbit(): VisualizerScene {
 }
 
 export const presets: readonly VisualizerPreset[] = [
+    {id: 'bars', name: 'Spectrum bars', description: 'Rising frequency bars, from bass on the left to highs on the right.', create: createSpectrumBars},
     {id: 'halo', name: 'Spectrum halo', description: 'A rotating crown of frequency and color.', create: createHalo},
     {id: 'terrain', name: 'Wave terrain', description: 'A wireframe landscape shaped by sound.', create: createTerrain},
     {id: 'orbit', name: 'Particle orbit', description: 'An expanding constellation of sound.', create: createOrbit},

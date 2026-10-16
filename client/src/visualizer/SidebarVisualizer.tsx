@@ -5,6 +5,8 @@ import type {VisualizerPlayback} from './audio';
 import {presets} from './presets';
 import VisualizerCanvas from './VisualizerCanvas';
 import MusicVisualizer from './MusicVisualizer';
+import FrameRateSelect from './FrameRateSelect';
+import type {FrameRate} from './FrameRateSelect';
 import styles from './SidebarVisualizer.module.css';
 
 interface Props {
@@ -17,6 +19,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
     const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
     const color = colorTheme === "artwork" ? trackColor : undefined;
     const [expanded, setExpanded] = useState(false);
+    const [frameRate, setFrameRate] = useState<FrameRate>('30');
     const [presetId, setPresetId] = useState(presets[0].id);
     const [paused, setPaused] = useState(true);
     const [error, setError] = useState('');
@@ -55,11 +58,12 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
         <section className={styles.preview} aria-label="Live music preview">
             <header className={styles.header}>
                 <span>VISUALIZER</span>
+                <FrameRateSelect className={styles.frameRate} value={frameRate} onChange={setFrameRate}/>
                 <span className={styles.status}><i data-playing={Boolean(audio && !paused)}/>{audio ? paused ? 'Paused' : 'Live' : 'Ready'}</span>
             </header>
             <div className={styles.scene}>
                 {playback && !expanded
-                    ? <VisualizerCanvas color={color} {...playback} preset={preset} quality="low" intensity={1} motion={motion}/>
+                    ? <VisualizerCanvas color={color} {...playback} preset={preset} quality="low" frameRate={frameRate} intensity={1} motion={motion}/>
                     : <div className={styles.placeholder}><span aria-hidden="true">◉</span><p>{expanded ? 'Expanded view is open' : 'Play a track to bring this space to life'}</p></div>}
             </div>
             <footer className={styles.footer}>
@@ -73,6 +77,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
         </section>
         {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'}
             presetId={presetId} onPresetChange={setPresetId} fullscreenRef={fullscreenRef}
+            frameRate={frameRate} onFrameRateChange={setFrameRate}
             onClose={() => setExpanded(false)}/>}
     </>;
 }

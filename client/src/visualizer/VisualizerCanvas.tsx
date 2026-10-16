@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import * as THREE from 'three';
 import type {AudioAnalysis} from './audio';
 import type {AudioFrame, VisualizerPreset} from './presets';
+import type {FrameRate} from './FrameRateSelect';
 
 interface Props {
     color?: string;
@@ -11,17 +12,18 @@ interface Props {
     intensity: number;
     motion: boolean;
     quality: 'low' | 'high';
+    frameRate: FrameRate;
 }
 
-export default function VisualizerCanvas({audio, analysis, color, preset, intensity, motion, quality}: Props) {
+export default function VisualizerCanvas({audio, analysis, color, preset, intensity, motion, quality, frameRate}: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const settings = useRef({intensity, motion, color});
+    const settings = useRef({intensity, motion, color, frameRate});
     const redraw = useRef<(() => void) | null>(null);
     const [error, setError] = useState('');
     useEffect(() => {
-        settings.current = {intensity, motion, color};
+        settings.current = {intensity, motion, color, frameRate};
         redraw.current?.();
-    }, [intensity, motion, color]);
+    }, [intensity, motion, color, frameRate]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -48,6 +50,7 @@ export default function VisualizerCanvas({audio, analysis, color, preset, intens
         scene.add(active.root);
         const frame: AudioFrame = {
             spectrum: new Uint8Array(analysis.analyser.frequencyBinCount),
+            sampleRate: analysis.context.sampleRate,
             waveform: new Uint8Array(analysis.analyser.fftSize),
             bass: 0, energy: 0, time: 0, ...settings.current,
         };
@@ -55,12 +58,15 @@ export default function VisualizerCanvas({audio, analysis, color, preset, intens
         active.setColor(appliedColor);
         let request = 0;
         let previous = 0;
+        let nextFrame = 0;
         let lost = false;
         let visible = true;
         const render = (now: number) => {
             request = 0;
             if (document.hidden || lost || !visible) return;
-            if (now - previous >= (quality === 'low' ? 1000 / 30 : 1000 / 60) || audio.paused) {
+            const interval = settings.current.frameRate === 'native' ? 0 : 1000 / Number(settings.current.frameRate);
+            if (!previous || now + 0.5 >= nextFrame || audio.paused) {
+                nextFrame = interval ? now + interval - (Math.max(0, now - nextFrame) % interval) : now;
                 frame.time += previous && !audio.paused ? Math.min((now - previous) / 1000, 0.1) : 0;
                 previous = now;
                 analysis.analyser.getByteFrequencyData(frame.spectrum);
@@ -80,6 +86,7 @@ export default function VisualizerCanvas({audio, analysis, color, preset, intens
         const wake = () => {
             cancelAnimationFrame(request);
             previous = 0;
+            nextFrame = 0;
             request = requestAnimationFrame(render);
         };
         redraw.current = wake;
@@ -94,6 +101,8 @@ export default function VisualizerCanvas({audio, analysis, color, preset, intens
             camera.aspect = width / Math.max(height, 1);
             camera.position.z = 8 / Math.min(Math.max(camera.aspect, 0.2), 1);
             camera.updateProjectionMatrix();
+            const visibleHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
+            active.resize?.(visibleHeight * camera.aspect, visibleHeight);
             wake();
         });
         const contextLost = (event: Event) => {
