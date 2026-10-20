@@ -21,7 +21,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
     const color = colorTheme === "artwork" ? trackColor : undefined;
     const [expanded, setExpanded] = useState(false);
     const [startImmersive, setStartImmersive] = useState(false);
-    const [frameRate, setFrameRate] = useState<FrameRate>('30');
+    const [frameRate, setFrameRate] = useState<FrameRate>('60');
     const [presetId, setPresetId] = useState(presets[0].id);
     const [paused, setPaused] = useState(true);
     const [error, setError] = useState('');

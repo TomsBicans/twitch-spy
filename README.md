@@ -47,7 +47,7 @@ Closing the expanded view keeps the music playing and restores the sidebar previ
 The selected scene carries back to the preview.
 
 The visualizer uses Three.js and the browser's Web Audio API. The preview defaults
-to 30 fps with capped resolution. Animation stops when paused, offscreen, or when
+to 60 fps with capped resolution. Animation stops when paused, offscreen, or when
 the tab is hidden. Only one scene renders while the expanded view is open. It visualizes this app's playback,
 not system audio, and does not import projectM/MilkDrop presets.
 See [visualizer development](docs/visualizer.md) to add new scenes.

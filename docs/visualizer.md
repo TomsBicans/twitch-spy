@@ -37,8 +37,9 @@ the frontend origin for Web Audio analysis.
 
 ## Resource limits and interaction
 
-Eco caps rendering at 30 fps and device pixel ratio 1. High caps at 60 fps and
-pixel ratio 1.5. The sidebar uses Eco and starts automatically on playback.
+The frame rate defaults to 60 fps, with 30, 60, 120, and Native options.
+Eco caps device pixel ratio at 1; High caps it at 1.5.
+The sidebar uses Eco and starts automatically on playback.
 Expanding disposes the preview renderer; closing restores the preview with the
 selected preset. Paused, offscreen, and background views stop requesting continuous
 animation frames. The OS reduced-motion setting

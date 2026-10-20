@@ -137,9 +137,9 @@ async def main() -> None:
         first_frame = await preview.locator("canvas").screenshot()
         await page.wait_for_timeout(300)
         assert first_frame != await preview.locator("canvas").screenshot(), "Preview should animate without opening a dialog"
-        await expect(preview.get_by_label("Visualizer frame rate")).to_have_value("30")
+        await expect(preview.get_by_label("Visualizer frame rate")).to_have_value("60")
         await preview.locator("canvas").evaluate("canvas => { window.previewCanvas = canvas; }")
-        for frame_rate in ("60", "120", "native"):
+        for frame_rate in ("30", "60", "120", "native"):
             await preview.get_by_label("Visualizer frame rate").select_option(frame_rate)
             assert await preview.locator("canvas").evaluate("canvas => canvas === window.previewCanvas")
         await preview.get_by_role("button", name="Fullscreen visualizer", exact=True).click()
