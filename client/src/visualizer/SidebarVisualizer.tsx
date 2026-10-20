@@ -8,6 +8,7 @@ import MusicVisualizer from './MusicVisualizer';
 import FrameRateSelect from './FrameRateSelect';
 import type {FrameRate} from './FrameRateSelect';
 import styles from './SidebarVisualizer.module.css';
+import {isVisualizerShortcut} from './shortcuts';
 
 interface Props {
     playback: VisualizerPlayback | null;
@@ -19,6 +20,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
     const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
     const color = colorTheme === "artwork" ? trackColor : undefined;
     const [expanded, setExpanded] = useState(false);
+    const [startImmersive, setStartImmersive] = useState(false);
     const [frameRate, setFrameRate] = useState<FrameRate>('30');
     const [presetId, setPresetId] = useState(presets[0].id);
     const [paused, setPaused] = useState(true);
@@ -41,6 +43,29 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
             audio.removeEventListener('ended', sync);
         };
     }, [audio]);
+
+    useEffect(() => {
+        if (!playback || expanded) return;
+        const keyDown = async (event: KeyboardEvent) => {
+            if (!isVisualizerShortcut(event, 'f') || !document.fullscreenEnabled
+                || document.querySelector('dialog[open]')) return;
+            event.preventDefault();
+            setError('');
+            flushSync(() => {
+                setStartImmersive(true);
+                setExpanded(true);
+            });
+            try {
+                await fullscreenRef.current?.requestFullscreen();
+            } catch (cause) {
+                setExpanded(false);
+                setStartImmersive(false);
+                setError(`Could not enter fullscreen: ${String(cause)}`);
+            }
+        };
+        document.addEventListener('keydown', keyDown);
+        return () => document.removeEventListener('keydown', keyDown);
+    }, [playback, expanded]);
 
     const openFullscreen = async () => {
         setError('');
@@ -70,7 +95,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
                 <p className={styles.title} title={title}>{title ?? 'Your music, in motion'}</p>
                 <div className={styles.actions}>
                     <button disabled={!playback} onClick={() => setExpanded(true)} aria-label="Expand visualizer"><Expand size={14}/>Expand</button>
-                    <button disabled={!playback || !document.fullscreenEnabled} onClick={openFullscreen} aria-label="Fullscreen visualizer"><Maximize size={14}/>Fullscreen</button>
+                    <button disabled={!playback || !document.fullscreenEnabled} onClick={openFullscreen} aria-label="Fullscreen visualizer" title="Press F for fullscreen without controls"><Maximize size={14}/>Fullscreen</button>
                 </div>
                 {error && <p role="alert">{error}</p>}
             </footer>
@@ -78,6 +103,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
         {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'}
             presetId={presetId} onPresetChange={setPresetId} fullscreenRef={fullscreenRef}
             frameRate={frameRate} onFrameRateChange={setFrameRate}
-            onClose={() => setExpanded(false)}/>}
+            startImmersive={startImmersive}
+            onClose={() => { setExpanded(false); setStartImmersive(false); }}/>}
     </>;
 }

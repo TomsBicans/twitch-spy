@@ -51,6 +51,13 @@ exits fullscreen through the browser, or closes the dialog when windowed. H togg
 settings and transport visibility outside form fields. Focus returns to the
 launcher on close. Unsupported fullscreen is disabled and failures are reported.
 
+Press F from the sidebar or expanded visualizer for fullscreen with settings and
+playback controls hidden. Show controls (H), Exit fullscreen, and Close remain
+available in the same action bar as button-launched fullscreen.
+Press F again to restore the previous view, including control visibility
+and whether it was already fullscreen. Leaving fullscreen with Escape also
+restores the view. F ignores form fields, editable text, modifiers, and key repeats.
+
 ## Validation
 
 Run `npm run build` in `client`. With Vite on port 5173, run:

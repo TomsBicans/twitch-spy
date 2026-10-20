@@ -6,6 +6,7 @@ import VisualizerCanvas from './VisualizerCanvas';
 import FrameRateSelect from './FrameRateSelect';
 import type {FrameRate} from './FrameRateSelect';
 import styles from './MusicVisualizer.module.css';
+import {isVisualizerShortcut} from './shortcuts';
 
 interface Props {
     audio: HTMLAudioElement;
@@ -20,6 +21,7 @@ interface Props {
     fullscreenRef: RefObject<HTMLDivElement | null>;
     frameRate: FrameRate;
     onFrameRateChange: (value: FrameRate) => void;
+    startImmersive?: boolean;
 }
 
 function timestamp(seconds: number): string {
@@ -27,14 +29,17 @@ function timestamp(seconds: number): string {
     return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange}: Props) {
+export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false}: Props) {
     const dialog = useRef<HTMLDialogElement>(null);
     const viewport = fullscreenRef;
     const hideButton = useRef<HTMLButtonElement>(null);
     const [intensity, setIntensity] = useState(1);
     const [quality, setQuality] = useState<'low' | 'high'>('low');
     const [motion, setMotion] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    const [hidden, setHidden] = useState(false);
+    const [hidden, setHidden] = useState(startImmersive);
+    const previousView = useRef<{fullscreen: boolean; hidden: boolean; focus: Element | null} | null>(
+        startImmersive ? {fullscreen: false, hidden: false, focus: null} : null);
+    const fullscreenPending = useRef(false);
     const [fullscreen, setFullscreen] = useState(false);
     const [error, setError] = useState('');
     const [playback, setPlayback] = useState({paused: audio.paused, time: audio.currentTime, duration: audio.duration, volume: audio.volume, muted: audio.muted, loop: audio.loop});
@@ -62,6 +67,59 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
         };
     }, [audio, viewport]);
 
+    useEffect(() => {
+        const restore = () => {
+            const previous = previousView.current;
+            previousView.current = null;
+            if (previous) setHidden(previous.hidden);
+            if (startImmersive) onClose();
+            else {
+                const focus = previous?.focus;
+                requestAnimationFrame(() => {
+                    if (focus instanceof HTMLElement && focus.isConnected) focus.focus();
+                });
+            }
+        };
+        const fullscreenChanged = () => {
+            if (!document.fullscreenElement && previousView.current) restore();
+        };
+        const keyDown = async (event: KeyboardEvent) => {
+            if (!isVisualizerShortcut(event, 'f')) return;
+            event.preventDefault();
+            if (fullscreenPending.current || !document.fullscreenEnabled) return;
+            fullscreenPending.current = true;
+            try {
+                setError('');
+                if (previousView.current) {
+                    if (!previousView.current.fullscreen && document.fullscreenElement === viewport.current) {
+                        await document.exitFullscreen();
+                    }
+                    if (previousView.current) restore();
+                } else {
+                    previousView.current = {
+                        fullscreen: document.fullscreenElement === viewport.current,
+                        hidden,
+                        focus: document.activeElement,
+                    };
+                    if (!previousView.current.fullscreen) await viewport.current?.requestFullscreen();
+                    setHidden(true);
+                    viewport.current?.focus();
+                }
+            } catch (cause) {
+                if (!document.fullscreenElement && previousView.current) restore();
+                setError(`Fullscreen is unavailable: ${String(cause)}`);
+            } finally {
+                fullscreenPending.current = false;
+            }
+        };
+        document.addEventListener('keydown', keyDown);
+        document.addEventListener('fullscreenchange', fullscreenChanged);
+        return () => {
+            document.removeEventListener('keydown', keyDown);
+            document.removeEventListener('fullscreenchange', fullscreenChanged);
+        };
+    }, [hidden, onClose, startImmersive, viewport]);
+
     const togglePlayback = async () => {
         try {
             setError('');
@@ -81,18 +139,18 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
 
     return <dialog ref={dialog} className={styles.dialog} aria-label="Music visualizer" onCancel={onClose}
         onKeyDown={event => {
-            if (event.key.toLowerCase() === 'h' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement)) {
+            if (isVisualizerShortcut(event.nativeEvent, 'h')) {
                 setHidden(value => !value);
                 hideButton.current?.focus();
             }
         }}>
-        <div ref={viewport} className={styles.viewport}>
+        <div ref={viewport} className={styles.viewport} tabIndex={-1}>
         <div className={styles.stage}>
             <VisualizerCanvas color={color} audio={audio} analysis={analysis} preset={preset} intensity={intensity} motion={motion} quality={quality} frameRate={frameRate}/>
         </div>
         <div className={styles.actions}>
             <button ref={hideButton} onClick={() => setHidden(value => !value)} aria-expanded={!hidden} aria-controls="visualizer-controls">{hidden ? 'Show controls' : 'Hide controls'} <kbd>H</kbd></button>
-            <button onClick={toggleFullscreen} disabled={!document.fullscreenEnabled}>{fullscreen ? 'Exit fullscreen' : 'Fullscreen'}</button>
+            <button onClick={toggleFullscreen} disabled={!document.fullscreenEnabled} title="Press F for fullscreen without controls">{fullscreen ? 'Exit fullscreen' : 'Fullscreen'}</button>
             <button onClick={onClose} aria-label="Close visualizer">Close</button>
         </div>
         {!hidden && <div id="visualizer-controls" className={styles.controls}>
