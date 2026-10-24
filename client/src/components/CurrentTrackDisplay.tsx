@@ -1,17 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Music2 } from "lucide-react";
+import { Maximize2, Minimize2, Music2 } from "lucide-react";
 import styles from "./CurrentTrackDisplay.module.css";
 
 interface CurrentTrackDisplayProps {
   title: string | undefined;
   color: string;
   artwork?: string;
+  artworkExpanded?: boolean;
+  onArtworkToggle?: () => void;
 }
 
 const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
   title,
   color,
   artwork,
+  artworkExpanded = false,
+  onArtworkToggle,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [failedArtwork, setFailedArtwork] = useState<string>();
@@ -107,6 +111,13 @@ const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
             {title || "No track selected"}
           </div>
         </div>
+        {onArtworkToggle && <button type="button" className={styles.expandButton}
+          onClick={onArtworkToggle} disabled={!title}
+          aria-label={artworkExpanded ? "Collapse artwork" : "Expand artwork"}
+          title={artworkExpanded ? "Back to library" : "Expand artwork"}
+          aria-expanded={artworkExpanded} aria-controls={artworkExpanded ? "artwork-view" : undefined}>
+          {artworkExpanded ? <Minimize2 size={18}/> : <Maximize2 size={18}/>}
+        </button>}
       </div>
     </div>
   );

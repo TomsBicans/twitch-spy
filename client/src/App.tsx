@@ -1,9 +1,11 @@
-import {lazy, Suspense, useEffect, useRef, useState} from "react";
+import {lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import type {VisualizerPlayback} from './visualizer/audio';
 import "./App.css";
 import styles from "./App.module.css";
 import URLInput from "./components/URLInput.tsx";
 import MusicPlayer from "./components/AudioPlayer.tsx";
+import ArtworkView from "./components/ArtworkView.tsx";
+import {getArtworkUrl} from "./backend/artwork.ts";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
 import JobList from "./components/JobList.tsx";
@@ -17,20 +19,40 @@ const socket = io(BACKEND_URL);
 const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
 
 function App() {
+    const appShellRef = useRef<HTMLDivElement>(null);
+    const dockRef = useRef<HTMLDivElement>(null);
+    const [artworkExpanded, setArtworkExpanded] = useState(false);
+    const closeArtwork = useCallback(() => setArtworkExpanded(false), []);
     const [trackColor, setTrackColor] = useState("#4a4a4a");
     const [playback, setPlayback] = useState<VisualizerPlayback | null>(null);
     const syncDialogRef = useRef<HTMLDialogElement>(null);
     const [showDiagnostics, setShowDiagnostics] = useState(window.location.hash === "#diagnostics");
     useEffect(() => {
-        const onHashChange = () => setShowDiagnostics(window.location.hash === "#diagnostics");
+        const onHashChange = () => {
+            const diagnostics = window.location.hash === "#diagnostics";
+            setShowDiagnostics(diagnostics);
+            if (diagnostics) closeArtwork();
+        };
         window.addEventListener("hashchange", onHashChange);
         return () => window.removeEventListener("hashchange", onHashChange);
-    }, []);
+    }, [closeArtwork]);
     const [pool, setPool] = useState<Atom[]>([]);
     const queue = useMusicQueue(pool);
     const {currentTrack} = queue;
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
+
+    useLayoutEffect(() => {
+        const dock = dockRef.current;
+        if (!dock) return;
+        const updateDockHeight = () => {
+            appShellRef.current?.style.setProperty("--player-dock-height", `${dock.getBoundingClientRect().height}px`);
+        };
+        updateDockHeight();
+        const observer = new ResizeObserver(updateDockHeight);
+        observer.observe(dock);
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         const handleConnect = () => setIsConnected(true);
@@ -74,7 +96,7 @@ function App() {
     };
 
     return (
-        <div className={styles.appShell}>
+        <div ref={appShellRef} className={styles.appShell}>
             <aside className={styles.sidebar}>
                 <div className={styles.brand}>
                     <div className={styles.brandTop}>
@@ -87,7 +109,7 @@ function App() {
                     <h1 className={styles.appTitle}>twitch-spy</h1>
                     <p className={styles.appSubtitle}>music library</p>
                     <div className={styles.desktopActions}>
-                        <button type="button" className={styles.desktopButton} onClick={() => { window.location.hash = "diagnostics"; setShowDiagnostics(true); }}>Health and logs</button>
+                        <button type="button" className={styles.desktopButton} onClick={() => { closeArtwork(); window.location.hash = "diagnostics"; setShowDiagnostics(true); }}>Health and logs</button>
                         <button type="button" className={styles.desktopButton} onClick={openMusicDirectory}>Open music folder</button>
                         <button type="button" className={styles.desktopButton} onClick={quitApplication}>Quit application</button>
                     </div>
@@ -129,16 +151,21 @@ function App() {
 
             <main className={styles.mainContent}>
                 {showDiagnostics && <Diagnostics onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
-                <JobList
-                    socket={socket}
-                    onMusicSelected={queue.selectTrack}
-                    onPoolChanged={setPool}
-                    currentTrack={currentTrack?.content_name}
-                />
+                <div className={artworkExpanded ? styles.libraryHidden : undefined} inert={artworkExpanded}>
+                    <JobList
+                        socket={socket}
+                        onMusicSelected={queue.selectTrack}
+                        onPoolChanged={setPool}
+                        currentTrack={currentTrack?.content_name}
+                    />
+                </div>
+                {artworkExpanded && <ArtworkView artwork={getArtworkUrl(currentTrack)}
+                    title={currentTrack?.content_name} color={trackColor} onClose={closeArtwork}/>}
             </main>
 
-            <div className={styles.nowPlayingDock}>
+            <div ref={dockRef} className={styles.nowPlayingDock}>
                 <MusicPlayer onTrackColorChange={setTrackColor} entry={currentTrack} onPlaybackReady={setPlayback}
+                    artworkExpanded={artworkExpanded} onArtworkToggle={() => setArtworkExpanded(value => !value)}
                     autoplay={queue.autoplay} onAutoplayChange={() => queue.setAutoplay(!queue.autoplay)}
                     shuffle={queue.shuffle} onShuffleChange={queue.toggleShuffle}
                     onNext={queue.next} onPrevious={queue.previous}

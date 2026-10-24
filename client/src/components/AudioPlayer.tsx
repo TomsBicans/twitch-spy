@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import AudioPlayer, {RHAP_UI} from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
+import {getArtworkUrl} from "../backend/artwork.ts";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
@@ -34,6 +35,8 @@ interface AudioPlayerProps {
     canNext: boolean;
     canPrevious: boolean;
     poolSize: number;
+    artworkExpanded?: boolean;
+    onArtworkToggle?: () => void;
 }
 
 const getAverageColor = (imageUrl: string): Promise<string> => {
@@ -82,16 +85,15 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
 };
 
 const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrackColorChange, autoplay,
-    onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize}) => {
+    onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize,
+    artworkExpanded = false, onArtworkToggle}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
     const playerRef = useRef<AudioPlayer>(null);
     const [playerError, setPlayerError] = useState('');
     const analysisRef = useRef<AudioAnalysis | null>(null);
-    const artwork = entry?.thumbnail_image_in_base64
-        ? `data:image/jpeg;base64,${entry.thumbnail_image_in_base64}`
-        : entry?.thumbnail_url ? `${BACKEND_URL}${entry.thumbnail_url}` : undefined;
+    const artwork = getArtworkUrl(entry);
 
     useEffect(() => {
         document.title = isPlaying && entry?.content_name ? entry.content_name : "twitch-spy";
@@ -176,7 +178,8 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     return (
         <div className={styles.playerShell}>
             <div className={styles.leftPane}>
-                <CurrentTrackDisplay title={entry?.content_name} color={trackColor} artwork={artwork}/>
+                <CurrentTrackDisplay title={entry?.content_name} color={trackColor} artwork={artwork}
+                    artworkExpanded={artworkExpanded} onArtworkToggle={onArtworkToggle}/>
             </div>
             <div className={styles.centerPane}>
                 <div className={styles.transport}>

@@ -37,6 +37,12 @@ Previous retraces shuffle history. An empty pool or a pool containing only the c
 song stops automatic advancement. These controls and the temporary pool last for the
 current session; saved playlists are not yet supported.
 
+Use **Expand artwork** beside the thumbnail in the bottom player to fill the main
+area with the current track's artwork and a blurred ambient backdrop. The bottom
+controls stay available, and the picture follows autoplay, shuffle, and track changes.
+Choose **Back to library**, collapse the artwork, or press **Escape** to return to
+your search and scroll position without interrupting playback.
+
 Play a track to start the live 3D preview below the sidebar queue. Use **Expand**
 to open its controls or **Fullscreen** to jump directly into fullscreen.
 Choose Spectrum halo, Wave terrain, or Particle orbit; adjust intensity and quality,

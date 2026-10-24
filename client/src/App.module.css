@@ -186,6 +186,10 @@
   min-height: 100vh;
 }
 
+.libraryHidden {
+  visibility: hidden;
+}
+
 /* ─── Now playing dock ──────────────────────────────────── */
 .nowPlayingDock {
   position: fixed;
