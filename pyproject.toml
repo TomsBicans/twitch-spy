@@ -15,8 +15,8 @@ dependencies = [
     "mutagen>=1.47.0",
     "psutil>=7.2.2",
     "pystray>=0.19.5; sys_platform == 'win32'",
-    "pillow>=11.0; sys_platform == 'win32'",
-    "pytest>=9.0.2",
+    "pillow>=13.0.0; sys_platform == 'win32'",
+    "pytest>=9.0.3",
     "tqdm>=4.67.3",
     "yt-dlp[default,curl-cffi]>=2026.8.19",
 ]
@@ -24,6 +24,19 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pyinstaller>=6.0.0",
+]
+
+[tool.uv]
+constraint-dependencies = [
+    "brotli>=1.2.1",
+    "brotlicffi>=1.2.1.0",
+    "certifi>=2026.10.19",
+    "curl-cffi>=0.15.0",
+    "pygments>=2.20.0",
+    "python-engineio>=4.13.2",
+    "python-socketio>=5.16.2",
+    "setuptools>=84.1.0",
+    "werkzeug>=3.1.9",
 ]
 
 [project.scripts]
