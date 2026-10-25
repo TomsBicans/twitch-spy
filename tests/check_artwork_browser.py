@@ -110,6 +110,13 @@ async def main() -> None:
                 await expect(button).to_be_in_viewport()
 
         await check_layout()
+        await view.get_by_role("img").click()
+        await page.keyboard.press("Space")
+        await expect(page.get_by_role("button", name="Play", exact=True)).to_be_visible()
+        assert await player.evaluate("audio => audio.paused")
+        await page.keyboard.press("Space")
+        await expect(page.get_by_role("button", name="Pause", exact=True)).to_be_visible()
+        assert not await player.evaluate("audio => audio.paused")
         Path("dist").mkdir(exist_ok=True)
         await page.screenshot(path="dist/artwork-desktop.png")
         await page.get_by_role("button", name="Pause", exact=True).click()

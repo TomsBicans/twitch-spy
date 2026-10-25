@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import AudioPlayer, {RHAP_UI} from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
@@ -159,10 +159,10 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
         return () => { cancelled = true; };
     }, [artwork, onTrackColorChange]);
 
-    const togglePlay = async () => {
+    const togglePlay = useCallback(async () => {
         const audio = playerRef.current?.audio?.current;
-        if (!audio) return;
-        if (isPlaying) {
+        if (!audio || !currentTrack) return;
+        if (!audio.paused) {
             audio.pause();
         } else {
             try {
@@ -173,7 +173,22 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                 setPlayerError(`Playback failed: ${String(error)}`);
             }
         }
-    };
+    }, [currentTrack]);
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== " " || event.defaultPrevented || event.isComposing
+                || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+                || !currentTrack) return;
+            if (event.target instanceof Element
+                && (event.target.closest('input, textarea, select, button, a[href], [role="button"], [role="slider"]')
+                    || (event.target instanceof HTMLElement && event.target.isContentEditable))) return;
+            event.preventDefault();
+            if (!event.repeat) void togglePlay();
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [currentTrack, togglePlay]);
 
     return (
         <div className={styles.playerShell}>
@@ -189,6 +204,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                     className={styles.playButton}
                     onClick={togglePlay}
                     aria-label={isPlaying ? "Pause" : "Play"}
+                    title="Play / pause (Space)"
                     disabled={!currentTrack}
                 >
                     {isPlaying ? <PauseIcon/> : <PlayIcon/>}
