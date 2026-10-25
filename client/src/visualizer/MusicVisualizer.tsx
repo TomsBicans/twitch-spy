@@ -7,6 +7,7 @@ import FrameRateSelect from './FrameRateSelect';
 import type {FrameRate} from './FrameRateSelect';
 import styles from './MusicVisualizer.module.css';
 import {isVisualizerShortcut} from './shortcuts';
+import VolumeControl from '../components/VolumeControl';
 
 interface Props {
     audio: HTMLAudioElement;
@@ -168,10 +169,9 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
                 <span>{timestamp(playback.time)}</span>
                 <input aria-label="Seek" type="range" min="0" max={duration || 1} step="0.1" value={Math.min(playback.time, duration)} disabled={!duration} onChange={event => { const time = Number(event.target.value); audio.currentTime = time; setPlayback(value => ({...value, time})); }}/>
                 <span>{timestamp(duration)}</span>
-                <button onClick={() => { audio.muted = !audio.muted; }}>{playback.muted ? 'Unmute' : 'Mute'}</button>
-                <input className={styles.volume} aria-label="Volume" type="range" min="0" max="1" step="0.01" value={playback.volume} onChange={event => { const volume = Number(event.target.value); audio.volume = volume; setPlayback(value => ({...value, volume})); }}/>
                 <button aria-pressed={playback.loop} onClick={() => { audio.loop = !audio.loop; setPlayback(value => ({...value, loop: audio.loop})); }}>Loop</button>
             </div>
+            <div className={styles.volume}><VolumeControl audio={audio}/></div>
         </div>}
         {error && <p className={styles.error} role="alert">{error}</p>}
         </div>

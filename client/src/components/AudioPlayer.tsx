@@ -4,6 +4,8 @@ import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 import {getArtworkUrl} from "../backend/artwork.ts";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
+import VolumeControl from "./VolumeControl";
+import {readVolumeSettings, saveVolumeSettings} from "./volume";
 import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
 import {getAudioAnalysis, releaseAudioAnalysis} from "../visualizer/audio";
@@ -91,6 +93,14 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
     const playerRef = useRef<AudioPlayer>(null);
+    const [volumeSettings] = useState(readVolumeSettings);
+    const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+    const attachPlayer = useCallback((player: AudioPlayer | null) => {
+        playerRef.current = player;
+        const audio = player?.audio.current ?? null;
+        if (audio) audio.muted = volumeSettings.muted;
+        setAudioElement(audio);
+    }, [volumeSettings]);
     const [playerError, setPlayerError] = useState('');
     const analysisRef = useRef<AudioAnalysis | null>(null);
     const artwork = getArtworkUrl(entry);
@@ -222,13 +232,18 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
             </div>
             <div className={styles.rightPane}>
                 <AudioPlayer
-                    ref={playerRef}
+                    ref={attachPlayer}
+                    volume={volumeSettings.volume}
+                    onVolumeChange={() => {
+                        const audio = playerRef.current?.audio.current;
+                        if (audio) saveVolumeSettings(audio);
+                    }}
                     autoPlay
                     autoPlayAfterSrcChange
                     src={currentTrack}
                     crossOrigin="anonymous"
                     showJumpControls={false}
-                    customControlsSection={[RHAP_UI.VOLUME_CONTROLS]}
+                    customControlsSection={audioElement ? [<VolumeControl key="volume" audio={audioElement}/>] : []}
                     customProgressBarSection={[
                         RHAP_UI.CURRENT_TIME,
                         RHAP_UI.PROGRESS_BAR,

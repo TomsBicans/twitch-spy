@@ -1,0 +1,102 @@
+.control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: min(340px, 100%);
+    min-width: 0;
+    color: #d8d5e7;
+}
+
+.control .iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #d8d5e7;
+    cursor: pointer;
+}
+.control .iconButton:hover, .control .iconButton[aria-expanded=true] {
+    background: #292237;
+    color: #fff;
+}
+
+.sliderWrap { position: relative; display: flex; flex: 1; min-width: 80px; }
+.slider {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    height: 32px;
+    accent-color: #a18aff;
+    cursor: pointer;
+}
+.percentage {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 7px;
+    border: 1px solid #444157;
+    border-radius: 6px;
+    background: #181624;
+    color: #e8e4f3;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    opacity: 0;
+}
+.sliderWrap:hover .percentage, .sliderWrap:focus-within .percentage { opacity: 1; }
+
+.settings {
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: calc(100% + 12px);
+    box-sizing: border-box;
+    width: min(300px, calc(100vw - 56px));
+    padding: 14px;
+    border: 1px solid #444157;
+    border-radius: 12px;
+    background: #181624;
+    color: #e8e4f3;
+    box-shadow: 0 12px 36px #0008;
+}
+.heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.heading h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.level { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.level > span:first-child { margin-right: auto; }
+.level input {
+    width: 54px;
+    padding: 6px;
+    border: 1px solid #625774;
+    border-radius: 6px;
+    background: #100e18;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+.settings p { margin: 12px 0 0; color: #b9b1c9; font-size: 12px; line-height: 1.5; }
+.control .apply {
+    display: block;
+    margin: 12px 0 0 auto;
+    padding: 6px 12px;
+    border: 1px solid #8d75ce;
+    border-radius: 7px;
+    background: #4e387e;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.control .apply:hover { background: #62499a; }
+.control :focus-visible { outline: 2px solid #b6a4ff; outline-offset: 3px; }
+
+@media (max-width: 600px) {
+    .control { gap: 6px; }
+}

@@ -190,9 +190,8 @@ async def main() -> None:
         await page.wait_for_function("Math.abs(document.querySelector('audio').currentTime - 1) < 0.05")
         volume = dialog.get_by_role("slider", name="Volume", exact=True)
         await volume.press("Home")
-        for _ in range(40):
-            await volume.press("ArrowRight")
-        assert await page.locator("audio").evaluate("audio => audio.volume") == 0.4
+        await volume.press("ArrowRight")
+        assert math.isclose(await page.locator("audio").evaluate("audio => audio.volume"), 0.001)
         await dialog.get_by_role("button", name="Mute", exact=True).click()
         assert await page.locator("audio").evaluate("audio => audio.muted")
         await dialog.get_by_role("button", name="Loop", exact=True).click()

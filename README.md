@@ -43,6 +43,15 @@ controls stay available, and the picture follows autoplay, shuffle, and track ch
 Choose **Back to library**, collapse the artwork, or press **Escape** to return to
 your search and scroll position without interrupting playback.
 
+The player and expanded visualizer share a wide **Volume** slider from 0–100%,
+with the percentage shown while hovering or adjusting it. Its curved response gives
+fine control at quiet levels, and 0% is silent. The speaker button mutes and restores
+the previous level. **Audio settings** beside the slider offers precise adjustment
+from −60 dB (very quiet) to 0 dB (original level); press Enter or **Apply** to use it.
+Volume and mute are remembered in
+this browser across track changes and reloads, including on mobile. Existing saved
+levels are preserved. These controls do not normalize loudness between tracks.
+
 Play a track to start the live 3D preview below the sidebar queue. Use **Expand**
 to open its controls or **Fullscreen** to jump directly into fullscreen.
 Choose Spectrum halo, Wave terrain, or Particle orbit; adjust intensity and quality,

@@ -40,7 +40,7 @@
 .transport { display: flex; gap: 12px; align-items: center; }
 .transport span { font-size: 12px; font-variant-numeric: tabular-nums; }
 .transport input[aria-label=Seek] { flex: 1; min-width: 40px; }
-.volume { width: 80px; }
+.volume { display: flex; justify-content: flex-end; margin-top: 12px; }
 .error { position: absolute; top: 70px; left: 24px; right: 24px; background: #34202d; padding: 12px; }
 @media (max-width: 650px) {
     .controls { padding: 40px 14px 16px; }

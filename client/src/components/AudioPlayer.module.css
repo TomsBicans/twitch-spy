@@ -76,6 +76,11 @@
   width: 100%;
 }
 
+.rightPane :global(.rhap_controls-section) {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 @media (max-width: 900px) {
   .playerShell { flex-wrap: wrap; gap: 10px; }
   .rightPane { flex-basis: 180px; }
