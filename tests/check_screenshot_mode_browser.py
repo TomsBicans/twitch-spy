@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 
-from playwright.async_api import Page, async_playwright, expect
+from playwright.async_api import Page, Route, async_playwright, expect
 
 from check_library_browser import track
 from check_playback_queue_browser import mock_library
@@ -73,6 +73,13 @@ async def main() -> None:
         browser = await playwright.chromium.launch(headless=True, channel="msedge")
         context = await browser.new_context(viewport={"width": 2048, "height": 1152})
         await mock_library(context, songs)
+        retry_requests: list[tuple[str, str]] = []
+
+        async def retry_download(route: Route) -> None:
+            retry_requests.append((route.request.method, route.request.url))
+            await route.fulfill(json={"success": True})
+
+        await context.route("**/jobs/*/retry", retry_download)
         page = await context.new_page()
         await page.route("**/diagnostics", lambda route: route.fulfill(json={
             "status": "running", "version": "PRIVATE build", "pid": 100,
@@ -145,7 +152,15 @@ async def main() -> None:
         await set_screenshot_mode(page, True)
         await page.get_by_text("Error details", exact=True).click()
         await assert_masked(page)
+        retry = page.get_by_role("button", name="Retry download", exact=True)
+        await expect(retry).to_be_disabled()
+        await retry.dispatch_event("click")
         await set_screenshot_mode(page, False)
+        assert not retry_requests, retry_requests
+        await expect(retry).to_be_enabled()
+        async with page.expect_response("**/jobs/65/retry"):
+            await retry.click()
+        assert retry_requests == [("POST", "http://127.0.0.1:5173/jobs/65/retry")], retry_requests
         await expect(page.get_by_text("PRIVATE download failed", exact=False)).to_be_visible()
         await page.get_by_role("button", name="Close playback queue").click()
         await page.set_viewport_size({"width": 390, "height": 844})
@@ -173,7 +188,8 @@ async def main() -> None:
         assert not errors, errors
         await browser.close()
     print("Passed: masked artwork/text/URLs/errors, queue and visualizer, playback continuity, "
-          "restoration, mobile layout, direct links and reload, no original artwork requests")
+          "restoration, retry download blocking and restoration, mobile layout, "
+          "direct links and reload, no original artwork requests")
 
 
 if __name__ == "__main__":

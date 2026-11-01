@@ -237,7 +237,12 @@
   transition: background var(--transition-medium) ease, border-color var(--transition-medium) ease;
 }
 
-.retryButton:hover {
+.retryButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.retryButton:hover:not(:disabled) {
   background: rgba(255, 157, 141, 0.22);
   border-color: rgba(255, 157, 141, 0.65);
 }

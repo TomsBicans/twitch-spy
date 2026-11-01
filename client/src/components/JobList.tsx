@@ -106,6 +106,7 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
                 {RETRIABLE_STATES.has(job.status) && (
                     <button
                         className={styles.retryButton}
+                        disabled={screenshotMode}
                         onClick={(e) => { e.stopPropagation(); onRetry(); }}
                         aria-label="Retry download"
                     >
@@ -256,6 +257,7 @@ export const JobList = ({
     };
 
     const handleRetry = async (job: Atom) => {
+        if (screenshotMode) return;
         try {
             await fetch(`${BACKEND_URL}/jobs/${job.id}/retry`, {method: "POST"});
         } catch (error) {
