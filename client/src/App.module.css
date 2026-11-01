@@ -190,6 +190,11 @@
   visibility: hidden;
 }
 
+@media (min-width: 1201px) {
+  .queueOpen { --queue-width: 340px; }
+  .queueOpen .mainContent { margin-right: var(--queue-width); }
+}
+
 /* ─── Now playing dock ──────────────────────────────────── */
 .nowPlayingDock {
   position: fixed;

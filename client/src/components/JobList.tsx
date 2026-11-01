@@ -3,12 +3,16 @@ import {Socket} from "socket.io-client";
 import {type Atom, CONTENT_MODE, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
 import {BACKEND_URL} from "../backend/backend.ts";
+import type {LibraryFilter} from "../playbackState";
 
 interface JobStatusesProps {
     socket: Socket;
     onMusicSelected: (selection: Atom) => void;
     currentTrack: string | undefined;
     onPoolChanged?: (tracks: Atom[]) => void;
+    onLibraryChanged?: (tracks: Atom[], ready: boolean) => void;
+    filter?: LibraryFilter;
+    onFilterChanged?: (filter: LibraryFilter) => void;
 }
 
 type SelectedProcessingState = ProcessingStates | "all";
@@ -119,6 +123,9 @@ export const JobList = ({
                             onMusicSelected,
                             currentTrack,
                             onPoolChanged,
+                            onLibraryChanged,
+                            filter,
+                            onFilterChanged,
                         }: JobStatusesProps) => {
     const [jobs, setJobs] = useState<Array<Atom>>([]);
     const [loading, setLoading] = useState(true);
@@ -128,9 +135,11 @@ export const JobList = ({
     const [loadError, setLoadError] = useState("");
     const [reloadKey, setReloadKey] = useState(0);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-    const [selectedJobProcessingState, setSelectedJobProcessingState] =
+    const [localStatus, setLocalStatus] =
         useState<SelectedProcessingState>(ProcessingStates.FINISHED);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [localSearch, setLocalSearch] = useState("");
+    const selectedJobProcessingState = filter?.status ?? localStatus;
+    const searchQuery = filter?.search ?? localSearch;
 
     useEffect(() => {
         let controller: AbortController;
@@ -228,15 +237,16 @@ export const JobList = ({
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(event.target.value);
+        setLocalSearch(event.target.value);
+        onFilterChanged?.({search: event.target.value, status: selectedJobProcessingState});
         setVisibleCount(PAGE_SIZE);
     };
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setVisibleCount(PAGE_SIZE);
-        setSelectedJobProcessingState(
-            event.target.value as SelectedProcessingState
-        );
+        const status = event.target.value as SelectedProcessingState;
+        setLocalStatus(status);
+        onFilterChanged?.({search: searchQuery, status});
     };
 
     const handleCardClick = (job: Atom) => {
@@ -265,6 +275,11 @@ export const JobList = ({
     useEffect(() => {
         onPoolChanged?.(playablePool);
     }, [onPoolChanged, playablePool]);
+
+    useEffect(() => {
+        onLibraryChanged?.(jobs.filter(job => job.status === ProcessingStates.FINISHED
+            && job.content_type === CONTENT_MODE.AUDIO), !loading);
+    }, [jobs, loading, onLibraryChanged]);
 
     const emptyStateMessage = searchQuery
         ? "No matches yet. Try different keywords or clear the filters."

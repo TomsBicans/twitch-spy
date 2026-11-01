@@ -10,7 +10,7 @@ import type {Atom} from "../backend/models.ts";
 import styles from "./AudioPlayer.module.css";
 import {getAudioAnalysis, releaseAudioAnalysis} from "../visualizer/audio";
 import type {AudioAnalysis, VisualizerPlayback} from "../visualizer/audio";
-import {SkipBack, SkipForward} from "lucide-react";
+import {ListMusic, SkipBack, SkipForward} from "lucide-react";
 
 const PlayIcon = () => (
     <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
@@ -39,6 +39,8 @@ interface AudioPlayerProps {
     poolSize: number;
     artworkExpanded?: boolean;
     onArtworkToggle?: () => void;
+    queueOpen: boolean;
+    onQueueToggle: () => void;
 }
 
 const getAverageColor = (imageUrl: string): Promise<string> => {
@@ -88,7 +90,7 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
 
 const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrackColorChange, autoplay,
     onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize,
-    artworkExpanded = false, onArtworkToggle}) => {
+    artworkExpanded = false, onArtworkToggle, queueOpen, onQueueToggle}) => {
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
@@ -268,6 +270,11 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                     }}
                 />
             </div>
+            <button type="button" className={styles.queueButton} onClick={onQueueToggle}
+                aria-label={queueOpen ? "Hide playback queue" : "Show playback queue"}
+                aria-expanded={queueOpen} aria-controls="playback-queue" title="Playback queue">
+                <ListMusic size={21}/><span>Queue</span>
+            </button>
             {playerError && <p role="alert" className={styles.playerError}>{playerError}</p>}
         </div>
     );

@@ -38,6 +38,8 @@
   outline-offset: 3px;
 }
 .poolCount { color: #9da5bd; font-size: 0.68rem; }
+.queueButton { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px; flex-shrink: 0; border: 1px solid #ffffff16; border-radius: 9px; color: #aca6bf; background: #ffffff04; font-size: 0.72rem; }
+.queueButton[aria-expanded="true"] { color: #c2adff; background: #a58aff1a; border-color: #a58aff4d; }
 
 .playButton {
   padding: 0;
@@ -94,6 +96,7 @@
 }
 
 @media (max-width: 600px) {
+  .queueButton { position: absolute; right: 28px; top: 82px; }
   .rightPane { flex-basis: 100%; }
   .playerShell {
     gap: 10px;

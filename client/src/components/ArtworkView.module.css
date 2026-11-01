@@ -1,6 +1,6 @@
 .view {
   position: fixed;
-  inset: 0 0 var(--player-dock-height, 140px) 280px;
+  inset: 0 var(--queue-width, 0px) var(--player-dock-height, 140px) 280px;
   z-index: 10;
   isolation: isolate;
   display: flex;
