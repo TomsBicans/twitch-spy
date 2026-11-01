@@ -42,7 +42,8 @@ export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean) {
     const trackAt = (position: number): Atom | undefined => {
         if (position === 0 && anchor) return anchor;
         if (!order.length) return undefined;
-        const offset = anchorIndex < 0 ? position - 1 : anchorIndex + position;
+        let offset = anchorIndex + position;
+        if (anchorIndex < 0) offset = position > 0 ? position - 1 : position;
         return order[((offset % order.length) + order.length) % order.length];
     };
     const canNext = ready && pool.some(track => track.url !== state.track);
