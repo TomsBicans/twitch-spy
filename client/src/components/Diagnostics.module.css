@@ -11,3 +11,11 @@
 .panel td, .panel th { padding: 8px; border-bottom: 1px solid #384258; }
 .logs { height: 50dvh; min-height: 320px; resize: vertical; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: #0e121b; padding: 16px; font-size: .8rem; border-radius: 8px; }
 .error { color: #ffb4b4; }
+.heading button:disabled { opacity: .45; cursor: default; }
+.tools { margin: 16px 0; font-size: .8rem; color: #a9b1c4; }
+.tools summary { width: fit-content; cursor: pointer; }
+.toolRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border: 1px solid #ffffff0d; border-radius: 8px; background: #ffffff03; }
+.toolRow span { color: #d1d6e2; }
+.toolRow p { margin: 4px 0 0; font-size: .75rem; }
+.toolRow button { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: .75rem; border-radius: 6px; border: 1px solid #ffffff14; color: #c0b4df; background: transparent; }
+.toolRow button[aria-pressed="true"] { background: #9571ff1c; border-color: #a58aff60; color: #d3c5ff; }

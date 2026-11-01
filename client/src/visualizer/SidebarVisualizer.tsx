@@ -9,6 +9,7 @@ import FrameRateSelect from './FrameRateSelect';
 import type {FrameRate} from './FrameRateSelect';
 import styles from './SidebarVisualizer.module.css';
 import {isVisualizerShortcut} from './shortcuts';
+import {useScreenshotMode} from '../screenshotMode';
 
 interface Props {
     playback: VisualizerPlayback | null;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4a"}: Props) {
+    const screenshotMode = useScreenshotMode();
     const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
     const color = colorTheme === "artwork" ? trackColor : undefined;
     const [expanded, setExpanded] = useState(false);
@@ -97,7 +99,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
                     <button disabled={!playback} onClick={() => setExpanded(true)} aria-label="Expand visualizer"><Expand size={14}/>Expand</button>
                     <button disabled={!playback || !document.fullscreenEnabled} onClick={openFullscreen} aria-label="Fullscreen visualizer" title="Press F for fullscreen without controls"><Maximize size={14}/>Fullscreen</button>
                 </div>
-                {error && <p role="alert">{error}</p>}
+                {error && <p role="alert">{screenshotMode ? 'Visualizer is unavailable. Try again.' : error}</p>}
             </footer>
         </section>
         {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'}

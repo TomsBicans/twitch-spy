@@ -1,6 +1,8 @@
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {BACKEND_URL} from "../backend/backend";
 import styles from "./Diagnostics.module.css";
+import {Camera} from "lucide-react";
+import {useScreenshotMode} from "../screenshotMode";
 
 interface ProcessReading {
     pid: number;
@@ -29,7 +31,13 @@ interface Snapshot {
 const memory = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 const cpu = (percent: number | null) => percent === null ? "Sampling…" : `${percent.toFixed(1)}%`;
 
-export default function Diagnostics({onClose}: {onClose: () => void}) {
+interface DiagnosticsProps {
+    onClose: () => void;
+    onScreenshotToggle?: () => void;
+}
+
+export default function Diagnostics({onClose, onScreenshotToggle}: DiagnosticsProps) {
+    const screenshotMode = useScreenshotMode();
     const [snapshot, setSnapshot] = useState<Snapshot>();
     const [error, setError] = useState("");
     const [paused, setPaused] = useState(false);
@@ -42,7 +50,7 @@ export default function Diagnostics({onClose}: {onClose: () => void}) {
     }, [snapshot?.logs]);
 
     useEffect(() => {
-        if (paused) return;
+        if (paused || screenshotMode) return;
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout>;
         async function refresh() {
@@ -68,16 +76,28 @@ export default function Diagnostics({onClose}: {onClose: () => void}) {
         }
         void refresh();
         return () => { controller.abort(); clearTimeout(timer); };
-    }, [paused]);
+    }, [paused, screenshotMode]);
 
     return <section className={styles.panel} aria-label="Health and resource usage">
         <div className={styles.heading}>
             <h2>Health and resource usage</h2>
             <div>
-                <button type="button" onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</button>
+                <button type="button" disabled={screenshotMode} onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</button>
                 <button type="button" onClick={onClose}>Close</button>
             </div>
         </div>
+        {onScreenshotToggle && <details className={styles.tools}>
+            <summary>Developer tools</summary>
+            <div className={styles.toolRow}>
+                <div>
+                    <span>Screenshot mode</span>
+                    <p>Use demo artwork and text when capturing the interface.</p>
+                </div>
+                <button type="button" aria-label="Screenshot mode" aria-pressed={screenshotMode}
+                    onClick={onScreenshotToggle}><Camera size={14}/>{screenshotMode ? "Disable" : "Enable"}</button>
+            </div>
+        </details>}
+        {screenshotMode ? <p className={styles.note}>Diagnostics and logs are hidden while Screenshot mode is enabled.</p> : <>
         {error && <p role="alert" className={styles.error}>{error}</p>}
         {!snapshot && !error && <p>Loading diagnostics…</p>}
         {snapshot && <>
@@ -102,6 +122,7 @@ export default function Diagnostics({onClose}: {onClose: () => void}) {
                 const logs = event.currentTarget;
                 followLogsRef.current = logs.scrollHeight - logs.clientHeight - logs.scrollTop <= 4;
             }}>{snapshot.logs || "No application log entries yet."}</pre>
+        </>}
         </>}
     </section>;
 }

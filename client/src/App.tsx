@@ -6,7 +6,7 @@ import URLInput from "./components/URLInput.tsx";
 import MusicPlayer from "./components/AudioPlayer.tsx";
 import ArtworkView from "./components/ArtworkView.tsx";
 import PlaybackQueue from "./components/PlaybackQueue";
-import {getArtworkUrl} from "./backend/artwork.ts";
+import {displayArtwork, displayTitle, ScreenshotModeContext, useScreenshotController} from "./screenshotMode";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
 import JobList from "./components/JobList.tsx";
@@ -20,6 +20,8 @@ const socket = io(BACKEND_URL);
 const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
 
 function App() {
+    const screenshot = useScreenshotController();
+    const screenshotMode = screenshot.enabled;
     const appShellRef = useRef<HTMLDivElement>(null);
     const dockRef = useRef<HTMLDivElement>(null);
     const [artworkExpanded, setArtworkExpanded] = useState(false);
@@ -45,7 +47,7 @@ function App() {
         setLibraryReady(ready);
     }, []);
     const [queueOpen, setQueueOpen] = useState(false);
-    const queue = useMusicQueue(pool, library, libraryReady);
+    const queue = useMusicQueue(pool, library, libraryReady, screenshotMode);
     const {currentTrack} = queue;
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
@@ -104,6 +106,7 @@ function App() {
     };
 
     return (
+        <ScreenshotModeContext.Provider value={screenshotMode}>
         <div ref={appShellRef} className={`${styles.appShell} ${queueOpen ? styles.queueOpen : ""}`}>
             <aside className={styles.sidebar}>
                 <div className={styles.brand}>
@@ -118,10 +121,10 @@ function App() {
                     <p className={styles.appSubtitle}>music library</p>
                     <div className={styles.desktopActions}>
                         <button type="button" className={styles.desktopButton} onClick={() => { closeArtwork(); window.location.hash = "diagnostics"; setShowDiagnostics(true); }}>Health and logs</button>
-                        <button type="button" className={styles.desktopButton} onClick={openMusicDirectory}>Open music folder</button>
-                        <button type="button" className={styles.desktopButton} onClick={quitApplication}>Quit application</button>
+                        <button type="button" disabled={screenshotMode} className={styles.desktopButton} onClick={openMusicDirectory}>Open music folder</button>
+                        <button type="button" disabled={screenshotMode} className={styles.desktopButton} onClick={quitApplication}>Quit application</button>
                     </div>
-                    {desktopMessage && <p className={styles.desktopMessage}>{desktopMessage}</p>}
+                    {!screenshotMode && desktopMessage && <p className={styles.desktopMessage}>{desktopMessage}</p>}
                 </div>
 
                 <div className={styles.sidebarSection}>
@@ -136,12 +139,12 @@ function App() {
 
                 <div className={styles.visualizerSlot}>
                     <Suspense fallback={<p>Loading visualizer...</p>}>
-                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={currentTrack?.content_name}/>
+                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={displayTitle(currentTrack, screenshotMode)}/>
                     </Suspense>
                 </div>
 
                 <div className={`${styles.sidebarSection} ${styles.syncSection}`}>
-                    <button type="button" className={styles.syncButton}
+                    <button type="button" disabled={screenshotMode} className={styles.syncButton}
                         onClick={() => syncDialogRef.current?.showModal()}>
                         Sync to device
                     </button>
@@ -154,11 +157,13 @@ function App() {
                     <button type="button" className={styles.desktopButton}
                         onClick={() => syncDialogRef.current?.close()}>Close</button>
                 </div>
-                <SyncPanel socket={socket} />
+                {!screenshotMode && <SyncPanel socket={socket} />}
             </dialog>
 
             <main className={styles.mainContent}>
-                {showDiagnostics && <Diagnostics onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
+                {showDiagnostics && <Diagnostics
+                    onScreenshotToggle={() => { syncDialogRef.current?.close(); screenshot.toggle(); }}
+                    onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
                 <div className={artworkExpanded ? styles.libraryHidden : undefined} inert={artworkExpanded}>
                     <JobList
                         socket={socket}
@@ -169,8 +174,8 @@ function App() {
                         currentTrack={currentTrack?.content_name}
                     />
                 </div>
-                {artworkExpanded && <ArtworkView artwork={getArtworkUrl(currentTrack)}
-                    title={currentTrack?.content_name} color={trackColor} onClose={closeArtwork}/>}
+                {artworkExpanded && <ArtworkView artwork={displayArtwork(currentTrack, screenshotMode)}
+                    title={displayTitle(currentTrack, screenshotMode)} color={trackColor} onClose={closeArtwork}/>}
             </main>
 
             {queueOpen && <PlaybackQueue currentTrack={currentTrack} history={queue.history}
@@ -187,6 +192,7 @@ function App() {
                     canNext={queue.canNext} canPrevious={queue.canPrevious} poolSize={pool.length}/>
             </div>
         </div>
+        </ScreenshotModeContext.Provider>
     );
 }
 

@@ -4,6 +4,7 @@ import {type Atom, CONTENT_MODE, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 import type {LibraryFilter} from "../playbackState";
+import {displayArtwork, displaySource, displayTitle, useScreenshotMode} from "../screenshotMode";
 
 interface JobStatusesProps {
     socket: Socket;
@@ -37,6 +38,7 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
     isPlaying: boolean;
     onRetry: () => void;
 }) => {
+    const screenshotMode = useScreenshotMode();
     const cardRef = useRef<HTMLDivElement>(null);
     const [thumbnailVisible, setThumbnailVisible] = useState(false);
 
@@ -56,11 +58,7 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
         return () => observer.disconnect();
     }, []);
 
-    const thumbnail = thumbnailVisible
-        ? job.thumbnail_image_in_base64
-            ? `data:image/jpeg;base64,${job.thumbnail_image_in_base64}`
-            : job.thumbnail_url ? `${BACKEND_URL}${job.thumbnail_url}` : ""
-        : "";
+    const thumbnail = thumbnailVisible || screenshotMode ? displayArtwork(job, screenshotMode) : undefined;
 
     const status = job.status.toLowerCase();
     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
@@ -84,7 +82,7 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
             onClick={onClick}
             onKeyDown={handleKeyDown}
         >
-            <div className={styles.thumbnail} style={{backgroundImage: `url(${thumbnail})`}} />
+            <div className={styles.thumbnail} style={{backgroundImage: thumbnail ? `url("${thumbnail}")` : undefined}} />
             <div className={styles.cardContent}>
                 <div className={styles.cardHeader}>
                     <span className={styles.contentType}>
@@ -92,8 +90,8 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
                     </span>
                     <span className={styles.statusChip}>{statusLabel}</span>
                 </div>
-                <h3 className={styles.jobName}>{job.content_name || "Untitled"}</h3>
-                <p className={styles.jobUrl}>{job.url}</p>
+                <h3 className={styles.jobName}>{displayTitle(job, screenshotMode) || "Untitled"}</h3>
+                <p className={styles.jobUrl}>{displaySource(job, screenshotMode)}</p>
                 {job.status === ProcessingStates.FAILED && (
                     <details
                         className={styles.errorDetails}
@@ -101,12 +99,14 @@ const SongCard = React.memo(({job, onClick, isPlaying, onRetry}: {
                         onKeyDown={(event) => event.stopPropagation()}
                     >
                         <summary>Error details</summary>
-                        <pre>{job.error_message || "Error details were not recorded. Retry this download to capture the reason."}</pre>
+                        <pre>{screenshotMode ? "Demo download could not be completed. Try again later."
+                            : job.error_message || "Error details were not recorded. Retry this download to capture the reason."}</pre>
                     </details>
                 )}
                 {RETRIABLE_STATES.has(job.status) && (
                     <button
                         className={styles.retryButton}
+                        disabled={screenshotMode}
                         onClick={(e) => { e.stopPropagation(); onRetry(); }}
                         aria-label="Retry download"
                     >
@@ -127,6 +127,7 @@ export const JobList = ({
                             filter,
                             onFilterChanged,
                         }: JobStatusesProps) => {
+    const screenshotMode = useScreenshotMode();
     const [jobs, setJobs] = useState<Array<Atom>>([]);
     const [loading, setLoading] = useState(true);
     const [scanning, setScanning] = useState(false);
@@ -256,6 +257,7 @@ export const JobList = ({
     };
 
     const handleRetry = async (job: Atom) => {
+        if (screenshotMode) return;
         try {
             await fetch(`${BACKEND_URL}/jobs/${job.id}/retry`, {method: "POST"});
         } catch (error) {
@@ -320,7 +322,8 @@ export const JobList = ({
                     <input
                         type="text"
                         placeholder="Search by title or URL"
-                        value={searchQuery}
+                        value={screenshotMode ? "" : searchQuery}
+                        disabled={screenshotMode}
                         onChange={handleSearchChange}
                         className={styles.searchInput}
                         aria-label="Search tracks"
@@ -336,7 +339,7 @@ export const JobList = ({
             )}
             {loadError && (
                 <div role="alert">
-                    <p>{loadError}</p>
+                    <p>{screenshotMode ? "Could not finish loading the demo library." : loadError}</p>
                     {!scanFailed && <button className={styles.filterSelect} onClick={() => setReloadKey((key) => key + 1)}>Retry loading</button>}
                 </div>
             )}

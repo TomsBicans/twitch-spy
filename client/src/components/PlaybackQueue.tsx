@@ -1,7 +1,7 @@
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {History, ListMusic, LocateFixed, Music2, Play, Shuffle, X} from "lucide-react";
 import type {Atom} from "../backend/models";
-import {getArtworkUrl} from "../backend/artwork";
+import {displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
 import type {QueueEntry} from "../useMusicQueue";
 import styles from "./PlaybackQueue.module.css";
 
@@ -17,7 +17,7 @@ interface PlaybackQueueProps {
 }
 
 function Cover({track}: {track: Atom}) {
-    const url = getArtworkUrl(track);
+    const url = displayArtwork(track, useScreenshotMode());
     const [failed, setFailed] = useState<string>();
     return <span className={styles.cover} aria-hidden="true">
         {url && failed !== url
@@ -28,6 +28,7 @@ function Cover({track}: {track: Atom}) {
 
 export default function PlaybackQueue({currentTrack, history, upcoming, shuffle, autoplay,
     loading, onJump, onClose}: PlaybackQueueProps) {
+    const screenshotMode = useScreenshotMode();
     const [visible, setVisible] = useState(40);
     const [visibleHistory, setVisibleHistory] = useState(5);
     const closeRef = useRef<HTMLButtonElement>(null);
@@ -71,11 +72,11 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
     const renderEntry = ({track, position}: QueueEntry, past: boolean) => <li key={position}
         data-queue-state={past ? "past" : "upcoming"} className={past ? styles.past : undefined}>
         <button type="button" onClick={() => onJump(position)}
-            aria-label={`Play ${track.content_name}`} className={styles.track}>
+            aria-label={`Play ${displayTitle(track, screenshotMode)}`} className={styles.track}>
             <span className={styles.number}>{position < 0 ? <History size={12}/>
                 : String(position + 1).padStart(2, "0")}</span>
-            <Cover track={track}/><span className={styles.trackTitle} title={track.content_name}>
-                {track.content_name}</span><Play size={14} className={styles.playIcon}/>
+            <Cover track={track}/><span className={styles.trackTitle} title={displayTitle(track, screenshotMode)}>
+                {displayTitle(track, screenshotMode)}</span><Play size={14} className={styles.playIcon}/>
         </button>
     </li>;
 
@@ -112,7 +113,7 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
                             <span className={styles.number}>{currentPosition < 0 ? <Music2 size={12}/>
                                 : String(currentPosition + 1).padStart(2, "0")}</span>
                             <Cover track={currentTrack}/>
-                            <strong title={currentTrack.content_name}>{currentTrack.content_name}</strong>
+                            <strong title={displayTitle(currentTrack, screenshotMode)}>{displayTitle(currentTrack, screenshotMode)}</strong>
                             <span className={styles.soundBars} aria-hidden="true"><i/><i/><i/></span>
                         </div>
                     </li>

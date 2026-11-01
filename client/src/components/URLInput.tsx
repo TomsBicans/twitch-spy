@@ -3,12 +3,14 @@ import {Socket} from "socket.io-client";
 import {TextInputStats} from "./util/TextInputStats.tsx";
 import {apiRequest} from "../backend/backend.ts";
 import styles from "./URLInput.module.css";
+import {useScreenshotMode} from "../screenshotMode";
 
 interface URLInputProps {
     socket: Socket;
 }
 
 export const URLInput = ({socket}: URLInputProps) => {
+    const screenshotMode = useScreenshotMode();
     const [userInput, setUserInput] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [planning, setPlanning] = useState<{current: number; total: number} | null>(null);
@@ -70,7 +72,7 @@ export const URLInput = ({socket}: URLInputProps) => {
 
     const submitForm = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (!formRef.current || !rawInputValid) {
+        if (screenshotMode || !formRef.current || !rawInputValid) {
             return;
         }
 
@@ -97,7 +99,8 @@ export const URLInput = ({socket}: URLInputProps) => {
             <label className={styles.inputShell}>
                 <span className={styles.inputLabel}>Paste URLs</span>
                 <textarea
-                    value={userInput}
+                    value={screenshotMode ? "" : userInput}
+                    disabled={screenshotMode}
                     onChange={(e) => setUserInput(e.target.value)}
                     rows={3}
                     placeholder="Comma or line separated YouTube links"
@@ -106,25 +109,26 @@ export const URLInput = ({socket}: URLInputProps) => {
                 <span className={styles.inputGlow} aria-hidden="true" />
             </label>
             <div className={styles.metaRow}>
-                {planning ? (
+                {planning && !screenshotMode ? (
                     <span className={styles.planningText}>
                         Planning {planning.current} / {planning.total}…
                     </span>
                 ) : (
-                    <TextInputStats urlCount={validUrlCount} inputValidity={rawInputValid} />
+                    <TextInputStats urlCount={screenshotMode ? 0 : validUrlCount}
+                        inputValidity={!screenshotMode && rawInputValid} />
                 )}
                 <div className={styles.buttonGroup}>
                     <button
                         type="button"
                         onClick={() => setUserInput(cleanedInput)}
-                        disabled={!cleanedInputValid || cleanedInput === userInput}
+                        disabled={screenshotMode || !cleanedInputValid || cleanedInput === userInput}
                         className={styles.secondaryButton}
                     >
                         Clean input
                     </button>
                     <button
                         type="submit"
-                        disabled={!rawInputValid || isSubmitting}
+                        disabled={screenshotMode || !rawInputValid || isSubmitting}
                         className={styles.primaryButton}
                     >
                         {isSubmitting ? "Submitting…" : "Queue downloads"}
