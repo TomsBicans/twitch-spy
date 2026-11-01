@@ -170,6 +170,34 @@ async def main() -> None:
         await page.get_by_role("heading", name="Pool failed", exact=True).click()
         await source("Other%20song")
 
+        await page.get_by_role("button", name="Shuffle", exact=True).click()
+        await page.get_by_role("button", name="Previous song", exact=True).click()
+        await source("Pool%200050")
+        params = parse_qs(urlparse(page.url).query)
+        assert params["position"] == ["-1"]
+        assert params["from"] == ["-1"]
+        await page.get_by_role("button", name="Previous song", exact=True).click()
+        await source("Pool%200049")
+        await page.get_by_role("button", name="Next song", exact=True).click()
+        await source("Pool%200050")
+        await page.reload()
+        await source("Pool%200050")
+        await expect(search).to_have_value("Pool")
+        await expect(page.get_by_role("button", name="Previous song")).to_be_enabled()
+        await page.get_by_role("button", name="Show playback queue").click()
+        await expect(page.locator('#queue-tracks [aria-current="true"]')).to_contain_text(
+            "Pool 0050",
+        )
+        await page.get_by_role("button", name="Previous song", exact=True).click()
+        await source("Pool%200049")
+        await page.get_by_role("button", name="Next song", exact=True).click()
+        await source("Pool%200050")
+        await page.get_by_role("button", name="Next song", exact=True).click()
+        await source("Other%20song")
+        await page.get_by_role("button", name="Next song", exact=True).click()
+        await source("Pool%200000")
+        await page.get_by_role("button", name="Close playback queue").click()
+
         await page.set_viewport_size({"width": 390, "height": 844})
         await expect(page.get_by_role("button", name="Next song")).to_be_visible()
         await expect(page.get_by_role("button", name="Shuffle", exact=True)).to_be_visible()
@@ -180,7 +208,12 @@ async def main() -> None:
         await page.screenshot(path="dist/music-controls-mobile.png")
         assert not errors, errors
         await browser.close()
-        print("Passed: Space playback shortcut and focus guards, sequence, full search pool, autoplay, shuffle cycle/history, query changes, empty/single pools, failed tracks, mobile layout")
+        print(
+            "Passed: Space playback shortcut and focus guards, sequence, full "
+            "search pool, autoplay, shuffle cycle/history, query changes, "
+            "filtered-out anchor navigation and bookmark restore, empty/single "
+            "pools, failed tracks, mobile layout"
+        )
 
 
 if __name__ == "__main__":

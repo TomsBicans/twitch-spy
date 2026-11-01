@@ -34,8 +34,22 @@ for subsequent navigation.
 Autoplay is off initially; enable it to advance when a song ends. Sequential playback
 wraps around the pool. Shuffle plays every matching song before repeating, and
 Previous retraces shuffle history. An empty pool or a pool containing only the current
-song stops automatic advancement. These controls and the temporary pool last for the
-current session; saved playlists are not yet supported.
+song stops automatic advancement.
+
+The URL remembers autoplay, shuffle, the shuffle seed, current song and sequence
+position, plus the library search and status filter. Bookmark or copy it to return
+to the same sequence, including its history, without relying on browser storage.
+Restoration waits for the library to load; your browser may require pressing **Play**.
+Songs restart from the beginning. Adding or removing library tracks can change the
+sequence; the URL refers to tracks in this app's library.
+
+Use **Queue** in the player dock to open the right sidebar. A single list shows
+dimmed previous songs, the highlighted current song, and upcoming songs in order.
+Click a previous or upcoming song to move to that position. The panel opens near
+the current song; use **Current** to return to it after browsing. **Show earlier
+songs** reveals more history, up to 200 entries. The panel sits beside expanded
+artwork on larger screens and opens as a drawer on smaller screens. Close it with
+the close button, the **Queue** button, or **Escape**; playback continues.
 
 Use **Expand artwork** beside the thumbnail in the bottom player to fill the main
 area with the current track's artwork and a blurred ambient backdrop. The bottom

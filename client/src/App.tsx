@@ -5,6 +5,7 @@ import styles from "./App.module.css";
 import URLInput from "./components/URLInput.tsx";
 import MusicPlayer from "./components/AudioPlayer.tsx";
 import ArtworkView from "./components/ArtworkView.tsx";
+import PlaybackQueue from "./components/PlaybackQueue";
 import {getArtworkUrl} from "./backend/artwork.ts";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
@@ -37,7 +38,14 @@ function App() {
         return () => window.removeEventListener("hashchange", onHashChange);
     }, [closeArtwork]);
     const [pool, setPool] = useState<Atom[]>([]);
-    const queue = useMusicQueue(pool);
+    const [library, setLibrary] = useState<Atom[]>([]);
+    const [libraryReady, setLibraryReady] = useState(false);
+    const onLibraryChanged = useCallback((tracks: Atom[], ready: boolean) => {
+        setLibrary(tracks);
+        setLibraryReady(ready);
+    }, []);
+    const [queueOpen, setQueueOpen] = useState(false);
+    const queue = useMusicQueue(pool, library, libraryReady);
     const {currentTrack} = queue;
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
@@ -96,7 +104,7 @@ function App() {
     };
 
     return (
-        <div ref={appShellRef} className={styles.appShell}>
+        <div ref={appShellRef} className={`${styles.appShell} ${queueOpen ? styles.queueOpen : ""}`}>
             <aside className={styles.sidebar}>
                 <div className={styles.brand}>
                     <div className={styles.brandTop}>
@@ -156,6 +164,8 @@ function App() {
                         socket={socket}
                         onMusicSelected={queue.selectTrack}
                         onPoolChanged={setPool}
+                        onLibraryChanged={onLibraryChanged}
+                        filter={queue.filter} onFilterChanged={queue.setFilter}
                         currentTrack={currentTrack?.content_name}
                     />
                 </div>
@@ -163,12 +173,17 @@ function App() {
                     title={currentTrack?.content_name} color={trackColor} onClose={closeArtwork}/>}
             </main>
 
+            {queueOpen && <PlaybackQueue currentTrack={currentTrack} history={queue.history}
+                upcoming={queue.upcoming} shuffle={queue.shuffle} autoplay={queue.autoplay}
+                loading={!libraryReady} onJump={queue.jumpTo} onClose={() => setQueueOpen(false)}/>}
+
             <div ref={dockRef} className={styles.nowPlayingDock}>
                 <MusicPlayer onTrackColorChange={setTrackColor} entry={currentTrack} onPlaybackReady={setPlayback}
                     artworkExpanded={artworkExpanded} onArtworkToggle={() => setArtworkExpanded(value => !value)}
                     autoplay={queue.autoplay} onAutoplayChange={() => queue.setAutoplay(!queue.autoplay)}
                     shuffle={queue.shuffle} onShuffleChange={queue.toggleShuffle}
                     onNext={queue.next} onPrevious={queue.previous}
+                    queueOpen={queueOpen} onQueueToggle={() => setQueueOpen(value => !value)}
                     canNext={queue.canNext} canPrevious={queue.canPrevious} poolSize={pool.length}/>
             </div>
         </div>

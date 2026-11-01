@@ -21,7 +21,7 @@ export default function ArtworkView({artwork, title, color, onClose}: ArtworkVie
         document.documentElement.style.overflow = "hidden";
         closeRef.current?.focus({preventScroll: true});
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== "Escape" || event.defaultPrevented || document.fullscreenElement
+            if (event.key !== "Escape" || event.defaultPrevented || document.getElementById("playback-queue") || document.fullscreenElement
                 || document.querySelector("dialog[open]")) return;
             event.preventDefault();
             onClose();
