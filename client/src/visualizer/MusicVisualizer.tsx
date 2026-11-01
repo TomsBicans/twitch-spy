@@ -8,6 +8,7 @@ import type {FrameRate} from './FrameRateSelect';
 import styles from './MusicVisualizer.module.css';
 import {isVisualizerShortcut} from './shortcuts';
 import VolumeControl from '../components/VolumeControl';
+import {useScreenshotMode} from '../screenshotMode';
 
 interface Props {
     audio: HTMLAudioElement;
@@ -31,6 +32,7 @@ function timestamp(seconds: number): string {
 }
 
 export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false}: Props) {
+    const screenshotMode = useScreenshotMode();
     const dialog = useRef<HTMLDialogElement>(null);
     const viewport = fullscreenRef;
     const hideButton = useRef<HTMLButtonElement>(null);
@@ -173,7 +175,7 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
             </div>
             <div className={styles.volume}><VolumeControl audio={audio}/></div>
         </div>}
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && <p className={styles.error} role="alert">{screenshotMode ? 'Visualizer is unavailable. Try again.' : error}</p>}
         </div>
     </dialog>;
 }

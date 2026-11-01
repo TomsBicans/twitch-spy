@@ -81,7 +81,39 @@ the tab is hidden. Only one scene renders while the expanded view is open. It vi
 not system audio, and does not import projectM/MilkDrop presets.
 See [visualizer development](docs/visualizer.md) to add new scenes.
 
-![Library UI](docs/ui_preview.jpg)
+Before capturing the app for sharing, open **Health and logs**, expand
+**Developer tools**, and enable **Screenshot mode**. Close Health and logs to
+return to the library, then open it again when you want to disable masking.
+It replaces covers with generated geometric artwork, uses fictional track names and
+example source URLs, hides search and pasted input, and removes playback details
+from the address bar. The queue, artwork view, player, and visualizer use the same
+demo identity for each song. Toggle it off to restore the original view and playback
+URL without interrupting the current song.
+
+You can also open the app with `?screenshot=1` to start with masking enabled.
+Downloads and device sync are unavailable while masking is on; diagnostic readings
+and logs are hidden, but Health and logs remains accessible to change the setting.
+This is a visual presentation mode: the browser still accesses the real library
+and plays the original audio. It does not anonymize network traffic or mute audio
+for screen recordings. A screenshot-mode URL does not retain your playback bookmark
+after a reload; turn masking off before bookmarking your listening session.
+
+Library playback with shuffle, the continuous queue, previous songs, and the live visualizer:
+
+![Music library with demo artwork, the playback queue, and live visualizer](docs/library-with-playback-queue.png)
+
+Expanded artwork with an ambient background and player controls:
+
+![Expanded demo artwork with an ambient background and player controls](docs/expanded-artwork.png)
+
+Expanded artwork with the continuous playback queue open:
+
+![Expanded demo artwork alongside previous, current, and upcoming songs](docs/expanded-artwork-with-queue.png)
+
+These previews use Screenshot mode with fictional metadata and generated artwork.
+Capture updated screenshots using the same mode. To run its browser checks against Vite on port 5173:
+
+`uv run --with playwright python tests/check_screenshot_mode_browser.py`.
 
 ---
 

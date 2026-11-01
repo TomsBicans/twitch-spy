@@ -102,6 +102,8 @@
   border-color: var(--accent);
 }
 
+.desktopButton:disabled, .syncButton:disabled { opacity: 0.45; cursor: default; }
+
 .desktopMessage {
   margin: 2px 0 0;
   font-size: 0.75rem;

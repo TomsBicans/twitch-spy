@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import AudioPlayer, {RHAP_UI} from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
-import {getArtworkUrl} from "../backend/artwork.ts";
+import {displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import VolumeControl from "./VolumeControl";
 import {readVolumeSettings, saveVolumeSettings} from "./volume";
@@ -91,6 +91,8 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
 const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrackColorChange, autoplay,
     onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize,
     artworkExpanded = false, onArtworkToggle, queueOpen, onQueueToggle}) => {
+    const screenshotMode = useScreenshotMode();
+    const title = displayTitle(entry, screenshotMode);
     const [currentTrack, setCurrentTrack] = useState<string | undefined>();
     const [trackColor, setTrackColor] = useState<string>("#4a4a4a");
     const [isPlaying, setIsPlaying] = useState(false);
@@ -105,12 +107,12 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     }, [volumeSettings]);
     const [playerError, setPlayerError] = useState('');
     const analysisRef = useRef<AudioAnalysis | null>(null);
-    const artwork = getArtworkUrl(entry);
+    const artwork = displayArtwork(entry, screenshotMode);
 
     useEffect(() => {
-        document.title = isPlaying && entry?.content_name ? entry.content_name : "twitch-spy";
+        document.title = screenshotMode ? "twitch-spy · Screenshot mode" : isPlaying && title ? title : "twitch-spy";
         return () => { document.title = "twitch-spy"; };
-    }, [isPlaying, entry?.content_name]);
+    }, [isPlaying, title, screenshotMode]);
 
     useEffect(() => {
         if (!("mediaSession" in navigator)) return;
@@ -205,7 +207,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     return (
         <div className={styles.playerShell}>
             <div className={styles.leftPane}>
-                <CurrentTrackDisplay title={entry?.content_name} color={trackColor} artwork={artwork}
+                <CurrentTrackDisplay title={title} color={trackColor} artwork={artwork}
                     artworkExpanded={artworkExpanded} onArtworkToggle={onArtworkToggle}/>
             </div>
             <div className={styles.centerPane}>
@@ -275,7 +277,8 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                 aria-expanded={queueOpen} aria-controls="playback-queue" title="Playback queue">
                 <ListMusic size={21}/><span>Queue</span>
             </button>
-            {playerError && <p role="alert" className={styles.playerError}>{playerError}</p>}
+            {playerError && <p role="alert" className={styles.playerError}>{screenshotMode
+                ? "Playback is unavailable. Try another demo track." : playerError}</p>}
         </div>
     );
 };

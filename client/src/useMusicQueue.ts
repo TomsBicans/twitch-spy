@@ -18,7 +18,7 @@ function shuffled(tracks: Atom[], seed: number): Atom[] {
     return result;
 }
 
-export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean) {
+export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean, screenshotMode = false) {
     const [state, setState] = useState(readPlaybackState);
     const currentTrack = library.find(track => track.url === state.track);
     const anchor = library.find(track => track.url === state.anchor);
@@ -29,14 +29,14 @@ export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean) {
     }, [pool, state.shuffle, state.seed, state.anchor, anchor]);
 
     useEffect(() => {
-        writePlaybackState(state);
-    }, [state]);
+        if (!screenshotMode) writePlaybackState(state);
+    }, [state, screenshotMode]);
 
     useEffect(() => {
-        const restore = () => setState(readPlaybackState());
+        const restore = () => { if (!screenshotMode) setState(readPlaybackState()); };
         window.addEventListener("popstate", restore);
         return () => window.removeEventListener("popstate", restore);
-    }, []);
+    }, [screenshotMode]);
 
     const anchorIndex = order.findIndex(track => track.url === state.anchor);
     const trackAt = (position: number): Atom | undefined => {
