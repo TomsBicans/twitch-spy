@@ -3,6 +3,7 @@ import {History, ListMusic, LocateFixed, Music2, Play, Shuffle, X} from "lucide-
 import type {Atom} from "../backend/models";
 import {displayArtist, displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
 import type {QueueEntry} from "../useMusicQueue";
+import {REPEAT_LABELS, type RepeatMode} from "../playbackState";
 import styles from "./PlaybackQueue.module.css";
 
 interface PlaybackQueueProps {
@@ -11,6 +12,8 @@ interface PlaybackQueueProps {
     upcoming: QueueEntry[];
     shuffle: boolean;
     autoplay: boolean;
+    repeatMode: RepeatMode;
+    currentPosition: number;
     loading: boolean;
     onJump: (position: number) => void;
     onClose: () => void;
@@ -26,7 +29,7 @@ function Cover({track}: {track: Atom}) {
     </span>;
 }
 
-export default function PlaybackQueue({currentTrack, history, upcoming, shuffle, autoplay,
+export default function PlaybackQueue({currentTrack, history, upcoming, shuffle, autoplay, repeatMode, currentPosition,
     loading, onJump, onClose}: PlaybackQueueProps) {
     const screenshotMode = useScreenshotMode();
     const [visible, setVisible] = useState(40);
@@ -36,8 +39,6 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
     const currentRef = useRef<HTMLLIElement>(null);
     const close = useRef(onClose);
     close.current = onClose;
-    const currentPosition = upcoming[0] ? upcoming[0].position - 1
-        : history.length ? history[history.length - 1].position + 1 : 0;
 
     const scrollToCurrent = () => {
         const list = listRef.current;
@@ -101,6 +102,7 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
                 {shuffle ? "Shuffled" : "In order"}</span>
             <span className={autoplay ? styles.enabled : undefined}>
                 <i/>{autoplay ? "Autoplay on" : "Autoplay off"}</span>
+            <span>{REPEAT_LABELS[repeatMode]}</span>
         </div>
         <div className={styles.listHeader}>
             <span>{history.length} played <span aria-hidden="true">·</span> {upcoming.length} up next</span>

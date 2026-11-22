@@ -25,7 +25,7 @@
     font: inherit;
 }
 .dialog button:hover { background: #30304d; }
-.dialog button[aria-pressed=true] { background: #513c91; }
+.dialog button[aria-pressed=true], .dialog button[data-repeat-active=true] { background: #513c91; }
 .dialog button:disabled { opacity: 0.5; cursor: default; }
 .dialog :focus-visible { outline: 2px solid #ad9aff; outline-offset: 3px; }
 .dialog kbd { font-size: 10px; opacity: 0.6; padding-left: 5px; }
@@ -39,6 +39,7 @@
 .options .check { flex-direction: row; align-items: center; }
 .dialog input { accent-color: #a394ff; }
 .transport { display: flex; gap: 12px; align-items: center; }
+.transport button[data-repeat-active] { display: grid; place-items: center; }
 .transport span { font-size: 12px; font-variant-numeric: tabular-nums; }
 .transport input[aria-label=Seek] { flex: 1; min-width: 40px; }
 .volume { display: flex; justify-content: flex-end; margin-top: 12px; }

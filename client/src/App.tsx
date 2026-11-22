@@ -160,7 +160,8 @@ function App() {
 
                 <div className={styles.visualizerSlot}>
                     <Suspense fallback={<p>Loading visualizer...</p>}>
-                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={trackTitle} artist={trackArtist}/>
+                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={trackTitle} artist={trackArtist}
+                            repeatMode={queue.repeatMode} onRepeatModeChange={queue.cycleRepeatMode}/>
                     </Suspense>
                 </div>
 
@@ -201,12 +202,15 @@ function App() {
 
             {queueOpen && <PlaybackQueue currentTrack={currentTrack} history={queue.history}
                 upcoming={queue.upcoming} shuffle={queue.shuffle} autoplay={queue.autoplay}
+                repeatMode={queue.repeatMode} currentPosition={queue.position}
                 loading={!libraryReady} onJump={queue.jumpTo} onClose={() => setQueueOpen(false)}/>}
 
             <div ref={dockRef} className={styles.nowPlayingDock}>
                 <MusicPlayer onTrackColorChange={setTrackColor} entry={currentTrack} onPlaybackReady={setPlayback}
                     artworkExpanded={artworkExpanded} onArtworkToggle={() => setArtworkExpanded(value => !value)}
-                    autoplay={queue.autoplay} onAutoplayChange={() => queue.setAutoplay(!queue.autoplay)}
+                    autoplay={queue.autoplay} onAutoplayChange={queue.toggleAutoplay}
+                    repeatMode={queue.repeatMode} onRepeatModeChange={queue.cycleRepeatMode}
+                    loopCurrentTrack={queue.loopCurrentTrack} onTrackEnded={queue.onTrackEnded}
                     shuffle={queue.shuffle} onShuffleChange={queue.toggleShuffle}
                     onNext={queue.next} onPrevious={queue.previous}
                     queueOpen={queueOpen} onQueueToggle={() => setQueueOpen(value => !value)}

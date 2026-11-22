@@ -99,6 +99,7 @@ async def main() -> None:
         await page.locator("textarea").fill("https://youtube.com/watch?v=SECRET_INPUT")
         await page.get_by_role("heading", name="PRIVATE song 000", exact=True).click()
         await page.get_by_role("button", name="Autoplay", exact=True).click()
+        await page.get_by_role("button", name="Repeat off", exact=True).click()
         await page.get_by_role("button", name="Shuffle", exact=True).click()
         for _ in range(3):
             await page.get_by_role("button", name="Next song", exact=True).click()
@@ -146,7 +147,7 @@ async def main() -> None:
             "https://youtube.com/watch?v=SECRET_INPUT",
         )
         restored = parse_qs(urlparse(page.url).query)
-        for key in ("track", "anchor", "position", "shuffle", "autoplay", "seed", "q"):
+        for key in ("track", "anchor", "position", "shuffle", "autoplay", "repeat", "seed", "q"):
             assert restored[key] == params[key], (key, restored, params)
         await page.locator("#statusFilter").select_option("all")
         await page.get_by_role("button", name="Show more tracks").click()

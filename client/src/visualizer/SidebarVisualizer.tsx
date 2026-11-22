@@ -10,15 +10,18 @@ import type {FrameRate} from './FrameRateSelect';
 import styles from './SidebarVisualizer.module.css';
 import {isVisualizerShortcut} from './shortcuts';
 import {useScreenshotMode} from '../screenshotMode';
+import type {RepeatMode} from '../playbackState';
 
 interface Props {
     playback: VisualizerPlayback | null;
     title?: string;
     artist?: string;
     trackColor?: string;
+    repeatMode: RepeatMode;
+    onRepeatModeChange: () => void;
 }
 
-export default function SidebarVisualizer({playback, title, artist, trackColor = "#4a4a4a"}: Props) {
+export default function SidebarVisualizer({playback, title, artist, trackColor = "#4a4a4a", repeatMode, onRepeatModeChange}: Props) {
     const screenshotMode = useScreenshotMode();
     const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
     const color = colorTheme === "artwork" ? trackColor : undefined;
@@ -107,6 +110,7 @@ export default function SidebarVisualizer({playback, title, artist, trackColor =
             </footer>
         </section>
         {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'} artist={artist}
+            repeatMode={repeatMode} onRepeatModeChange={onRepeatModeChange}
             presetId={presetId} onPresetChange={setPresetId} fullscreenRef={fullscreenRef}
             frameRate={frameRate} onFrameRateChange={setFrameRate}
             startImmersive={startImmersive}

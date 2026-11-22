@@ -7,8 +7,15 @@ export interface LibraryFilter {
 
 export const DEFAULT_LIBRARY_FILTER: LibraryFilter = {search: "", status: ProcessingStates.FINISHED};
 
+export type RepeatMode = "off" | "queue" | "track";
+
+export const REPEAT_LABELS: Record<RepeatMode, string> = {
+    off: "Repeat off", queue: "Repeat queue", track: "Repeat track",
+};
+
 interface PlaybackState extends LibraryFilter {
     autoplay: boolean;
+    repeat: RepeatMode;
     shuffle: boolean;
     seed: number;
     anchor: string;
@@ -26,10 +33,12 @@ function integer(value: string | null, fallback: number): number {
 export function readPlaybackState(): PlaybackState {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
+    const repeat = params.get("repeat");
     const position = integer(params.get("position"), 0);
     const track = params.get("track") ?? "";
     return {
         autoplay: params.get("autoplay") === "1",
+        repeat: repeat === "queue" || repeat === "track" ? repeat : "off",
         shuffle: params.get("shuffle") === "1",
         seed: integer(params.get("seed"), 1 + crypto.getRandomValues(new Uint32Array(1))[0] % 999_999_999),
         anchor: params.get("anchor") ?? track,
@@ -45,6 +54,7 @@ export function writePlaybackState(state: PlaybackState): void {
     const url = new URL(window.location.href);
     const values = {
         autoplay: state.autoplay ? "1" : "0", shuffle: state.shuffle ? "1" : "0",
+        repeat: state.repeat === "off" ? "" : state.repeat,
         seed: String(state.seed), track: state.track, anchor: state.anchor,
         position: state.track ? String(state.position) : "",
         from: state.start ? String(state.start) : "", q: state.search,

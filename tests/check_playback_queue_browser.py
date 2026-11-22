@@ -67,6 +67,7 @@ async def main() -> None:
         await page.get_by_role("button", name="Show more tracks").click()
         await page.get_by_role("heading", name="Track 0060", exact=True).click()
         await page.get_by_role("button", name="Autoplay", exact=True).click()
+        await page.get_by_role("button", name="Repeat off", exact=True).click()
         await page.get_by_role("button", name="Shuffle", exact=True).click()
         await page.get_by_role("button", name="Next song", exact=True).click()
         await page.get_by_role("button", name="Next song", exact=True).click()
@@ -84,6 +85,7 @@ async def main() -> None:
         bookmark = page.url
         params = parse_qs(urlparse(bookmark).query)
         assert params["shuffle"] == ["1"] and params["autoplay"] == ["1"]
+        assert params["repeat"] == ["queue"]
         assert params["anchor"] == [songs[60]["url"]] and params["position"] == ["2"]
         assert params["campaign"] == ["queue-test"]
         saved_history = await queue_titles(page, "past")
@@ -108,6 +110,7 @@ async def main() -> None:
         restored.on("pageerror", lambda error: errors.append(str(error)))
         await restored.goto(bookmark)
         await expect(restored.locator("audio")).to_have_attribute("src", source or "")
+        await expect(restored.get_by_role("button", name="Repeat queue", exact=True)).to_be_visible()
         await expect(restored.get_by_role("button", name="Next song")).to_be_enabled()
         await expect(
             restored.get_by_role("button", name="Autoplay", exact=True),

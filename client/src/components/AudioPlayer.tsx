@@ -1,12 +1,14 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useLayoutEffect, useRef, useState} from "react";
 import AudioPlayer, {RHAP_UI} from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
 import {BACKEND_URL} from "../backend/backend.ts";
 import {displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
 import CurrentTrackDisplay from "./CurrentTrackDisplay.tsx";
 import VolumeControl from "./VolumeControl";
+import RepeatButton from "./RepeatButton";
 import {readVolumeSettings, saveVolumeSettings} from "./volume";
 import type {Atom} from "../backend/models.ts";
+import type {RepeatMode} from "../playbackState";
 import styles from "./AudioPlayer.module.css";
 import {getAudioAnalysis, releaseAudioAnalysis} from "../visualizer/audio";
 import type {AudioAnalysis, VisualizerPlayback} from "../visualizer/audio";
@@ -30,6 +32,10 @@ interface AudioPlayerProps {
     onTrackColorChange?: (color: string) => void;
     autoplay: boolean;
     onAutoplayChange: () => void;
+    repeatMode: RepeatMode;
+    onRepeatModeChange: () => void;
+    loopCurrentTrack: boolean;
+    onTrackEnded: () => void;
     shuffle: boolean;
     onShuffleChange: () => void;
     onNext: () => void;
@@ -89,7 +95,8 @@ const getAverageColor = (imageUrl: string): Promise<string> => {
 };
 
 const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrackColorChange, autoplay,
-    onAutoplayChange, shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize,
+    onAutoplayChange, repeatMode, onRepeatModeChange, loopCurrentTrack, onTrackEnded,
+    shuffle, onShuffleChange, onNext, onPrevious, canNext, canPrevious, poolSize,
     artworkExpanded = false, onArtworkToggle, queueOpen, onQueueToggle}) => {
     const screenshotMode = useScreenshotMode();
     const title = displayTitle(entry, screenshotMode);
@@ -108,6 +115,11 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
     const [playerError, setPlayerError] = useState('');
     const analysisRef = useRef<AudioAnalysis | null>(null);
     const artwork = displayArtwork(entry, screenshotMode);
+
+    useLayoutEffect(() => {
+        // react-h5-audio-player reads the element's loop setting after mounting.
+        if (audioElement) audioElement.loop = loopCurrentTrack;
+    }, [audioElement, loopCurrentTrack]);
 
     useEffect(() => {
         document.title = screenshotMode ? "twitch-spy · Screenshot mode" : isPlaying && title ? title : "twitch-spy";
@@ -231,6 +243,7 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                         title="Continue to the next matching song when this song ends">Autoplay</button>
                     <button type="button" aria-pressed={shuffle} onClick={onShuffleChange}
                         title="Play matching songs in random order">Shuffle</button>
+                    <RepeatButton mode={repeatMode} onCycle={onRepeatModeChange}/>
                 </div>
                 <span className={styles.poolCount}>{poolSize} matching {poolSize === 1 ? "song" : "songs"}</span>
             </div>
@@ -267,8 +280,9 @@ const MusicPlayer: React.FC<AudioPlayerProps> = ({entry, onPlaybackReady, onTrac
                         setPlayerError("Could not load this song. Try another track.");
                     }}
                     onEnded={() => {
+                        if (loopCurrentTrack) return;
                         setIsPlaying(false);
-                        if (autoplay && canNext) onNext();
+                        onTrackEnded();
                     }}
                 />
             </div>
