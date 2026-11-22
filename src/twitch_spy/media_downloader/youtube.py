@@ -13,6 +13,7 @@ import yt_dlp
 from typing import Optional
 
 from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.audio_metadata import read_mp3_artist
 from twitch_spy.media_downloader.ydl_options import downloader_options
 
 
@@ -164,10 +165,8 @@ class YoutubeDownloader:
 
             atom.media_file_os_path = filename  # Store media file path
 
-            try:
-                YoutubeDownloader.add_metadata_to_audio_file(info_dict, filename)
-            except Exception as e:
-                raise e
+            YoutubeDownloader.add_metadata_to_audio_file(info_dict, filename)
+            atom.artist = read_mp3_artist(filename)
             try:
                 thumbnail_path = YoutubeDownloader.download_thumbnail(
                     atom.url,

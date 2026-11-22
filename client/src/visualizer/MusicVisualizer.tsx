@@ -8,12 +8,15 @@ import type {FrameRate} from './FrameRateSelect';
 import styles from './MusicVisualizer.module.css';
 import {isVisualizerShortcut} from './shortcuts';
 import VolumeControl from '../components/VolumeControl';
+import RepeatButton from '../components/RepeatButton';
 import {useScreenshotMode} from '../screenshotMode';
+import type {RepeatMode} from '../playbackState';
 
 interface Props {
     audio: HTMLAudioElement;
     analysis: AudioAnalysis;
     title: string;
+    artist?: string;
     color?: string;
     colorTheme: "artwork" | "system";
     onColorThemeChange: (theme: "artwork" | "system") => void;
@@ -24,6 +27,8 @@ interface Props {
     frameRate: FrameRate;
     onFrameRateChange: (value: FrameRate) => void;
     startImmersive?: boolean;
+    repeatMode: RepeatMode;
+    onRepeatModeChange: () => void;
 }
 
 function timestamp(seconds: number): string {
@@ -31,7 +36,9 @@ function timestamp(seconds: number): string {
     return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false}: Props) {
+export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, artist,
+    onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false,
+    repeatMode, onRepeatModeChange}: Props) {
     const screenshotMode = useScreenshotMode();
     const dialog = useRef<HTMLDialogElement>(null);
     const viewport = fullscreenRef;
@@ -45,7 +52,7 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
     const fullscreenPending = useRef(false);
     const [fullscreen, setFullscreen] = useState(false);
     const [error, setError] = useState('');
-    const [playback, setPlayback] = useState({paused: audio.paused, time: audio.currentTime, duration: audio.duration, volume: audio.volume, muted: audio.muted, loop: audio.loop});
+    const [playback, setPlayback] = useState({paused: audio.paused, time: audio.currentTime, duration: audio.duration});
     const preset = presets.find(item => item.id === presetId) ?? presets[0];
 
     useEffect(() => {
@@ -59,8 +66,8 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
     }, []);
 
     useEffect(() => {
-        const sync = () => setPlayback({paused: audio.paused, time: audio.currentTime, duration: audio.duration, volume: audio.volume, muted: audio.muted, loop: audio.loop});
-        const events = ['play', 'pause', 'ended', 'timeupdate', 'durationchange', 'volumechange', 'loadedmetadata', 'emptied'];
+        const sync = () => setPlayback({paused: audio.paused, time: audio.currentTime, duration: audio.duration});
+        const events = ['play', 'pause', 'ended', 'timeupdate', 'durationchange', 'loadedmetadata', 'emptied'];
         events.forEach(event => audio.addEventListener(event, sync));
         const fullscreenChanged = () => setFullscreen(document.fullscreenElement === viewport.current);
         document.addEventListener('fullscreenchange', fullscreenChanged);
@@ -157,7 +164,12 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
             <button onClick={onClose} aria-label="Close visualizer">Close</button>
         </div>
         {!hidden && <div id="visualizer-controls" className={styles.controls}>
-            <header><span className={styles.eyebrow}>NOW PLAYING / VISUALIZER</span><h2>{title}</h2><p>{preset.description}</p></header>
+            <header>
+                <span className={styles.eyebrow}>NOW PLAYING / VISUALIZER</span>
+                <h2>{title}</h2>
+                {artist && <p className={styles.artist} title={artist}>{artist}</p>}
+                <p>{preset.description}</p>
+            </header>
             <div className={styles.options}>
                 <label>Scene<select aria-label="Scene" value={presetId} onChange={event => onPresetChange(event.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                 <label>Colors<select aria-label="Colors" value={colorTheme} onChange={event => onColorThemeChange(event.target.value as "artwork" | "system")}><option value="artwork">Match artwork</option><option value="system">System</option></select></label>
@@ -171,7 +183,7 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
                 <span>{timestamp(playback.time)}</span>
                 <input aria-label="Seek" type="range" min="0" max={duration || 1} step="0.1" value={Math.min(playback.time, duration)} disabled={!duration} onChange={event => { const time = Number(event.target.value); audio.currentTime = time; setPlayback(value => ({...value, time})); }}/>
                 <span>{timestamp(duration)}</span>
-                <button aria-pressed={playback.loop} onClick={() => { audio.loop = !audio.loop; setPlayback(value => ({...value, loop: audio.loop})); }}>Loop</button>
+                <RepeatButton mode={repeatMode} onCycle={onRepeatModeChange}/>
             </div>
             <div className={styles.volume}><VolumeControl audio={audio}/></div>
         </div>}

@@ -38,6 +38,7 @@ def atom_to_dict(event_name: str, atom: Atom, *, include_thumbnail: bool = True)
         "single_item": atom.single_item,
         "content_type": atom.content_type.value,
         "content_name": str(atom.content_title),
+        "artist": atom.artist,
         "download_dir": atom.download_dir,
         "media_file_os_path": atom.media_file_os_path,
         "status": atom.status.value,

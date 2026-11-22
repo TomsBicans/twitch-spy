@@ -25,18 +25,23 @@ downloads, tags, and organizes them into a local audio library with a real-time 
 
 ## Preview
 
-The player dock has **Previous song**, **Next song**, **Autoplay**, and **Shuffle**
+The player dock has **Previous song**, **Next song**, **Autoplay**, **Shuffle**, and **Repeat**
 controls. The song pool follows the current search and status filter, including
 matches beyond the visible cards as the library loads. Only finished audio tracks
 are playable. Changing filters keeps the current song playing and updates the pool
 for subsequent navigation.
 
-Autoplay is off initially; enable it to advance when a song ends. Sequential playback
-wraps around the pool. Shuffle plays every matching song before repeating, and
-Previous retraces shuffle history. An empty pool or a pool containing only the current
-song stops automatic advancement.
+Autoplay is off initially. The repeat button cycles through three modes.
 
-The URL remembers autoplay, shuffle, the shuffle seed, current song and sequence
+- **Repeat off** plays through to the end of the queue when Autoplay is on.
+- **Repeat queue** advances automatically and starts the same queue again at the end.
+- **Repeat track** loops the current song.
+
+Use **Next song** to skip to the first song manually from the end of the queue.
+Shuffle gives each matching song a turn, and **Previous song** retraces shuffle
+history. Turning Autoplay off during Repeat queue returns to Repeat off.
+
+The URL remembers autoplay, repeat mode, shuffle, the shuffle seed, current song and sequence
 position, plus the library search and status filter. Bookmark or copy it to return
 to the same sequence, including its history, without relying on browser storage.
 Restoration waits for the library to load; your browser may require pressing **Play**.
@@ -69,7 +74,7 @@ levels are preserved. These controls do not normalize loudness between tracks.
 Play a track to start the live 3D preview below the sidebar queue. Use **Expand**
 to open its controls or **Fullscreen** to jump directly into fullscreen.
 Choose Spectrum halo, Wave terrain, or Particle orbit; adjust intensity and quality,
-disable camera motion, or enter fullscreen. Playback, seeking, volume, mute, and loop
+disable camera motion, or enter fullscreen. Playback, seeking, volume, mute, and repeat
 controls operate on the same track as the library player. **Hide controls** (or **H**)
 hides the settings and transport; the show/fullscreen/close buttons stay available.
 Closing the expanded view keeps the music playing and restores the sidebar preview.

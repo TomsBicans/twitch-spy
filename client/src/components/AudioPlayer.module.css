@@ -32,7 +32,7 @@
 .skipButton { width: 32px; height: 36px; padding: 0; }
 .skipButton:disabled { opacity: 0.35; cursor: default; }
 .modes button { padding: 3px 7px; font-size: 0.72rem; }
-.modes button[aria-pressed="true"] { background: #5841a0; color: #fff; border-color: #a18aff; }
+.modes button[aria-pressed="true"], .modes button[data-repeat-active="true"] { background: #5841a0; color: #fff; border-color: #a18aff; }
 .skipButton:focus-visible, .modes button:focus-visible, .playButton:focus-visible {
   outline: 2px solid #a18aff;
   outline-offset: 3px;

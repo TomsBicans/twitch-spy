@@ -25,7 +25,7 @@
     font: inherit;
 }
 .dialog button:hover { background: #30304d; }
-.dialog button[aria-pressed=true] { background: #513c91; }
+.dialog button[aria-pressed=true], .dialog button[data-repeat-active=true] { background: #513c91; }
 .dialog button:disabled { opacity: 0.5; cursor: default; }
 .dialog :focus-visible { outline: 2px solid #ad9aff; outline-offset: 3px; }
 .dialog kbd { font-size: 10px; opacity: 0.6; padding-left: 5px; }
@@ -33,11 +33,13 @@
 .eyebrow { color: #aea2eb; font-size: 10px; letter-spacing: 0.18em; }
 .controls h2 { font-size: clamp(16px, 2vw, 24px); margin: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .controls p { color: #a4aec4; font-size: 13px; margin: 8px 0 18px; }
+.controls .artist { margin: -4px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d0d5e6; }
 .options { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
 .options label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #b6bfd4; }
 .options .check { flex-direction: row; align-items: center; }
 .dialog input { accent-color: #a394ff; }
 .transport { display: flex; gap: 12px; align-items: center; }
+.transport button[data-repeat-active] { display: grid; place-items: center; }
 .transport span { font-size: 12px; font-variant-numeric: tabular-nums; }
 .transport input[aria-label=Seek] { flex: 1; min-width: 40px; }
 .volume { display: flex; justify-content: flex-end; margin-top: 12px; }

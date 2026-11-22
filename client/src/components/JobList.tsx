@@ -1,9 +1,10 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Socket} from "socket.io-client";
+import {X} from "lucide-react";
 import {type Atom, CONTENT_MODE, ProcessingStates} from "../backend/models.ts";
 import styles from "./JobList.module.css";
 import {BACKEND_URL} from "../backend/backend.ts";
-import type {LibraryFilter} from "../playbackState";
+import {DEFAULT_LIBRARY_FILTER, type LibraryFilter} from "../playbackState";
 import {displayArtwork, displaySource, displayTitle, useScreenshotMode} from "../screenshotMode";
 
 interface JobStatusesProps {
@@ -137,10 +138,15 @@ export const JobList = ({
     const [reloadKey, setReloadKey] = useState(0);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [localStatus, setLocalStatus] =
-        useState<SelectedProcessingState>(ProcessingStates.FINISHED);
-    const [localSearch, setLocalSearch] = useState("");
+        useState<SelectedProcessingState>(DEFAULT_LIBRARY_FILTER.status);
+    const [localSearch, setLocalSearch] = useState(DEFAULT_LIBRARY_FILTER.search);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const selectedJobProcessingState = filter?.status ?? localStatus;
     const searchQuery = filter?.search ?? localSearch;
+
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [searchQuery, selectedJobProcessingState]);
 
     useEffect(() => {
         let controller: AbortController;
@@ -222,29 +228,23 @@ export const JobList = ({
         processingState: SelectedProcessingState,
         query: string
     ) => {
-        const tokenizedQuery = query.split(" ").filter((q) => q.length > 0);
+        const tokens = query.trim().split(/\s+/).filter(Boolean);
         return jobs.filter((job) => {
-            const matchesState =
-                processingState === "all" || job.status === processingState;
-            const matchesQuery =
-                tokenizedQuery.length === 0 ||
-                tokenizedQuery.every(
-                    (token) =>
-                        (job.content_name?.toLowerCase() || "").includes(token) ||
-                        job.url.toLowerCase().includes(token)
-                );
-            return matchesState && matchesQuery;
+            if (processingState !== "all" && job.status !== processingState) return false;
+            if (!tokens.length) return true;
+            const title = job.content_name?.toLowerCase() ?? "";
+            const artist = job.artist?.toLowerCase() ?? "";
+            const url = job.url.toLowerCase();
+            return tokens.every(token => title.includes(token) || artist.includes(token) || url.includes(token));
         });
     };
 
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setLocalSearch(event.target.value);
-        onFilterChanged?.({search: event.target.value, status: selectedJobProcessingState});
-        setVisibleCount(PAGE_SIZE);
+    const updateSearch = (search: string) => {
+        setLocalSearch(search);
+        onFilterChanged?.({search, status: selectedJobProcessingState});
     };
 
     const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setVisibleCount(PAGE_SIZE);
         const status = event.target.value as SelectedProcessingState;
         setLocalStatus(status);
         onFilterChanged?.({search: searchQuery, status});
@@ -320,14 +320,20 @@ export const JobList = ({
             <div className={styles.searchRow}>
                 <div className={styles.searchField}>
                     <input
+                        ref={searchInputRef}
                         type="text"
-                        placeholder="Search by title or URL"
+                        placeholder="Search by title, artist or URL"
                         value={screenshotMode ? "" : searchQuery}
                         disabled={screenshotMode}
-                        onChange={handleSearchChange}
+                        onChange={event => updateSearch(event.target.value)}
                         className={styles.searchInput}
                         aria-label="Search tracks"
                     />
+                    {!screenshotMode && searchQuery && <button type="button" className={styles.clearSearch}
+                        aria-label="Clear search" title="Clear search" onClick={() => {
+                            updateSearch("");
+                            searchInputRef.current?.focus();
+                        }}><X size={18} aria-hidden="true"/></button>}
                 </div>
             </div>
             {loading && (

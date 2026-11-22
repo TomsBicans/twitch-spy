@@ -1,6 +1,8 @@
 import {useEffect, useMemo, useState} from "react";
 import type {Atom} from "./backend/models";
-import {readPlaybackState, writePlaybackState, type LibraryFilter} from "./playbackState";
+import {readPlaybackState, writePlaybackState, type LibraryFilter, type RepeatMode} from "./playbackState";
+
+const NEXT_REPEAT_MODE: Record<RepeatMode, RepeatMode> = {off: "queue", queue: "track", track: "off"};
 
 export interface QueueEntry {
     track: Atom;
@@ -39,15 +41,29 @@ export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean, scr
     }, [screenshotMode]);
 
     const anchorIndex = order.findIndex(track => track.url === state.anchor);
+    const indexAt = (position: number): number => {
+        const offset = anchorIndex >= 0 ? anchorIndex + position : position > 0 ? position - 1 : position;
+        return ((offset % order.length) + order.length) % order.length;
+    };
     const trackAt = (position: number): Atom | undefined => {
         if (position === 0 && anchor) return anchor;
         if (!order.length) return undefined;
-        let offset = anchorIndex + position;
-        if (anchorIndex < 0) offset = position > 0 ? position - 1 : position;
-        return order[((offset % order.length) + order.length) % order.length];
+        return order[indexAt(position)];
     };
-    const canNext = ready && pool.some(track => track.url !== state.track);
+    const currentInOrder = order.some(track => track.url === state.track);
+    const canNext = ready && order.some(track => track.url !== state.track);
     const canPrevious = canNext && (!state.shuffle || state.position > state.start);
+    const upcomingPosition = (offset: number): number => {
+        const position = state.position + offset;
+        // Keep a filtered-out anchor in history without replaying it automatically.
+        return anchorIndex < 0 && state.position < 0 && position >= 0 ? position + 1 : position;
+    };
+    const nextIndex = order.length ? indexAt(upcomingPosition(1)) : 0;
+    const remaining = currentInOrder && nextIndex === 0 ? 0 : order.length - nextIndex;
+    const repeatQueue = state.repeat === "queue";
+    const autoplay = state.autoplay || repeatQueue;
+    const loopCurrentTrack = state.repeat === "track" || (repeatQueue && ready && currentInOrder && !canNext);
+    const canAutoAdvance = autoplay && !loopCurrentTrack && canNext && (repeatQueue || remaining > 0);
     const jumpTo = (position: number) => {
         const track = trackAt(position);
         if (!track || !Number.isSafeInteger(position)) return;
@@ -67,9 +83,9 @@ export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean, scr
             if (track) history.push({track, position});
         }
         if (canNext) {
-            const count = pool.length - (pool.some(track => track.url === state.track) ? 1 : 0);
+            const count = repeatQueue ? order.length - Number(currentInOrder) : remaining;
             for (let offset = 1; offset <= count; offset++) {
-                const position = state.position + offset;
+                const position = upcomingPosition(offset);
                 const track = trackAt(position);
                 if (track) upcoming.push({track, position});
             }
@@ -78,8 +94,13 @@ export function useMusicQueue(pool: Atom[], library: Atom[], ready: boolean, scr
 
     return {
         currentTrack, selectTrack, history, upcoming, jumpTo, canNext, canPrevious,
-        autoplay: state.autoplay,
-        setAutoplay: (autoplay: boolean) => setState(previous => ({...previous, autoplay})),
+        position: state.position, autoplay, loopCurrentTrack,
+        onTrackEnded: () => { if (canAutoAdvance) jumpTo(upcomingPosition(1)); },
+        toggleAutoplay: () => setState(previous => previous.repeat === "queue"
+            ? {...previous, autoplay: false, repeat: "off"}
+            : {...previous, autoplay: !previous.autoplay}),
+        repeatMode: state.repeat,
+        cycleRepeatMode: () => setState(previous => ({...previous, repeat: NEXT_REPEAT_MODE[previous.repeat]})),
         shuffle: state.shuffle,
         toggleShuffle: () => setState(previous => ({
             ...previous, shuffle: !previous.shuffle, anchor: previous.track, position: 0, start: 0,

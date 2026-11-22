@@ -24,7 +24,10 @@
 .placeholder span { color: #8d77e8; font-size: 42px; }
 .placeholder p { margin: 6px 0; }
 .footer { padding: 8px 12px 12px; }
-.title { margin: 0 0 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; color: #aeb7ca; }
+.trackDetails { margin-bottom: 10px; }
+.title, .artist { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.title { font-size: 11px; color: #e8eaf6; }
+.artist { margin-top: 3px; font-size: 11px; color: #aeb7ca; }
 .actions { display: flex; gap: 6px; }
 .actions button { display: flex; align-items: center; justify-content: center; gap: 5px; flex: 1; padding: 8px 5px; border: 1px solid #39304f; border-radius: 7px; background: #19152a; color: #e8eaf6; font-size: 11px; cursor: pointer; }
 .actions button:hover { background: #302549; }

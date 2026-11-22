@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from mutagen.id3 import ID3
 import twitch_spy.media_downloader.youtube as youtube
 from twitch_spy import config
 from twitch_spy.media_downloader.atomizer import Atom
@@ -25,18 +26,18 @@ def test_download_audio_uses_configured_ffmpeg(monkeypatch, tmp_path):
             return False
 
         def extract_info(self, url, download):
-            return {"title": "Audio"}
+            return {"title": "Audio", "artist": "Night Ensemble"}
 
         def prepare_filename(self, info):
             return str(tmp_path / "Audio.webm")
 
         def download(self, urls):
             audio_path.write_bytes(b"audio")
+            ID3().save(audio_path)
 
     monkeypatch.setattr(config, "FFMPEG_LOCATION", "/bundled/ffmpeg")
     monkeypatch.setattr(youtube.yt_dlp, "YoutubeDL", FakeYoutubeDL)
     monkeypatch.setattr(youtube, "_is_corrupt_audio", lambda _path: False)
-    monkeypatch.setattr(youtube.YoutubeDownloader, "add_metadata_to_audio_file", lambda *_args: None)
     monkeypatch.setattr(youtube.YoutubeDownloader, "download_thumbnail", lambda *_args: None)
     monkeypatch.setattr(youtube.YoutubeDownloader, "add_preview_picture_to_audio_file", lambda *_args: None)
     atom = Atom(
@@ -46,6 +47,7 @@ def test_download_audio_uses_configured_ffmpeg(monkeypatch, tmp_path):
     )
 
     assert youtube.YoutubeDownloader.download_audio(atom) == str(audio_path)
+    assert atom.artist == "Night Ensemble"
     assert calls["options"]["ffmpeg_location"] == "/bundled/ffmpeg"
 
 

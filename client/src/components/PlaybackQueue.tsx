@@ -1,8 +1,9 @@
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {History, ListMusic, LocateFixed, Music2, Play, Shuffle, X} from "lucide-react";
 import type {Atom} from "../backend/models";
-import {displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
+import {displayArtist, displayArtwork, displayTitle, useScreenshotMode} from "../screenshotMode";
 import type {QueueEntry} from "../useMusicQueue";
+import {REPEAT_LABELS, type RepeatMode} from "../playbackState";
 import styles from "./PlaybackQueue.module.css";
 
 interface PlaybackQueueProps {
@@ -11,6 +12,8 @@ interface PlaybackQueueProps {
     upcoming: QueueEntry[];
     shuffle: boolean;
     autoplay: boolean;
+    repeatMode: RepeatMode;
+    currentPosition: number;
     loading: boolean;
     onJump: (position: number) => void;
     onClose: () => void;
@@ -26,7 +29,7 @@ function Cover({track}: {track: Atom}) {
     </span>;
 }
 
-export default function PlaybackQueue({currentTrack, history, upcoming, shuffle, autoplay,
+export default function PlaybackQueue({currentTrack, history, upcoming, shuffle, autoplay, repeatMode, currentPosition,
     loading, onJump, onClose}: PlaybackQueueProps) {
     const screenshotMode = useScreenshotMode();
     const [visible, setVisible] = useState(40);
@@ -36,8 +39,6 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
     const currentRef = useRef<HTMLLIElement>(null);
     const close = useRef(onClose);
     close.current = onClose;
-    const currentPosition = upcoming[0] ? upcoming[0].position - 1
-        : history.length ? history[history.length - 1].position + 1 : 0;
 
     const scrollToCurrent = () => {
         const list = listRef.current;
@@ -69,16 +70,25 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
     }, []);
 
     const previousEntries = history.slice(-visibleHistory);
-    const renderEntry = ({track, position}: QueueEntry, past: boolean) => <li key={position}
-        data-queue-state={past ? "past" : "upcoming"} className={past ? styles.past : undefined}>
-        <button type="button" onClick={() => onJump(position)}
-            aria-label={`Play ${displayTitle(track, screenshotMode)}`} className={styles.track}>
-            <span className={styles.number}>{position < 0 ? <History size={12}/>
-                : String(position + 1).padStart(2, "0")}</span>
-            <Cover track={track}/><span className={styles.trackTitle} title={displayTitle(track, screenshotMode)}>
-                {displayTitle(track, screenshotMode)}</span><Play size={14} className={styles.playIcon}/>
-        </button>
-    </li>;
+    const currentTitle = displayTitle(currentTrack, screenshotMode);
+    const currentArtist = displayArtist(currentTrack, screenshotMode);
+    const renderEntry = ({track, position}: QueueEntry, past: boolean) => {
+        const title = displayTitle(track, screenshotMode);
+        const artist = displayArtist(track, screenshotMode);
+        return <li key={position} data-queue-state={past ? "past" : "upcoming"} className={past ? styles.past : undefined}>
+            <button type="button" onClick={() => onJump(position)}
+                aria-label={`Play ${title}${artist ? ` by ${artist}` : ""}`} className={styles.track}>
+                <span className={styles.number}>{position < 0 ? <History size={12}/>
+                    : String(position + 1).padStart(2, "0")}</span>
+                <Cover track={track}/>
+                <span className={styles.trackDetails}>
+                    <span className={styles.trackTitle} title={title}>{title}</span>
+                    {artist && <span className={styles.trackArtist} title={artist}>{artist}</span>}
+                </span>
+                <Play size={14} className={styles.playIcon}/>
+            </button>
+        </li>;
+    };
 
     return <aside id="playback-queue" aria-label="Playback queue" className={styles.panel}>
         <header className={styles.header}>
@@ -92,6 +102,7 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
                 {shuffle ? "Shuffled" : "In order"}</span>
             <span className={autoplay ? styles.enabled : undefined}>
                 <i/>{autoplay ? "Autoplay on" : "Autoplay off"}</span>
+            <span>{REPEAT_LABELS[repeatMode]}</span>
         </div>
         <div className={styles.listHeader}>
             <span>{history.length} played <span aria-hidden="true">·</span> {upcoming.length} up next</span>
@@ -113,7 +124,10 @@ export default function PlaybackQueue({currentTrack, history, upcoming, shuffle,
                             <span className={styles.number}>{currentPosition < 0 ? <Music2 size={12}/>
                                 : String(currentPosition + 1).padStart(2, "0")}</span>
                             <Cover track={currentTrack}/>
-                            <strong title={displayTitle(currentTrack, screenshotMode)}>{displayTitle(currentTrack, screenshotMode)}</strong>
+                            <span className={styles.trackDetails}>
+                                <strong title={currentTitle}>{currentTitle}</strong>
+                                {currentArtist && <span className={styles.trackArtist} title={currentArtist}>{currentArtist}</span>}
+                            </span>
                             <span className={styles.soundBars} aria-hidden="true"><i/><i/><i/></span>
                         </div>
                     </li>

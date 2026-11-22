@@ -75,7 +75,7 @@
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
   font-size: 0.95rem;
-  padding: 12px 16px;
+  padding: 12px 46px 12px 16px;
   transition: border-color var(--transition-medium) ease, box-shadow var(--transition-medium) ease;
 }
 
@@ -87,6 +87,27 @@
   outline: none;
   border-color: rgba(124, 92, 255, 0.45);
   box-shadow: 0 15px 35px -30px rgba(124, 92, 255, 0.7);
+}
+
+.clearSearch {
+  position: absolute;
+  inset: 0 6px 0 auto;
+  margin-block: auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.clearSearch:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 .gridContainer {

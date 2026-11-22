@@ -4,6 +4,7 @@ import threading
 from unittest.mock import Mock
 
 import pytest
+from mutagen.id3 import ID3, TPE1
 
 from twitch_spy.app import Application
 from twitch_spy.media_downloader.atomizer import Atom
@@ -104,6 +105,9 @@ def test_library_indexes_folders_once_and_reads_artwork_only_on_request(
         storage.add_entry(storage.storage_file, f"https://youtube.com/watch?v={index}", title)
         (tmp_path / f"{title}.mp3").write_bytes(b"audio")
         (tmp_path / "thumbnails" / f"{title}.jpg").write_bytes(b"artwork")
+    tags = ID3()
+    tags.add(TPE1(encoding=3, text=[" Māra ", "Night Ensemble"]))
+    tags.save(tmp_path / "Track 0.mp3")
     index_files = Mock(wraps=StorageManager._index_files)
     monkeypatch.setattr(StorageManager, "_index_files", staticmethod(index_files))
     monkeypatch.setattr(StorageManager, "read_img_base64", Mock(side_effect=AssertionError("Eager artwork read")))
@@ -116,7 +120,10 @@ def test_library_indexes_folders_once_and_reads_artwork_only_on_request(
     application.job_manager.restore_jobs(atoms)
     try:
         client = application.app.test_client()
-        job = client.get("/library").json["jobs"][0]
+        jobs = client.get("/library").json["jobs"]
+        job = jobs[0]
+        assert job["artist"] == "Māra, Night Ensemble"
+        assert jobs[1]["artist"] is None
         assert client.get(job["thumbnail_url"]).data == b"artwork"
         Path(atoms[0].thumbnail_file_os_path).unlink()
         assert client.get(job["thumbnail_url"]).status_code == 404

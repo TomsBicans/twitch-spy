@@ -18,12 +18,16 @@ export default function App() {
     const [name, setName] = React.useState(undefined);
     const [trackColor, setTrackColor] = React.useState("#4a4a4a");
     const [playback, setPlayback] = React.useState(null);
+    const [repeatMode, setRepeatMode] = React.useState('off');
+    const onRepeatModeChange = () => setRepeatMode({off: 'queue', queue: 'track', track: 'off'}[repeatMode]);
     return React.createElement(React.Fragment, null,
         React.createElement('button', {onClick: () => setName('Test tone')}, 'Start track'),
         React.createElement('button', {onClick: () => setName('Second tone')}, 'Change track'),
         React.createElement('aside', {style: {width: 248, height: 350, display: 'flex'}},
-            React.createElement(SidebarVisualizer, {playback, title: name, trackColor})),
-        React.createElement(MusicPlayer, {entry: name ? {content_name: name} : undefined, onPlaybackReady: setPlayback, onTrackColorChange: setTrackColor}));
+            React.createElement(SidebarVisualizer, {playback, title: name, trackColor, repeatMode, onRepeatModeChange})),
+        React.createElement(MusicPlayer, {entry: name ? {content_name: name} : undefined,
+            onPlaybackReady: setPlayback, onTrackColorChange: setTrackColor,
+            repeatMode, onRepeatModeChange, loopCurrentTrack: repeatMode === 'track', onTrackEnded: () => {}}));
 }
 """
 
@@ -194,7 +198,8 @@ async def main() -> None:
         assert math.isclose(await page.locator("audio").evaluate("audio => audio.volume"), 0.001)
         await dialog.get_by_role("button", name="Mute", exact=True).click()
         assert await page.locator("audio").evaluate("audio => audio.muted")
-        await dialog.get_by_role("button", name="Loop", exact=True).click()
+        await dialog.get_by_role("button", name="Repeat off", exact=True).click()
+        await dialog.get_by_role("button", name="Repeat queue", exact=True).click()
         assert await page.locator("audio").evaluate("audio => audio.loop")
         await dialog.get_by_role("button", name="Hide controls", exact=False).click()
         await expect(dialog.get_by_role("slider", name="Seek")).to_have_count(0)
