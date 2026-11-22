@@ -5,6 +5,8 @@ export interface LibraryFilter {
     status: ProcessingStates | "all";
 }
 
+export const DEFAULT_LIBRARY_FILTER: LibraryFilter = {search: "", status: ProcessingStates.FINISHED};
+
 interface PlaybackState extends LibraryFilter {
     autoplay: boolean;
     shuffle: boolean;
@@ -33,9 +35,9 @@ export function readPlaybackState(): PlaybackState {
         anchor: params.get("anchor") ?? track,
         track, position,
         start: Math.min(integer(params.get("from"), 0), position),
-        search: params.get("q") ?? "",
+        search: params.get("q") ?? DEFAULT_LIBRARY_FILTER.search,
         status: status === "all" || Object.values(ProcessingStates).includes(status as ProcessingStates)
-            ? status as LibraryFilter["status"] : ProcessingStates.FINISHED,
+            ? status as LibraryFilter["status"] : DEFAULT_LIBRARY_FILTER.status,
     };
 }
 
@@ -46,7 +48,7 @@ export function writePlaybackState(state: PlaybackState): void {
         seed: String(state.seed), track: state.track, anchor: state.anchor,
         position: state.track ? String(state.position) : "",
         from: state.start ? String(state.start) : "", q: state.search,
-        status: state.status === ProcessingStates.FINISHED ? "" : state.status,
+        status: state.status === DEFAULT_LIBRARY_FILTER.status ? "" : state.status,
     };
     for (const [key, value] of Object.entries(values)) {
         if (value) url.searchParams.set(key, value);

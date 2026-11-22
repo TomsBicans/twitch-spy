@@ -75,6 +75,21 @@
   letter-spacing: -0.02em;
 }
 
+.homeButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.homeButton:hover {
+  color: #c6b6fc;
+  transform: none;
+  box-shadow: none;
+}
+
 .appSubtitle {
   margin: 0;
   font-size: 0.82rem;

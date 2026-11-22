@@ -6,11 +6,12 @@ import styles from "./ArtworkView.module.css";
 interface ArtworkViewProps {
     artwork?: string;
     title?: string;
+    artist?: string;
     color: string;
     onClose: () => void;
 }
 
-export default function ArtworkView({artwork, title, color, onClose}: ArtworkViewProps) {
+export default function ArtworkView({artwork, title, artist, color, onClose}: ArtworkViewProps) {
     const closeRef = useRef<HTMLButtonElement>(null);
     const [failedArtwork, setFailedArtwork] = useState<string>();
     const visibleArtwork = artwork !== failedArtwork ? artwork : undefined;
@@ -59,6 +60,7 @@ export default function ArtworkView({artwork, title, color, onClose}: ArtworkVie
             <div className={styles.caption} aria-live="polite" aria-atomic="true">
                 <span className={styles.label}>Now playing</span>
                 <h2>{title ?? "No track selected"}</h2>
+                {artist && <p className={styles.artist} title={artist}>{artist}</p>}
             </div>
         </section>
     );

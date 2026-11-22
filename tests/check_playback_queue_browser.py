@@ -47,6 +47,8 @@ async def queue_titles(page: Page, state: str = "upcoming") -> list[str]:
 
 async def main() -> None:
     songs = [track(index) for index in range(65)]
+    songs[0]["artist"] = "Night Ensemble"
+    songs[1]["artist"] = "Māra"
     songs.append({**track(65), "status": "failed"})
     errors: list[str] = []
     async with async_playwright() as playwright:
@@ -214,13 +216,63 @@ async def main() -> None:
         await expect(restored.locator("audio")).to_have_attribute(
             "src", "http://127.0.0.1:5173/audio/Track%200064",
         )
+
+        await page.goto("http://127.0.0.1:5173/?campaign=queue-test")
+        search = page.get_by_role("textbox", name="Search tracks")
+        await search.fill("NIGHT ensemble")
+        await expect(page.get_by_text("1 matching song", exact=True)).to_be_visible()
+        await search.fill("night 0000")
+        await page.get_by_role("heading", name="Track 0000", exact=True).click()
+        await expect(page.get_by_text("1 matching song", exact=True)).to_be_visible()
+        await page.locator("#statusFilter").select_option("all")
+        await page.get_by_role("button", name="Clear search").click()
+        await expect(search).to_have_value("")
+        await expect(search).to_be_focused()
+        await expect(page.locator("#statusFilter")).to_have_value("all")
+        await expect(page.get_by_text("65 matching songs", exact=True)).to_be_visible()
+        assert "q" not in parse_qs(urlparse(page.url).query)
+
+        await page.get_by_role("button", name="Show playback queue").click()
+        await expect(panel.locator('[data-queue-state="current"]')).to_contain_text("Night Ensemble")
+        await expect(panel.get_by_role("button", name="Play Track 0001 by Māra")).to_be_visible()
+        await page.get_by_role("button", name="Next song", exact=True).click()
+        await expect(panel.locator('[data-queue-state="past"]')).to_contain_text("Night Ensemble")
+        await expect(panel.locator('[data-queue-state="current"]')).to_contain_text("Māra")
+        preview = page.get_by_role("region", name="Live music preview")
+        await expect(preview.get_by_text("Māra", exact=True)).to_be_visible()
+        await page.get_by_role("button", name="Expand visualizer").click()
+        visualizer = page.get_by_role("dialog", name="Music visualizer")
+        await expect(visualizer.get_by_text("Māra", exact=True)).to_be_visible()
+        await visualizer.get_by_role("button", name="Close visualizer").click()
+
+        await search.fill("MĀRA")
+        await page.get_by_role("button", name="Expand artwork").click()
+        artwork = page.get_by_role("region", name="Expanded artwork")
+        await expect(artwork.get_by_text("Māra", exact=True)).to_be_visible()
+        await page.get_by_role("button", name="Health and logs").click()
+        diagnostics = page.get_by_role("region", name="Health and resource usage")
+        await expect(diagnostics).to_be_visible()
+        playing = await page.locator("audio").get_attribute("src")
+        await page.get_by_role("button", name="twitch-spy home").click()
+        await expect(diagnostics).to_have_count(0)
+        await expect(panel).to_have_count(0)
+        await expect(search).to_have_value("")
+        await expect(page.locator("#statusFilter")).to_have_value("finished")
+        await expect(page.locator("audio")).to_have_attribute("src", playing or "")
+        home_url = urlparse(page.url)
+        assert not home_url.fragment
+        assert parse_qs(home_url.query)["campaign"] == ["queue-test"]
+
+        await page.get_by_role("button", name="Expand artwork").click()
+        await page.get_by_role("button", name="twitch-spy home").click()
+        await expect(artwork).to_have_count(0)
         assert not errors, errors
         await browser.close()
     print(
         "Passed: fresh-context URL restore, restarted library IDs, stable shuffle "
         "and history, unified timeline, current-song scrolling, queue jumps, "
         "filters, malformed URLs, desktop/mobile layout, "
-        "Escape and keyboard focus"
+        "Escape and keyboard focus, artist display and search, clear search and home"
     )
 
 

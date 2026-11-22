@@ -58,6 +58,7 @@ async def set_screenshot_mode(page: Page, enabled: bool) -> None:
 async def main() -> None:
     songs = [
         {**track(index), "content_name": f"PRIVATE song {index:03d}",
+         "artist": f"PRIVATE artist {index:03d}",
          "url": f"https://youtube.com/watch?v=SECRET_SOURCE_{index}"}
         for index in range(65)
     ]

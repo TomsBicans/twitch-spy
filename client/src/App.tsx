@@ -6,7 +6,7 @@ import URLInput from "./components/URLInput.tsx";
 import MusicPlayer from "./components/AudioPlayer.tsx";
 import ArtworkView from "./components/ArtworkView.tsx";
 import PlaybackQueue from "./components/PlaybackQueue";
-import {displayArtwork, displayTitle, ScreenshotModeContext, useScreenshotController} from "./screenshotMode";
+import {displayArtist, displayArtwork, displayTitle, ScreenshotModeContext, useScreenshotController} from "./screenshotMode";
 import type {Atom} from "./backend/models.ts";
 import JobOverview from "./components/JobOverview.tsx";
 import JobList from "./components/JobList.tsx";
@@ -15,6 +15,7 @@ import Diagnostics from "./components/Diagnostics.tsx";
 import {BACKEND_URL} from "./backend/backend.ts";
 import {io} from "socket.io-client";
 import {useMusicQueue} from "./useMusicQueue";
+import {DEFAULT_LIBRARY_FILTER} from "./playbackState";
 
 const socket = io(BACKEND_URL);
 const SidebarVisualizer = lazy(() => import('./visualizer/SidebarVisualizer'));
@@ -49,6 +50,8 @@ function App() {
     const [queueOpen, setQueueOpen] = useState(false);
     const queue = useMusicQueue(pool, library, libraryReady, screenshotMode);
     const {currentTrack} = queue;
+    const trackTitle = displayTitle(currentTrack, screenshotMode);
+    const trackArtist = displayArtist(currentTrack, screenshotMode);
     const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
     const [desktopMessage, setDesktopMessage] = useState<string | undefined>(undefined);
 
@@ -74,6 +77,21 @@ function App() {
             socket.off("disconnect", handleDisconnect);
         };
     }, []);
+
+    const closeDiagnostics = () => {
+        if (window.location.hash === "#diagnostics") window.location.hash = "";
+        setShowDiagnostics(false);
+    };
+
+    const returnToLibrary = () => {
+        closeDiagnostics();
+        closeArtwork();
+        setQueueOpen(false);
+        if (queue.filter.search !== DEFAULT_LIBRARY_FILTER.search || queue.filter.status !== DEFAULT_LIBRARY_FILTER.status) {
+            queue.setFilter(DEFAULT_LIBRARY_FILTER);
+        }
+        window.scrollTo(0, 0);
+    };
 
     const quitApplication = async () => {
         const token = document.querySelector<HTMLMetaElement>('meta[name="twitch-spy-shutdown-token"]')?.content;
@@ -117,7 +135,10 @@ function App() {
                             title={isConnected ? "Backend connected" : "Backend disconnected"}
                         />
                     </div>
-                    <h1 className={styles.appTitle}>twitch-spy</h1>
+                    <h1 className={styles.appTitle}>
+                        <button type="button" className={styles.homeButton} onClick={returnToLibrary}
+                            aria-label="twitch-spy home" title="Back to library">twitch-spy</button>
+                    </h1>
                     <p className={styles.appSubtitle}>music library</p>
                     <div className={styles.desktopActions}>
                         <button type="button" className={styles.desktopButton} onClick={() => { closeArtwork(); window.location.hash = "diagnostics"; setShowDiagnostics(true); }}>Health and logs</button>
@@ -139,7 +160,7 @@ function App() {
 
                 <div className={styles.visualizerSlot}>
                     <Suspense fallback={<p>Loading visualizer...</p>}>
-                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={displayTitle(currentTrack, screenshotMode)}/>
+                        <SidebarVisualizer trackColor={trackColor} playback={playback} title={trackTitle} artist={trackArtist}/>
                     </Suspense>
                 </div>
 
@@ -163,7 +184,7 @@ function App() {
             <main className={styles.mainContent}>
                 {showDiagnostics && <Diagnostics
                     onScreenshotToggle={() => { syncDialogRef.current?.close(); screenshot.toggle(); }}
-                    onClose={() => { window.location.hash = ""; setShowDiagnostics(false); }} />}
+                    onClose={closeDiagnostics} />}
                 <div className={artworkExpanded ? styles.libraryHidden : undefined} inert={artworkExpanded}>
                     <JobList
                         socket={socket}
@@ -175,7 +196,7 @@ function App() {
                     />
                 </div>
                 {artworkExpanded && <ArtworkView artwork={displayArtwork(currentTrack, screenshotMode)}
-                    title={displayTitle(currentTrack, screenshotMode)} color={trackColor} onClose={closeArtwork}/>}
+                    title={trackTitle} artist={trackArtist} color={trackColor} onClose={closeArtwork}/>}
             </main>
 
             {queueOpen && <PlaybackQueue currentTrack={currentTrack} history={queue.history}

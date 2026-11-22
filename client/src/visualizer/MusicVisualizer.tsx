@@ -14,6 +14,7 @@ interface Props {
     audio: HTMLAudioElement;
     analysis: AudioAnalysis;
     title: string;
+    artist?: string;
     color?: string;
     colorTheme: "artwork" | "system";
     onColorThemeChange: (theme: "artwork" | "system") => void;
@@ -31,7 +32,7 @@ function timestamp(seconds: number): string {
     return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false}: Props) {
+export default function MusicVisualizer({audio, analysis, color, colorTheme, onColorThemeChange, title, artist, onClose, presetId, onPresetChange, fullscreenRef, frameRate, onFrameRateChange, startImmersive = false}: Props) {
     const screenshotMode = useScreenshotMode();
     const dialog = useRef<HTMLDialogElement>(null);
     const viewport = fullscreenRef;
@@ -157,7 +158,12 @@ export default function MusicVisualizer({audio, analysis, color, colorTheme, onC
             <button onClick={onClose} aria-label="Close visualizer">Close</button>
         </div>
         {!hidden && <div id="visualizer-controls" className={styles.controls}>
-            <header><span className={styles.eyebrow}>NOW PLAYING / VISUALIZER</span><h2>{title}</h2><p>{preset.description}</p></header>
+            <header>
+                <span className={styles.eyebrow}>NOW PLAYING / VISUALIZER</span>
+                <h2>{title}</h2>
+                {artist && <p className={styles.artist} title={artist}>{artist}</p>}
+                <p>{preset.description}</p>
+            </header>
             <div className={styles.options}>
                 <label>Scene<select aria-label="Scene" value={presetId} onChange={event => onPresetChange(event.target.value)}>{presets.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                 <label>Colors<select aria-label="Colors" value={colorTheme} onChange={event => onColorThemeChange(event.target.value as "artwork" | "system")}><option value="artwork">Match artwork</option><option value="system">System</option></select></label>

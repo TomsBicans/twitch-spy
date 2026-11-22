@@ -14,10 +14,11 @@ import {useScreenshotMode} from '../screenshotMode';
 interface Props {
     playback: VisualizerPlayback | null;
     title?: string;
+    artist?: string;
     trackColor?: string;
 }
 
-export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4a"}: Props) {
+export default function SidebarVisualizer({playback, title, artist, trackColor = "#4a4a4a"}: Props) {
     const screenshotMode = useScreenshotMode();
     const [colorTheme, setColorTheme] = useState<"artwork" | "system">("artwork");
     const color = colorTheme === "artwork" ? trackColor : undefined;
@@ -94,7 +95,10 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
                     : <div className={styles.placeholder}><span aria-hidden="true">◉</span><p>{expanded ? 'Expanded view is open' : 'Play a track to bring this space to life'}</p></div>}
             </div>
             <footer className={styles.footer}>
-                <p className={styles.title} title={title}>{title ?? 'Your music, in motion'}</p>
+                <div className={styles.trackDetails}>
+                    <p className={styles.title} title={title}>{title ?? 'Your music, in motion'}</p>
+                    {artist && <p className={styles.artist} title={artist}>{artist}</p>}
+                </div>
                 <div className={styles.actions}>
                     <button disabled={!playback} onClick={() => setExpanded(true)} aria-label="Expand visualizer"><Expand size={14}/>Expand</button>
                     <button disabled={!playback || !document.fullscreenEnabled} onClick={openFullscreen} aria-label="Fullscreen visualizer" title="Press F for fullscreen without controls"><Maximize size={14}/>Fullscreen</button>
@@ -102,7 +106,7 @@ export default function SidebarVisualizer({playback, title, trackColor = "#4a4a4
                 {error && <p role="alert">{screenshotMode ? 'Visualizer is unavailable. Try again.' : error}</p>}
             </footer>
         </section>
-        {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'}
+        {expanded && playback && <MusicVisualizer color={color} colorTheme={colorTheme} onColorThemeChange={setColorTheme} {...playback} title={title ?? 'Music'} artist={artist}
             presetId={presetId} onPresetChange={setPresetId} fullscreenRef={fullscreenRef}
             frameRate={frameRate} onFrameRateChange={setFrameRate}
             startImmersive={startImmersive}

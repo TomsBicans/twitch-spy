@@ -33,6 +33,7 @@
 .eyebrow { color: #aea2eb; font-size: 10px; letter-spacing: 0.18em; }
 .controls h2 { font-size: clamp(16px, 2vw, 24px); margin: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .controls p { color: #a4aec4; font-size: 13px; margin: 8px 0 18px; }
+.controls .artist { margin: -4px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d0d5e6; }
 .options { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
 .options label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #b6bfd4; }
 .options .check { flex-direction: row; align-items: center; }

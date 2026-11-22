@@ -50,6 +50,10 @@ export function displayTitle(track: Atom | undefined, masked: boolean): string |
     return `${titles[number % titles.length]} — Studio ${String(number % 1000).padStart(3, "0")}`;
 }
 
+export function displayArtist(track: Atom | undefined, masked: boolean): string | undefined {
+    return masked ? undefined : track?.artist ?? undefined;
+}
+
 export function displaySource(track: Atom, masked: boolean): string {
     return masked ? `https://example.invalid/demo/${sampleNumber(track) % 1000}` : track.url;
 }

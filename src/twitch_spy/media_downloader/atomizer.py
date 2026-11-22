@@ -14,6 +14,8 @@ class Atom:
             content_title: Optional[str] = None,
             media_file_os_path: Optional[str] = None,
             thumbnail_image_in_base64: Optional[str] = None,
+            *,
+            artist: str | None = None,
     ) -> None:
         self.id = uuid.uuid4()
         self.url = url
@@ -22,6 +24,7 @@ class Atom:
         self.single_item = self._is_single_item(url)
         self.content_type = content_type
         self.content_title = content_title
+        self.artist = artist
         self.download_dir = download_dir
         self.status = constants.PROCESS_STATUS.QUEUED
         self.error_message: str | None = None

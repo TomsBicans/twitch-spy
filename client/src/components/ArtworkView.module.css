@@ -93,6 +93,16 @@
   overflow-wrap: anywhere;
 }
 
+.artist {
+  margin: 4px auto 0;
+  max-width: 900px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #c2c6d4;
+  font-size: 0.9rem;
+}
+
 @keyframes appear {
   from { opacity: 0; }
 }

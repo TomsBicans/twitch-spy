@@ -12,6 +12,7 @@ import unicodedata
 from collections.abc import Iterator
 from twitch_spy.config import AUDIO_LIBRARY
 from twitch_spy.media_downloader.atomizer import Atom
+from twitch_spy.media_downloader.audio_metadata import read_mp3_artist
 import twitch_spy.media_downloader.constants as const
 import twitch_spy.media_downloader.youtube as youtube
 from enum import Enum
@@ -304,6 +305,7 @@ class StorageManager:
                         content_title=title if title else url.split("/")[-1],
                         media_file_os_path=media_path,
                         thumbnail_image_in_base64=thumbnail_base64,
+                        artist=read_mp3_artist(media_path) if media_path else None,
                     )
                     a.update_status(status)
                     a.thumbnail_file_os_path = thumbnail_path
